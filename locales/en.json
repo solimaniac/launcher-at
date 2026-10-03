@@ -20,6 +20,8 @@
     "title": "Choose an account provider",
     "intro": "Your provider hosts your account and handles signup.",
     "choose": "Continue with {{name}}",
-    "empty": "No account providers are currently available."
+    "empty": "No account providers are currently available.",
+    "bluesky": "An account hosted by Bluesky.",
+    "eurosky": "An account hosted by Eurosky, based in Europe."
   }
 }
