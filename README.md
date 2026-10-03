@@ -2,7 +2,9 @@
 
 A small, MIT-licensed, static wizard: Atmosphere primer → provider selection → provider-native OAuth signup → completion → optional return to the originating app.
 
-Vite, vanilla TypeScript, SCSS, i18next, and the official `@atproto/oauth-client-browser`. No application backend, account database, PDS hosting, analytics, or token handoff.
+Vite, vanilla TypeScript, SCSS, i18next, and the official `@atproto/oauth-client-browser`. The launcher remains static; no account database, PDS hosting, or token handoff.
+
+The optional [activity backend](backend/README.md) runs as one Node process with Redis. It observes Jetstream account hosting transitions and exposes provider counts and five-minute recent joins for polling. It reads the same `config/providers.json`; no frontend API polling is added here.
 
 ## Run locally
 

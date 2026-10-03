@@ -3,7 +3,7 @@ import RedisMock from 'ioredis-mock'
 import { Jetstream, LexIndexer } from '@bsky/jetstream'
 import type { AccountEvent, LiveTransport } from '@bsky/jetstream'
 import { buildServer } from '../src/server.ts'
-import { createAccountHandler } from '../src/jetstream.ts'
+import { createAccountHandler, consumeAccounts } from '../src/jetstream.ts'
 import { RedisCursorStore, CURSOR_KEY } from '../src/cursor.ts'
 import { loadProviders } from '../src/providers.ts'
 
@@ -40,12 +40,65 @@ test('restores durable cursor and never advances it past a failed persistent wri
   expect(await new RedisCursorStore(redis, log).load()).toBe(2)
   await redis.quit()
 })
-test('first connection omits cursor: live, not automatic backfill', async () => {
+test('first connection starts at a persisted live boundary, not historical backfill', async () => {
+  vi.useFakeTimers({ now: Date.parse('2026-10-03T12:00:00Z') })
+  try {
+    const redis = new RedisMock(); await redis.flushall()
+    let url = ''
+    const transport: LiveTransport = { async *stream(getUrl) { url = getUrl(); yield frame(5) } }
+    await new Jetstream('https://example.test').runner(new LexIndexer().account(() => {})).live({ cursor: new RedisCursorStore(redis, log), liveTransport: transport })
+    expect(Number(new URL(url).searchParams.get('cursor'))).toBe(Date.now() * 1000)
+    expect(await redis.get(CURSOR_KEY)).toBe('5')
+    await redis.quit()
+  } finally { vi.useRealTimers() }
+})
+
+test('source shutdown drains pending identity/count work before final checkpoint', async () => {
   const redis = new RedisMock(); await redis.flushall()
-  let url = ''
-  const transport: LiveTransport = { async *stream(getUrl) { url = getUrl(); yield frame(5) } }
-  await new Jetstream('https://example.test').runner(new LexIndexer().account(() => {})).live({ cursor: new RedisCursorStore(redis, log), liveTransport: transport })
-  expect(new URL(url).searchParams.has('cursor')).toBe(false)
-  expect(await redis.get(CURSOR_KEY)).toBe('5')
+  const abort = new AbortController()
+  await redis.set(CURSOR_KEY, '1')
+  const ready = Promise.withResolvers<void>()
+  const gate = Promise.withResolvers<void>()
+  const sourceStopped = Promise.withResolvers<void>()
+  const transport: LiveTransport = { async *stream() { yield frame(7); sourceStopped.resolve(); throw new Error('socket shutdown') } }
+  let finished = false
+  const run = consumeAccounts({ url: 'https://example.test', cursor: new RedisCursorStore(redis, log), log, signal: abort.signal, transport,
+    handle: async () => { ready.resolve(); await gate.promise },
+  }).then(() => { finished = true })
+  await ready.promise
+  abort.abort()
+  await sourceStopped.promise
+  expect(finished).toBe(false)
+  expect(await redis.get(CURSOR_KEY)).toBe('1')
+  gate.resolve()
+  await run
+  expect(await redis.get(CURSOR_KEY)).toBe('7')
+  await redis.quit()
+})
+
+test('a checkpoint failure stays pending until Redis accepts it', async () => {
+  vi.useFakeTimers()
+  try {
+    const redis = new RedisMock(); await redis.flushall()
+    vi.spyOn(redis, 'set').mockRejectedValueOnce(new Error('Redis unavailable'))
+    let saved = false
+    const work = new RedisCursorStore(redis, log).save(8).then(() => { saved = true })
+    await Promise.resolve()
+    expect(saved).toBe(false)
+    expect(await redis.get(CURSOR_KEY)).toBeNull()
+    await vi.advanceTimersByTimeAsync(1000)
+    await work
+    expect(await redis.get(CURSOR_KEY)).toBe('8')
+    await redis.quit()
+  } finally { vi.useRealTimers() }
+})
+
+test('failed first count cannot lose the live boundary on restart', async () => {
+  const redis = new RedisMock(); await redis.flushall()
+  const cursor = new RedisCursorStore(redis, log)
+  const boundary = await cursor.load()
+  const transport: LiveTransport = { async *stream() { yield frame(9) } }
+  await expect(new Jetstream('https://example.test').runner(new LexIndexer().account(async () => { throw new Error('write failed') })).live({ cursor, liveTransport: transport })).rejects.toThrow('write failed')
+  expect(await new RedisCursorStore(redis, log).load()).toBe(boundary)
   await redis.quit()
 })

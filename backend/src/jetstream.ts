@@ -1,5 +1,5 @@
 import { Jetstream, LexIndexer, websocketTransport } from '@bsky/jetstream'
-import type { AccountEvent, CursorStore, LiveTransport } from '@bsky/jetstream'
+import type { AccountEvent, CursorStore, LiveTransport, JetstreamConsumer } from '@bsky/jetstream'
 import type { FastifyBaseLogger } from 'fastify'
 import { setTimeout as delay } from 'node:timers/promises'
 import type { Identity } from './identity.ts'
@@ -30,13 +30,21 @@ export async function consumeAccounts(options: {
 }) {
   const { log, signal } = options
   const js = new Jetstream(options.url)
-  const pending = new Set<Promise<void>>()
-  const indexer = new LexIndexer({ concurrency: options.concurrency ?? 8 }).account(event => {
-    const work = options.handle(event)
-    pending.add(work)
-    void work.then(() => pending.delete(work), () => pending.delete(work))
-    return work
-  })
+  const indexer = new LexIndexer({ concurrency: options.concurrency ?? 8 }).account(options.handle)
+  const consumer: JetstreamConsumer = {
+    kinds: ['account'],
+    async run(stream, context) {
+      let sourceError: unknown
+      // The SDK indexer drains on normal stream end, but not when its source
+      // throws. Normalize source shutdown so handlers settle BEFORE runner flush.
+      async function* drainedStream() {
+        try { yield* stream }
+        catch (err) { sourceError = err }
+      }
+      await indexer.run(drainedStream(), context)
+      if (sourceError && !signal.aborted) throw sourceError
+    },
+  }
   const transport = options.transport ?? websocketTransport({
     onConnect: () => log.info('Jetstream connected'),
     onDisconnect: () => log.warn('Jetstream disconnected'),
@@ -44,15 +52,12 @@ export async function consumeAccounts(options: {
   })
   while (!signal.aborted) {
     try {
-      await js.runner(indexer).live({ cursor: options.cursor, signal, liveTransport: transport,
+      await js.runner(consumer).live({ cursor: options.cursor, signal, liveTransport: transport,
         onError: err => log.warn({ err }, 'Jetstream event decoding failed'),
         onInfo: info => log.warn({ info }, 'Jetstream advisory'),
       })
     } catch (err) {
       if (!signal.aborted) log.error({ err }, 'Jetstream processing stopped; resuming from durable cursor')
-    } finally {
-      // SDK abort/source-error exits need draining before restarting or closing Redis.
-      await Promise.allSettled([...pending])
     }
     if (!signal.aborted) await delay(1000, undefined, { signal }).catch(() => {})
   }

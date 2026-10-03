@@ -3,11 +3,12 @@ import type { Redis } from 'ioredis'
 
 export function healthRoute(app: FastifyInstance, redis: Pick<Redis, 'ping'>) {
   app.get('/health', async (_request, reply) => {
-    let timer: ReturnType<typeof setTimeout> | undefined
+    const timeout = Promise.withResolvers<never>()
+    const timer = setTimeout(() => timeout.reject(new Error('Redis ping timeout')), 2000)
     try {
       await Promise.race([
         redis.ping(),
-        new Promise((_, reject) => { timer = setTimeout(() => reject(new Error('Redis ping timeout')), 2000) }),
+        timeout.promise,
       ])
       return { status: 'ok' }
     } catch {

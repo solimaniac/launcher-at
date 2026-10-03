@@ -9,10 +9,13 @@ export class RedisCursorStore implements CursorStore {
   private log: FastifyBaseLogger
   constructor(redis: Pick<Redis, 'get' | 'set'>, log: FastifyBaseLogger) { this.redis = redis; this.log = log }
   async load() {
+    // Persist a live timestamp boundary before the first event. Without it,
+    // a failed first write would restart at live and silently skip that event.
+    await this.redis.set(CURSOR_KEY, String(Date.now() * 1000), 'NX')
     const raw = await this.redis.get(CURSOR_KEY)
-    if (raw === null) return undefined
     const seq = Number(raw)
-    if (!Number.isSafeInteger(seq) || seq <= 0 || seq >= 1e15) throw new Error('Invalid stored v2 cursor')
+    if (!Number.isSafeInteger(seq) || seq <= 0) throw new Error('Invalid stored v2 cursor')
+    this.log.info({ cursor: seq }, 'Restoring Jetstream cursor')
     return seq
   }
   async save(seq: number): Promise<void> {
