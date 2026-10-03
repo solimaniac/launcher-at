@@ -16,11 +16,11 @@ Node **22.18+** (Node 24 LTS recommended), npm, and Redis 7+:
 
 ```sh
 # From repository root: only the backend dependencies are needed.
-npm --prefix backend install
-# Or npm --prefix backend ci for the committed lockfile.
+npm --prefix server install
+# Or npm --prefix server ci for the committed lockfile.
 docker run --name atmosphere-redis -p 6379:6379 -d redis:7-alpine
-cp backend/.env.example backend/.env
-cd backend
+cp server/.env.example server/.env
+cd server
 npm run dev
 ```
 
@@ -28,15 +28,15 @@ The dev command loads `.env` and uses native Node TypeScript/watch support. Prod
 
 ```sh
 # From repository root
-npm --prefix backend run typecheck
-npm --prefix backend test
-npm --prefix backend run build
-npm --prefix backend start
+npm --prefix server run typecheck
+npm --prefix server test
+npm --prefix server run build
+npm --prefix server start
 ```
 
 Tests mock identity/network responses and Redis in-process; they never require the production Jetstream or a running Redis. Production needs real Redis. Root frontend tests remain separate (`npm test`).
 
-`npm start` reads process environment, not `.env`; for an explicit local production run use `node --env-file=.env dist/index.js` from `backend/`.
+`npm start` reads process environment, not `.env`; for an explicit local production run use `node --env-file=.env dist/index.js` from `server/`.
 
 ### Environment
 
@@ -105,10 +105,10 @@ Cursors are not portable between Jetstream v1/v2 or necessarily between differen
 
 ## Railway
 
-Provision exactly **one persistent Node service and one Railway Redis service**, in the same project/environment. No Postgres or separate worker. This repository includes `backend/Dockerfile`, built from **repository root** so the shared provider configuration is included:
+Provision exactly **one persistent Node service and one Railway Redis service**, in the same project/environment. No Postgres or separate worker. This repository includes `server/Dockerfile`, built from **repository root** so the shared provider configuration is included:
 
 ```sh
-docker build -f backend/Dockerfile -t atmosphere-activity .
+docker build -f server/Dockerfile -t atmosphere-activity .
 docker run --rm -p 3000:3000 \
   -e REDIS_URL=redis://host.docker.internal:6379 \
   -e ALLOWED_ORIGINS=https://your-launcher.example \
@@ -117,12 +117,12 @@ docker run --rm -p 3000:3000 \
 
 In the Railway backend service:
 
-1. Connect the repository; leave **Root Directory `/`** (not `/backend`).
-2. Set `RAILWAY_DOCKERFILE_PATH=backend/Dockerfile`. The image installs/builds only the backend and copies `config/providers.json` into `/app/config`; it starts `node dist/index.js` as a non-root user.
+1. Connect the repository; leave **Root Directory `/`** (not `/server`).
+2. Set `RAILWAY_DOCKERFILE_PATH=server/Dockerfile`. The image installs/builds only the backend and copies `config/providers.json` into `/app/config`; it starts `node dist/index.js` as a non-root user.
 3. Set `REDIS_URL=${{Redis.REDIS_URL}}` (replace `Redis` with your Redis service name), `NODE_ENV=production`, and `ALLOWED_ORIGINS` to the static site's exact HTTPS origin(s). ioredis uses `family: 0` for Railway's private IPv4/IPv6 networking.
 4. Do not override the injected `PORT`; the process uses it automatically. Enable persistent deployment (no sleeping/serverless mode), with **one replica** and no overlapping consumers.
 5. Set the service **healthcheck path to `/health`**; allow enough startup time for Redis connection. Jetstream availability is independent of this healthcheck. Railway healthchecks gate deployments, not continuous stream monitoring.
-6. Keep the root build context intact; watch both `backend/**` and `config/providers.json` for redeployment. The frontend stays a separately hosted static site.
+6. Keep the root build context intact; watch both `server/**` and `config/providers.json` for redeployment.
 
 As of the current [Railway documentation](https://docs.railway.com/config-as-code), new services cannot opt into deprecated `railway.json` / `railway.toml` Config as Code. Use the dashboard settings above or the current [Infrastructure as Code](https://docs.railway.com/infrastructure-as-code) workflow (`railway config init/plan/apply`) with `healthcheck: '/health'`. No deployment or resource provisioning is performed by this repository change.
 
