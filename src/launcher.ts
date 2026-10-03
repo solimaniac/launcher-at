@@ -68,7 +68,9 @@ export async function launch(root: HTMLElement, oauth: SignupOAuth, callback = f
         logo.alt = ''
         card.append(logo)
       }
-      card.append(element('strong', provider.name), element('span', t(provider.description)))
+      const region = element('span', t('providers.region', { region: provider.region }))
+      region.className = 'region'
+      card.append(element('strong', provider.name), region, element('span', t(provider.description)))
       card.onclick = async () => {
         for (const button of root.querySelectorAll('button')) button.disabled = true
         root.setAttribute('aria-busy', 'true')

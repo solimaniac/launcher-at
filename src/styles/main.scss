@@ -21,6 +21,7 @@ h1:focus { outline: none; }
 .providers { display: grid; gap: 1rem; margin-block: 1.5rem; }
 .provider { text-align: left; width: 100%; background: var(--color-secondary); color: var(--color-text); }
 .provider strong, .provider span { display: block; }
+.provider .region { font-size: 0.875em; opacity: 0.8; }
 .provider img { width: 3rem; height: 3rem; object-fit: contain; float: left; margin-right: 1rem; }
 .notice { border-left: 4px solid var(--color-primary); padding: .75rem 1rem; background: var(--color-secondary); }
 .secondary { background: var(--color-secondary); color: var(--color-text); margin-inline-start: .6rem; }

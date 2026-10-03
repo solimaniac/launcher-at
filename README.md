@@ -64,12 +64,13 @@ Edit **`config/providers.json`**, the single provider source. Add an object:
   "name": "New Provider",
   "serviceUrl": "https://accounts.example.org",
   "description": "providers.newProvider",
+  "region": "Europe",
   "logo": "/providers/new-provider.svg",
   "enabled": true
 }
 ```
 
-Add the description at `providers.newProvider` in `locales/en.json`. If using `logo`, put the asset at `public/providers/new-provider.svg`; otherwise omit it. Logos are optional, same-site absolute paths, and decorative inside the named provider button. IDs, URLs, required fields, and duplicates are validated. Disabled providers stay in the public registry but do not appear in the picker.
+Add the description at `providers.newProvider` in `locales/en.json`. `region` is required plain text naming the country/region where the provider hosts accounts (e.g. `"United States"`, `"Europe"`); it is shown on the provider card. If using `logo`, put the asset at `public/providers/new-provider.svg`; otherwise omit it. Logos are optional, same-site absolute paths, and decorative inside the named provider button. IDs, URLs, required fields, and duplicates are validated. Disabled providers stay in the public registry but do not appear in the picker.
 
 Use the PDS **or provider entryway** URL accepted by ATProto OAuth, not an arbitrary signup homepage or a user's eventual physical PDS. Confirm the provider supports server-first OAuth account creation. Do not duplicate the list in UI code or `public/`.
 
@@ -117,6 +118,7 @@ Add `locales/fr.json` with the same keys, register it in `src/i18n.ts` under `re
 | `name` | string | Provider display name |
 | `serviceUrl` | string | HTTPS PDS/entryway URL for OAuth |
 | `description` | string | English text resolved from the locale key |
+| `region` | string | Country/region where the provider hosts accounts |
 | `logo` | string, optional | Same-site path; resolve against the registry origin |
 | `enabled` | boolean | Whether the launcher offers this provider |
 

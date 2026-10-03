@@ -4,6 +4,7 @@
     "name": "Bluesky",
     "serviceUrl": "https://bsky.social",
     "description": "providers.bluesky",
+    "region": "United States",
     "enabled": true
   },
   {
@@ -11,6 +12,7 @@
     "name": "Eurosky",
     "serviceUrl": "https://eurosky.social",
     "description": "providers.eurosky",
+    "region": "Europe",
     "enabled": true
   }
 ]
