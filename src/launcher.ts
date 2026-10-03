@@ -58,11 +58,6 @@ export async function launch(root: HTMLElement, oauth: SignupOAuth, callback = f
     screen(t('providers.title'), element('p', t('providers.intro')))
     const cards = element('div')
     cards.className = 'providers'
-    const more = element('details')
-    more.append(element('summary', t('providers.more')))
-    const secondaryCards = element('div')
-    secondaryCards.className = 'providers'
-    more.append(secondaryCards)
     for (const provider of providers) {
       const card = element('button')
       card.className = 'provider'
@@ -83,13 +78,12 @@ export async function launch(root: HTMLElement, oauth: SignupOAuth, callback = f
         try { await oauth.start(provider.serviceUrl, app.id) }
         catch (error) { showError(error instanceof SignupError ? error.key : 'errors.authorization', selector) }
       }
-      ;(provider.secondary ? secondaryCards : cards).append(card)
+      cards.append(card)
     }
     if (!providers.length) cards.append(element('p', t('providers.empty')))
     const back = element('button', t('actions.back'))
     back.onclick = intro
     root.append(cards)
-    if (secondaryCards.childElementCount) root.append(more)
     root.append(back)
   }
   function restart() {

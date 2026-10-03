@@ -33,8 +33,7 @@
     "spark": "An account hosted by Spark.",
     "npmx": "An account hosted by npmx.",
     "pckt": "An account hosted by pckt.",
-    "witchcraft-systems": "An account hosted by Witchcraft Systems.",
-    "more": "More providers"
+    "witchcraft-systems": "An account hosted by Witchcraft Systems."
   },
   "oauth": { "opening": "Opening your provider’s secure signup…", "finishing": "Finishing your account setup…" },
   "complete": {

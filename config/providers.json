@@ -53,8 +53,7 @@
     "serviceUrl": "https://tngl.sh",
     "description": "providers.tangled",
     "region": "Europe",
-    "enabled": true,
-    "secondary": true
+    "enabled": true
   },
   {
     "id": "spark",
@@ -62,8 +61,7 @@
     "serviceUrl": "https://pds.sprk.so",
     "description": "providers.spark",
     "region": "United States",
-    "enabled": true,
-    "secondary": true
+    "enabled": true
   },
   {
     "id": "npmx",
@@ -71,8 +69,7 @@
     "serviceUrl": "https://npmx.social",
     "description": "providers.npmx",
     "region": "Europe",
-    "enabled": true,
-    "secondary": true
+    "enabled": true
   },
   {
     "id": "pckt",
@@ -80,8 +77,7 @@
     "serviceUrl": "https://pds.pckt.cafe",
     "description": "providers.pckt",
     "region": "United States",
-    "enabled": true,
-    "secondary": true
+    "enabled": true
   },
   {
     "id": "witchcraft-systems",
@@ -89,7 +85,6 @@
     "serviceUrl": "https://pds.witchcraft.systems",
     "description": "providers.witchcraft-systems",
     "region": "Japan",
-    "enabled": true,
-    "secondary": true
+    "enabled": true
   }
 ]
