@@ -9,11 +9,12 @@ import { serve } from '@hono/node-server'
 import type { ServerType } from '@hono/node-server'
 import { once } from 'node:events'
 import { pino } from 'pino'
+import type { Socket } from 'node:net'
 
 const config = loadEnv()
 const log = pino({ level: config.logLevel })
 const redis = connectRedis(config.redisUrl, log)
-const app = buildServer(redis, log)
+const app = buildServer(redis, log, config)
 const storage = new Storage(redis)
 const providers = loadProviders()
 const abort = new AbortController()
@@ -54,7 +55,15 @@ try {
       .catch(err => log.error({ err }, 'Recent activity pruning failed'))
   }, 30000).unref()
   activityRoutes(app, storage, providers, config.allowedOrigins)
-  server = serve({ fetch: app.fetch, port: config.port, hostname: '0.0.0.0' })
+  server = serve({ fetch: app.fetch, port: config.port, hostname: '0.0.0.0', serverOptions: {
+    maxHeaderSize: 8192, headersTimeout: 10000, requestTimeout: 10000,
+    keepAliveTimeout: 5000, connectionsCheckingInterval: 1000,
+  } })
+  server.maxConnections = 256
+  server.setTimeout(10000)
+  server.on('timeout', (socket: Socket) => socket.destroy())
+  if ('maxRequestsPerSocket' in server) server.maxRequestsPerSocket = 100
+  server.on('checkContinue', (_request, response) => { response.writeHead(417, { Connection: 'close' }); response.end() })
   await once(server, 'listening')
   log.info({ port: config.port }, 'HTTP server listening')
   consumer = consumeAccounts({ url: config.jetstreamUrl, cursor: new RedisCursorStore(redis, log),

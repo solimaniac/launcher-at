@@ -49,6 +49,10 @@ Tests mock identity/network responses and Redis in-process; they never require t
 | `NODE_ENV` | Set to `production` when deployed |
 | `LOG_LEVEL` | `info`; use `debug` for untracked-provider and failed handle verification details |
 | `IDENTITY_CONCURRENCY` | `8`, bounded maximum `20`; SDK indexer preserves per-DID order |
+| `TRUST_RAILWAY_PROXY` | `false`; trust Railway's `X-Real-IP` only after verifying the edge overwrites it and there is no direct origin access. Never trusts `X-Forwarded-For`. |
+| `RATE_LIMIT_PER_MINUTE` | `120` requests per client per UTC minute, shared across all non-health paths and methods |
+| `GLOBAL_RATE_LIMIT_PER_MINUTE` | `1200` non-health requests per process per UTC minute, including requests rejected by the per-client quota |
+| `MAX_CONCURRENT_REQUESTS` | `32` admitted HTTP requests in flight; excess returns 503 with `Retry-After: 1` |
 
 Keep `.env`, credentials, and service URLs containing passwords out of Git. `.env.example` contains only local placeholders.
 
@@ -79,9 +83,33 @@ Read-only, no authentication or cookies:
 
 - **`GET /api/v1/providers/counts`** → `{ "windowDays": 30, "observedSince": "...", "providers": [{ "id": "...", "name": "...", "joined": 0 }] }`. Includes every tracked provider, even zero-count providers; ignores unknown Redis hash fields. Reads 30 daily hashes in one pipeline. `observedSince` is `null` if tracking metadata is absent.
 - **`GET /api/v1/joins/recent?limit=50`** → `{ "windowMinutes": 5, "joins": [{ "handle": "...", "providerId": "...", "providerName": "...", "joinedAt": "..." }] }`. Default/max 50; larger limits are capped. Non-integer or nonpositive limits return 400. Newest first, never older than five minutes, no public DIDs. Fewer valid handles means fewer results.
-- **`GET /health`** → HTTP 200 `{ "status": "ok" }` when Redis responds; HTTP 503 otherwise. A Jetstream reconnect alone does not fail health.
+- **`GET /health`** → HTTP 200 `{ "status": "ok" }` when Redis responds; HTTP 503 otherwise. Checks are single-flight with a one-second result cache and a two-second timeout. A Jetstream reconnect alone does not fail health. Excess health probes return 429.
 
 Unexpected API storage errors return HTTP 503, not fabricated empty/zero data.
+
+### Abuse protection and limits
+
+**This is not DDoS immunity.** Admission limits cap Redis-backed work, memory used by quota tracking, and HTTP concurrency, but rejected traffic still consumes network bandwidth, sockets, and Node CPU. A sufficiently large or distributed flood can deny service or exhaust Railway resources. CORS is not an access-control or DDoS mechanism.
+
+- Request admission runs before routes, CORS preflights, Redis reads, and error logging. API endpoints, unknown paths, query variations, HEAD, invalid requests, and OPTIONS share client/global quotas. Rejected requests do not hit Redis and are not individually logged.
+- Rate limiting is **process-local**, not Redis-backed, matching the single-replica design. UTC minute windows reset on restart and can admit two windows' quota near a minute boundary. Quotas are not an even-per-second throttle. Shared NAT users and IPv6 clients in the same /64 share a limit; tune based on expected polling and usage.
+- At most 4,096 client keys are retained per budget for the current minute. Live quotas are never evicted to admit a new identity; a full table denies new identities until reset. No IP addresses are stored in Redis or logged by the limiter.
+- HTTP 429 includes `Retry-After` and `Cache-Control: no-store`. Allowed browser origins receive CORS headers on rejections and may read `Retry-After`. Clients should stop polling until then; do not retry-loop a 429/503.
+- Health has its own 30-per-client/120-global-per-minute allowance, independent of API saturation. This prevents API traffic from consuming probe quotas, but an attacker flooding health can still deny probes. Coalesced pings bound its Redis load; health is not an unlimited bypass.
+- Only GET, HEAD, and OPTIONS are admitted. Unsupported methods return 405. Request bodies/transfer encoding are rejected without buffering (400), oversized URLs return 414 (2,048-character cap), and Node rejects headers above 8 KiB (431). `Expect: 100-continue` uploads get 417. Rejected upload connections close after the response.
+- Node limits sockets to 256, headers/request upload/inactivity to approximately ten seconds, idle keep-alive to five seconds, and requests per socket to 100. These are origin limits, not assurances about Railway's edge accepting traffic. HTTP work slots are released on errors as well as success.
+
+#### Client-IP trust before deployment
+
+Local/direct mode ignores all forwarded headers and uses the socket peer. Behind a reverse proxy that means clients share the proxy's quota until configured otherwise. Set `TRUST_RAILWAY_PROXY=true` **only for an origin exclusively reached through Railway's edge** after verifying its `X-Real-IP` overwrite behavior. [Railway documents this header as the client IP](https://docs.railway.com/networking/public-networking/specs-and-limits); the implementation never trusts the leftmost `X-Forwarded-For`, Cloudflare headers, request IDs, or arbitrary client-supplied identity values. Missing/invalid proxy identity shares one restrictive bucket. IPv4-mapped IPv6 and equivalent IPv6 spellings normalize so aliases cannot rotate quotas.
+
+Before enabling trust, send repeated public requests with different spoofed `X-Real-IP` and `X-Forwarded-For` values from one connection/source and confirm the same quota is enforced; compare Railway's source-IP network logs. This repository's smoke verified direct-mode spoof rejection, not a live Railway trust boundary. Do not expose an alternative origin port/TCP proxy with forwarded-header trust enabled. An additional CDN changes the client-IP boundary: verify it instead of assuming the supplied client header is authoritative.
+
+#### Railway edge protection
+
+[Railway's documentation](https://docs.railway.com/networking/public-networking/specs-and-limits#ddos-protection) states its network-layer mitigation and domain RPS limits may not prevent application-layer overload. Configure edge rules/WAF or an external API-compatible DDoS/rate-limit service **before** public launch, with limits aligned to the origin's capacity. Apply protection to every attached domain, including the default Railway domain; an unprotected alternate domain is a bypass. [Railway Edge Rules](https://docs.railway.com/networking/edge-rules) can block unnecessary paths/sources before they reach Node. Monitor request rates, 429/503 rates, CPU/memory, Redis latency, and costs; maintain an incident plan to block floods at the edge.
+
+Do not blindly enable [Railway Under Attack Mode](https://docs.railway.com/networking/waf) on this API-only domain: Railway says browser challenges are shown only on navigations, while API calls are blocked. The separately hosted static frontend does not automatically gain clearance, and this API sends no credentials. Choose API-compatible blocking/rate rules, or deliberately plan the same-root-domain browser clearance flow before using challenges. No Railway edge settings were provisioned by this change.
 
 ## Redis retention and recovery
 
@@ -123,6 +151,7 @@ In the Railway backend service:
 4. Do not override the injected `PORT`; the process uses it automatically. Enable persistent deployment (no sleeping/serverless mode), with **one replica** and no overlapping consumers.
 5. Set the service **healthcheck path to `/health`**; allow enough startup time for Redis connection. Jetstream availability is independent of this healthcheck. Railway healthchecks gate deployments, not continuous stream monitoring.
 6. Keep the root build context intact; watch both `server/**` and `config/providers.json` for redeployment.
+7. Verify the public client-IP boundary described above, then enable `TRUST_RAILWAY_PROXY=true` for per-client limits. Configure API-compatible edge protection on all domains; the application limiter alone is not a volumetric DDoS defense.
 
 As of the current [Railway documentation](https://docs.railway.com/config-as-code), new services cannot opt into deprecated `railway.json` / `railway.toml` Config as Code. Use the dashboard settings above or the current [Infrastructure as Code](https://docs.railway.com/infrastructure-as-code) workflow (`railway config init/plan/apply`) with `healthcheck: '/health'`. No deployment or resource provisioning is performed by this repository change.
 
