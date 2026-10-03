@@ -9,6 +9,7 @@
     "network": "The Atmosphere is a network of applications built using AT Protocol.",
     "hosting": "Your account is hosted by an account provider (PDS).",
     "reuse": "Use the same account across compatible applications.",
+    "ownership": "Your data belongs to you, and you can move it to another provider at any time.",
     "create": "Create an Account"
   },
   "actions": {

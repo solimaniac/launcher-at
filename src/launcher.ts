@@ -47,7 +47,7 @@ export async function launch(root: HTMLElement, oauth: SignupOAuth, callback = f
     screen(t('intro.title'), element('p', app.id === 'default' ? t('intro.generic') : t('intro.app', { appName: app.appName })))
     unknownAppNotice()
     const list = element('ul')
-    for (const key of ['network', 'hosting', 'reuse']) list.append(element('li', t(`intro.${key}`)))
+    for (const key of ['network', 'hosting', 'reuse', 'ownership']) list.append(element('li', t(`intro.${key}`)))
     const create = element('button', t('intro.create'))
     create.onclick = selector
     root.append(list, create)
