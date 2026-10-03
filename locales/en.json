@@ -23,8 +23,15 @@
     "empty": "No account providers are currently available.",
     "bluesky": "An account hosted by Bluesky.",
     "eurosky": "An account hosted by Eurosky, based in Europe."
-  }
-  ,"errors": {
-    "unknownApp": "That app is not registered. You can still create an account, but we won’t redirect you afterward."
+  },
+  "oauth": { "opening": "Opening your provider’s secure signup…", "finishing": "Finishing your account setup…" },
+  "errors": {
+    "title": "We couldn’t complete this step",
+    "unknownApp": "That app is not registered. You can still create an account, but we won’t redirect you afterward.",
+    "initialization": "The signup client could not start. Check your connection and try again.",
+    "unsupportedProvider": "This provider’s OAuth configuration is unavailable or unsupported. Try again or choose another provider.",
+    "authorization": "We couldn’t open the provider’s signup flow. Please try again.",
+    "cancelled": "Signup authorization was cancelled. You can start again when you’re ready.",
+    "callback": "We couldn’t verify the signup result. Please start again."
   }
 }

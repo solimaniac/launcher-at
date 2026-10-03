@@ -17,7 +17,8 @@ export function parseProviders(value: unknown): Provider[] {
   return value.map(entry => {
     const p = record(entry)
     if (!validId(p.id) || !text(p.name) || !text(p.description) || typeof p.enabled !== 'boolean') throw new Error('Invalid provider fields')
-    const serviceUrl = httpsUrl(p.serviceUrl)
+    const parsedUrl = new URL(httpsUrl(p.serviceUrl))
+    const serviceUrl = parsedUrl.pathname === '/' && !parsedUrl.search && !parsedUrl.hash ? parsedUrl.origin : parsedUrl.href
     if (ids.has(p.id) || services.has(serviceUrl)) throw new Error('Duplicate provider')
     ids.add(p.id); services.add(serviceUrl)
     if (p.logo !== undefined && (!text(p.logo) || !/^\/[a-zA-Z0-9/_ .-]+$/.test(p.logo) || p.logo.includes('..'))) throw new Error('Invalid logo path')

@@ -2,6 +2,7 @@ import { t } from './i18n'
 import providerSource from '../config/providers.json'
 import { parseProviders } from './config'
 import { selectApp, applyTheme } from './apps'
+import { oauth, SignupError } from './oauth'
 import './styles/main.scss'
 
 const root = document.querySelector<HTMLElement>('#app')!
@@ -38,10 +39,22 @@ function selector() {
       card.append(logo)
     }
     card.append(element('strong', provider.name), element('span', t(provider.description)))
+    card.onclick = async () => {
+      for (const button of root.querySelectorAll('button')) button.disabled = true
+      root.append(element('p', t('oauth.opening')))
+      try { await oauth.start(provider.serviceUrl, app.id) }
+      catch (error) { showError(error instanceof SignupError ? error.key : 'errors.authorization', selector) }
+    }
     cards.append(card)
   }
   const back = element('button', t('actions.back'))
   back.onclick = intro
   root.append(cards, back)
+}
+function showError(key: string, retry: () => void) {
+  root.replaceChildren(element('h1', t('errors.title')), element('p', t(key)))
+  const button = element('button', t('actions.retry'))
+  button.onclick = retry
+  root.append(button)
 }
 intro()

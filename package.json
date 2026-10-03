@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@atproto/oauth-client-browser": "^0.5.9",
+    "@atproto/oauth-types": "^0.7.7",
     "i18next": "^26.4.2"
   },
   "devDependencies": {
