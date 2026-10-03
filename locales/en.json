@@ -24,4 +24,7 @@
     "bluesky": "An account hosted by Bluesky.",
     "eurosky": "An account hosted by Eurosky, based in Europe."
   }
+  ,"errors": {
+    "unknownApp": "That app is not registered. You can still create an account, but we won’t redirect you afterward."
+  }
 }

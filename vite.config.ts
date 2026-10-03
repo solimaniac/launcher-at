@@ -1,8 +1,9 @@
 import { defineConfig } from 'vite'
-import { readFileSync } from 'node:fs'
-import { parseProviders } from './src/config.ts'
+import { readFileSync, readdirSync } from 'node:fs'
+import { parseProviders, parseApps } from './src/config.ts'
 const providers = parseProviders(JSON.parse(readFileSync('config/providers.json', 'utf8')))
 const registry = JSON.stringify(providers, null, 2)
+parseApps(readdirSync('apps').map(id => JSON.parse(readFileSync(`apps/${id}/config.json`, 'utf8'))))
 export default defineConfig({
   server: { host: '127.0.0.1' },
   plugins: [{

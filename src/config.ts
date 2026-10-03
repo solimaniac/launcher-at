@@ -24,3 +24,30 @@ export function parseProviders(value: unknown): Provider[] {
     return { id: p.id, name: p.name, description: p.description, enabled: p.enabled, serviceUrl, ...(p.logo ? { logo: p.logo as string } : {}) }
   })
 }
+export interface AppConfig {
+  id: string
+  appName: string
+  redirectUrl?: string
+  theme: { primaryColor: string; secondaryColor: string; backgroundColor: string; textColor: string; fontFamily: string }
+}
+export function parseApps(value: unknown[]): AppConfig[] {
+  const ids = new Set<string>()
+  const apps = value.map(entry => {
+    const app = record(entry), theme = record(app.theme)
+    if (!validId(app.id) || !text(app.appName) || ids.has(app.id)) throw new Error('Invalid or duplicate app')
+    ids.add(app.id)
+    for (const key of ['primaryColor', 'secondaryColor', 'backgroundColor', 'textColor']) {
+      if (typeof theme[key] !== 'string' || !/^#[0-9a-fA-F]{6}$/.test(theme[key])) throw new Error('Theme requires six-digit hex colors')
+    }
+    if (!text(theme.fontFamily) || /[;{}<>]/.test(theme.fontFamily)) throw new Error('Invalid theme font')
+    if (app.redirectUrl !== undefined) httpsUrl(app.redirectUrl)
+    if (app.id === 'default' && app.redirectUrl !== undefined) throw new Error('Default app cannot redirect')
+    return app as unknown as AppConfig
+  })
+  if (!ids.has('default')) throw new Error('Default app is required')
+  return apps
+}
+export function lookupApp(apps: AppConfig[], id: unknown): { app: AppConfig; unknown: boolean } {
+  const found = validId(id) ? apps.find(app => app.id === id) : undefined
+  return { app: found ?? apps.find(app => app.id === 'default')!, unknown: id !== null && id !== undefined && !found }
+}

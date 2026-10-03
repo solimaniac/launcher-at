@@ -1,0 +1,11 @@
+{
+  "id": "default",
+  "appName": "Atmosphere",
+  "theme": {
+    "primaryColor": "#1859b8",
+    "secondaryColor": "#e5edfa",
+    "backgroundColor": "#f7f9fc",
+    "textColor": "#172238",
+    "fontFamily": "system-ui, sans-serif"
+  }
+}
