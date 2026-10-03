@@ -16,7 +16,9 @@
   },
   "dependencies": {
     "@atproto/identity": "^0.5.16",
+    "@atproto/lex": "^0.3.14",
     "@atproto/syntax": "^0.7.6",
+    "@bsky/jetstream": "^1.0.0",
     "fastify": "^5.12.5",
     "ioredis": "^5.11.1"
   },
