@@ -3,6 +3,7 @@ import providerSource from '../config/providers.json'
 import { parseProviders, httpsUrl, type Provider } from './config'
 import { selectApp, applyTheme } from './apps'
 import { SignupError, type SignupOAuth } from './signup'
+import { formatJoinCount, type JoinCounts } from './activity'
 
 function element<K extends keyof HTMLElementTagNameMap>(tag: K, text = '') {
   const node = document.createElement(tag)
@@ -10,13 +11,23 @@ function element<K extends keyof HTMLElementTagNameMap>(tag: K, text = '') {
   return node
 }
 
-export async function launch(root: HTMLElement, oauth: SignupOAuth, callback = false) {
+export async function launch(root: HTMLElement, oauth: SignupOAuth, callback = false, counts?: Promise<JoinCounts>) {
   document.title = t('site.title')
   let selection = selectApp(callback ? null : new URLSearchParams(location.search).get('app'))
   let app = selection.app
   let providers: Provider[] | undefined
   let countdown: number | undefined
   applyTheme(app)
+  let joinCounts: JoinCounts | undefined
+  // Counts are decoration: failures leave the selector unchanged.
+  counts?.then(result => { joinCounts = result; showCounts() }, () => {})
+  function showCounts() {
+    if (!joinCounts) return
+    for (const node of root.querySelectorAll<HTMLElement>('.provider .joins')) {
+      const joined = joinCounts.providers.get(node.dataset.provider!)
+      if (joined !== undefined) node.textContent = t('providers.joined', { joined: formatJoinCount(joined), days: joinCounts.windowDays })
+    }
+  }
 
   function stopCountdown() {
     window.clearInterval(countdown)
@@ -70,7 +81,10 @@ export async function launch(root: HTMLElement, oauth: SignupOAuth, callback = f
       }
       const region = element('span', t('providers.region', { region: provider.region }))
       region.className = 'region'
-      card.append(element('strong', provider.name), region, element('span', t(provider.description)))
+      const joins = element('span')
+      joins.className = 'joins'
+      joins.dataset.provider = provider.id
+      card.append(element('strong', provider.name), region, joins, element('span', t(provider.description)))
       card.onclick = async () => {
         for (const button of root.querySelectorAll('button')) button.disabled = true
         root.setAttribute('aria-busy', 'true')
@@ -85,6 +99,7 @@ export async function launch(root: HTMLElement, oauth: SignupOAuth, callback = f
     back.onclick = intro
     root.append(cards)
     root.append(back)
+    showCounts()
   }
   function restart() {
     history.replaceState(null, '', app.id === 'default' ? '/' : `/?app=${encodeURIComponent(app.id)}`)

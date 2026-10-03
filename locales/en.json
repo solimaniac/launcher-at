@@ -23,6 +23,7 @@
     "choose": "Continue with {{name}}",
     "empty": "No account providers are currently available.",
     "region": "Region: {{region}}",
+    "joined": "{{joined}} joined in the last {{days}} days",
     "bluesky": "An account hosted by Bluesky.",
     "eurosky": "An account hosted by Eurosky, based in Europe.",
     "blacksky": "An account hosted by Blacksky.",
@@ -36,6 +37,7 @@
     "witchcraft-systems": "An account hosted by Witchcraft Systems."
   },
   "oauth": { "opening": "Opening your provider’s secure signup…", "finishing": "Finishing your account setup…" },
+  "activity": { "label": "Recent signups", "joined": "{{handle}} joined on {{provider}}" },
   "complete": {
     "title": "Your Atmosphere account is ready.",
     "generic": "You can now use your account with compatible Atmosphere applications.",

@@ -1,6 +1,6 @@
 # Activity backend
 
-One persistent Node process: Hono HTTP with `@hono/node-server` and Pino structured logging, official `@bsky/jetstream` v2 consumer, official `@atproto/identity` resolution, and one Redis service. No workers, queue, Postgres, profiles, authentication, or frontend push connections. The static frontend can poll the two REST endpoints; this change does not add frontend UI or polling.
+One persistent Node process: Hono HTTP with `@hono/node-server` and Pino structured logging, official `@bsky/jetstream` v2 consumer, official `@atproto/identity` resolution, and one Redis service. No workers, queue, Postgres, profiles, authentication, or frontend push connections. The static frontend polls the two REST endpoints when built with `PUBLIC_ACTIVITY_API` (see the root README's "Activity display"); its poll interval is sized against the default rate limits below.
 
 ## Meaning of “joined”
 
@@ -103,13 +103,13 @@ Unexpected API storage errors return HTTP 503, not fabricated empty/zero data.
 
 Local/direct mode ignores all forwarded headers and uses the socket peer. Behind a reverse proxy that means clients share the proxy's quota until configured otherwise. Set `TRUST_RAILWAY_PROXY=true` **only for an origin exclusively reached through Railway's edge** after verifying its `X-Real-IP` overwrite behavior. [Railway documents this header as the client IP](https://docs.railway.com/networking/public-networking/specs-and-limits); the implementation never trusts the leftmost `X-Forwarded-For`, Cloudflare headers, request IDs, or arbitrary client-supplied identity values. Missing/invalid proxy identity shares one restrictive bucket. IPv4-mapped IPv6 and equivalent IPv6 spellings normalize so aliases cannot rotate quotas.
 
-Before enabling trust, send repeated public requests with different spoofed `X-Real-IP` and `X-Forwarded-For` values from one connection/source and confirm the same quota is enforced; compare Railway's source-IP network logs. This repository's smoke verified direct-mode spoof rejection, not a live Railway trust boundary. Do not expose an alternative origin port/TCP proxy with forwarded-header trust enabled. An additional CDN changes the client-IP boundary: verify it instead of assuming the supplied client header is authoritative.
+Before enabling trust, send repeated public requests with different spoofed `X-Real-IP` and `X-Forwarded-For` values from one connection/source and confirm the same quota is enforced; compare Railway's source-IP network logs. The production deployment's bounded header probe confirmed that Railway replaced three spoofed identities with the actual source IP; the temporary probe and domain were removed. A subsequent API smoke admitted exactly 120 requests and rejected further requests with 429 despite rotating spoofed headers, while `/health` stayed 200. Do not expose an alternative origin port/TCP proxy with forwarded-header trust enabled. An additional CDN changes the client-IP boundary: verify it instead of assuming the supplied client header is authoritative.
 
 #### Railway edge protection
 
 [Railway's documentation](https://docs.railway.com/networking/public-networking/specs-and-limits#ddos-protection) states its network-layer mitigation and domain RPS limits may not prevent application-layer overload. Configure edge rules/WAF or an external API-compatible DDoS/rate-limit service **before** public launch, with limits aligned to the origin's capacity. Apply protection to every attached domain, including the default Railway domain; an unprotected alternate domain is a bypass. [Railway Edge Rules](https://docs.railway.com/networking/edge-rules) can block unnecessary paths/sources before they reach Node. Monitor request rates, 429/503 rates, CPU/memory, Redis latency, and costs; maintain an incident plan to block floods at the edge.
 
-Do not blindly enable [Railway Under Attack Mode](https://docs.railway.com/networking/waf) on this API-only domain: Railway says browser challenges are shown only on navigations, while API calls are blocked. The separately hosted static frontend does not automatically gain clearance, and this API sends no credentials. Choose API-compatible blocking/rate rules, or deliberately plan the same-root-domain browser clearance flow before using challenges. No Railway edge settings were provisioned by this change.
+Do not blindly enable [Railway Under Attack Mode](https://docs.railway.com/networking/waf) on this API-only domain: Railway says browser challenges are shown only on navigations, while API calls are blocked. The separately hosted static frontend does not automatically gain clearance, and this API sends no credentials. Choose API-compatible blocking/rate rules, or deliberately plan the same-root-domain browser clearance flow before using challenges.
 
 ## Redis retention and recovery
 
@@ -127,7 +127,7 @@ The SDK manages WebSocket reconnect/resume and bounded concurrency. An account h
 
 DID failures/malformed endpoints are logged and skipped; untracked providers are debug-only. Handle failures omit display data without dropping counts. Checkpoint failures retry without reporting success or producing an unhandled rejection. An unreachable Redis during cursor loading never falls back silently to live. SIGINT/SIGTERM stop the source, drain pending handlers, flush checkpoints, close HTTP, then quit Redis. Shutdown has a ten-second hard deadline if dependencies never recover.
 
-Use one backend replica. Do not overlap deployments that consume the same Redis state; the current process/cursor design is not a multi-replica processor. Configure Railway's draining/overlap settings so the old consumer exits before the new one runs.
+Use one backend replica. Do not overlap deployments that consume the same Redis state; the current process/cursor design is not a multi-replica processor. Railway's overlap setting controls the period **after** the new deployment becomes active; even zero overlap does not prevent both consumers running during startup/healthchecks. Stop the old backend deployment and wait for removal before uploading its replacement. Keep automatic deployments disconnected until consumer coordination is implemented.
 
 Cursors are not portable between Jetstream v1/v2 or necessarily between different instances. Do not point at numbered legacy v1 hosts. If changing Jetstream instances, inspect compatibility before resetting `atmosphere:jetstream:cursor`; an intentional reset starts live and creates a known observation gap. `OutdatedCursor` advisories are logged; a cursor rejected by the server requires operator intervention rather than silently discarding history.
 
@@ -145,14 +145,35 @@ docker run --rm -p 3000:3000 \
 
 In the Railway backend service:
 
-1. Connect the repository; leave **Root Directory `/`** (not `/server`).
+1. Leave **Root Directory `/`** (not `/server`). Upload from the repository root with `railway up --service server --environment production --ci`. Do not connect automatic repository deployments for this single-consumer design.
 2. Set `RAILWAY_DOCKERFILE_PATH=server/Dockerfile`. The image installs/builds only the backend and copies `config/providers.json` into `/app/config`; it starts `node dist/index.js` as a non-root user.
 3. Set `REDIS_URL=${{Redis.REDIS_URL}}` (replace `Redis` with your Redis service name), `NODE_ENV=production`, and `ALLOWED_ORIGINS` to the static site's exact HTTPS origin(s). ioredis uses `family: 0` for Railway's private IPv4/IPv6 networking.
 4. Do not override the injected `PORT`; the process uses it automatically. Enable persistent deployment (no sleeping/serverless mode), with **one replica** and no overlapping consumers.
 5. Set the service **healthcheck path to `/health`**; allow enough startup time for Redis connection. Jetstream availability is independent of this healthcheck. Railway healthchecks gate deployments, not continuous stream monitoring.
-6. Keep the root build context intact; watch both `server/**` and `config/providers.json` for redeployment.
+6. Keep the root build context intact. Changes to either `server/**` or `config/providers.json` require a deployment. For manual CLI uploads, leave Watch Paths empty: filters can skip an unchanged upload even after the previous deployment was removed.
 7. Verify the public client-IP boundary described above, then enable `TRUST_RAILWAY_PROXY=true` for per-client limits. Configure API-compatible edge protection on all domains; the application limiter alone is not a volumetric DDoS defense.
 
-As of the current [Railway documentation](https://docs.railway.com/config-as-code), new services cannot opt into deprecated `railway.json` / `railway.toml` Config as Code. Use the dashboard settings above or the current [Infrastructure as Code](https://docs.railway.com/infrastructure-as-code) workflow (`railway config init/plan/apply`) with `healthcheck: '/health'`. No deployment or resource provisioning is performed by this repository change.
+As of the current [Railway documentation](https://docs.railway.com/config-as-code), new services cannot opt into deprecated `railway.json` / `railway.toml` Config as Code. Use the dashboard settings above, the Railway CLI's `railway api` for project settings, or the current [Infrastructure as Code](https://docs.railway.com/infrastructure-as-code) workflow (`railway config init/plan/apply`) with `healthcheck: '/health'`.
+
+### Provisioned production deployment
+
+Project [`launcher-at`](https://railway.com/project/44fb4fd8-4f01-4692-a781-d4e80dcab211), workspace **Personal Projects**, environment **production**. Public API: `https://server-production-1e48d.up.railway.app`. No frontend, Postgres, or worker is deployed.
+
+- `server`: repository-root `server/Dockerfile`, Node 24, one replica in `sfo`, sleeping disabled, `/health` healthcheck with a 120-second timeout, zero post-activation overlap, and 15-second shutdown drain. Railway supplies `PORT`. Source is a CLI upload, not automatic GitHub deployments; Watch Paths are empty so stop-then-upload also works for unchanged source.
+- `Redis`: Railway Redis 8.2 with a 5 GB volume mounted at `/data`, private-network-only access, password authentication, `appendonly yes`, `appendfsync everysec`, `save 60 1`, and `maxmemory-policy noeviction`. Credentials stay in Railway variables; the server uses `${{Redis.REDIS_URL}}`.
+- `NODE_ENV=production`, `TRUST_RAILWAY_PROXY=true`, and empty `ALLOWED_ORIGINS`. Configure the future frontend's exact HTTPS origin before browser polling; no wildcard CORS is enabled.
+- One service-wide edge rule blocks paths other than `/health`, `/api/v1/providers/counts`, and `/api/v1/joins/recent` with HTTP 404. It applies to every attached domain. No browser challenges or edge caching are enabled. This path filter is **not** volumetric DDoS/rate protection for the permitted API paths.
+- Live verification observed Redis health, Jetstream connection, nonzero counts for the 11 configured tracked providers, recent verified handles, invalid-limit rejection (400), unsupported-method rejection (405), and edge path rejection (404). Tracking began at `2026-10-03T17:35:18.924Z`; no historical backfill was performed.
+
+Future deployments must stop the existing consumer first. From the repository root:
+
+```sh
+railway down --service server --environment production --yes
+# Wait for the deployment removal above to complete before uploading.
+railway up --service server --environment production --ci
+curl --fail https://server-production-1e48d.up.railway.app/health
+```
+
+This deliberately accepts brief HTTP downtime to prevent simultaneous Jetstream consumers. Redis and its cursor remain running; the replacement resumes from that cursor. Do not use rolling `up`/`redeploy` against a running backend or enable automatic deployments.
 
 References: [Jetstream SDK](https://bsky.network/docs/jetstream-sdk/), [official client](https://github.com/bluesky-social/bsky/tree/main/packages/jetstream), [identity tooling](https://github.com/bluesky-social/atproto/tree/main/packages/identity), [Railway Dockerfiles](https://docs.railway.com/builds/dockerfiles), [Railway Redis networking](https://docs.railway.com/networking/private-networking/library-configuration).

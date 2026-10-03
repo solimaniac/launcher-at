@@ -4,7 +4,15 @@ A small, MIT-licensed, static wizard: Atmosphere primer â†’ provider selection â
 
 Vite, vanilla TypeScript, SCSS, i18next, and the official `@atproto/oauth-client-browser`. The launcher remains static; no account database, PDS hosting, or token handoff.
 
-The optional [activity backend](server/README.md) runs as one Node process with Redis. It observes Jetstream account hosting transitions and exposes provider counts and five-minute recent joins for polling. It reads the same `config/providers.json`; no frontend API polling is added here.
+The optional [activity backend](server/README.md) runs as one Node process with Redis. It observes Jetstream account hosting transitions and exposes provider counts and five-minute recent joins. It reads the same `config/providers.json`.
+
+### Activity display
+
+Set **PUBLIC_ACTIVITY_API** (build time, like `PUBLIC_ORIGIN`) to the backend's origin, e.g. `https://server-production-1e48d.up.railway.app`, and add the launcher's origin to the backend's `ALLOWED_ORIGINS`. Unset, no activity requests are made.
+
+- On page load the launcher fetches `/api/v1/providers/counts` once and shows "N joined in the last 30 days" on each provider card. Values of 1,000 and above are truncated to compact form with `+` (`1K+`, `10K+`, `1M+`). If the request fails, the cards show no count.
+- `src/activity.ts` polls `/api/v1/joins/recent?limit=50` every 30 seconds while the tab is visible. It reveals at most one new "*handle* joined on *Provider*" entry every 3 seconds and shows the latest five. Entries already shown are never repeated, and surplus older entries are dropped so the feed stays current. Failures back off exponentially, up to five minutes, and respect `Retry-After`. The callback page does not poll.
+- Budget: the backend allows 120 requests per client IP and 1,200 per process per minute by default (`RATE_LIMIT_PER_MINUTE`, `GLOBAL_RATE_LIMIT_PER_MINUTE`). One visible tab uses about 2 requests per minute, so roughly 60 tabs behind one shared IP, or 600 visible visitors per process, fit within those limits. If you change the server limits or the traffic you expect, revisit `POLL_MS` in `src/activity.ts`.
 
 ## Run locally
 
