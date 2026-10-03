@@ -1,4 +1,5 @@
-import { defineConfig, loadEnv } from 'vite'
+import { defineConfig } from 'vitest/config'
+import { loadEnv } from 'vite'
 import { readFileSync, readdirSync } from 'node:fs'
 import { parseProviders, parseApps } from './src/config.ts'
 import { metadataFor } from './build/metadata.ts'
@@ -17,6 +18,7 @@ export default defineConfig(({ mode }) => {
   const origin = process.env.PUBLIC_ORIGIN || loadEnv(mode, process.cwd(), 'PUBLIC_').PUBLIC_ORIGIN || 'http://127.0.0.1:5173'
   const metadata = JSON.stringify(metadataFor(origin), null, 2)
   return {
+  test: { include: ['src/**/*.test.ts', 'build/**/*.test.ts'] },
   server: { host: '127.0.0.1', port: 5173, strictPort: true },
   build: { rolldownOptions: { input: ['index.html', 'callback.html'] } },
   plugins: [{
