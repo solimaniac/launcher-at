@@ -31,7 +31,9 @@
     "app": "You’re ready to return to {{appName}}. That app will ask you to sign in separately.",
     "return": "Return to {{appName}}",
     "countdown_one": "Returning to {{appName}} in {{count}} second.",
-    "countdown_other": "Returning to {{appName}} in {{count}} seconds."
+    "countdown_other": "Returning to {{appName}} in {{count}} seconds.",
+    "stay": "Stay here",
+    "paused": "Automatic return paused. You can still use the return button."
   },
   "errors": {
     "title": "We couldn’t complete this step",
@@ -43,6 +45,6 @@
     "callback": "We couldn’t verify the signup result. Please start again.",
     "providers": "The provider list is unavailable. Please try again.",
     "redirect": "This app’s return URL is invalid. Your account is ready, but we won’t redirect you.",
-    "cleanup": "Your account is ready and the launcher has discarded its local session. The provider could not confirm token revocation; any issued token will expire."
+    "cleanup": "Your account is ready, but we couldn’t confirm launcher credential cleanup. You can revoke the launcher’s access in your provider’s settings."
   }
 }

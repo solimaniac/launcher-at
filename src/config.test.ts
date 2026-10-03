@@ -13,3 +13,8 @@ test('normalizes equivalent entryway URLs without blocking issuer discovery', ()
   expect(parseProviders([{ ...source[0], serviceUrl: 'https://bsky.social/' }])[0]!.serviceUrl).toBe('https://bsky.social')
   expect(() => parseProviders([source[0], { ...source[1], serviceUrl: 'https://bsky.social/' }])).toThrow()
 })
+test('rejects missing fields and remote or traversing logo paths', () => {
+  expect(() => parseProviders([{ ...source[0], serviceUrl: undefined }])).toThrow()
+  expect(() => parseProviders([{ ...source[0], name: '' }])).toThrow()
+  for (const logo of ['//evil.example/logo.svg', '/../logo.svg', 'https://evil.example/logo.svg']) expect(() => parseProviders([{ ...source[0], logo }])).toThrow()
+})

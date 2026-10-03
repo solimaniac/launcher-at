@@ -28,6 +28,13 @@ export async function launch(root: HTMLElement, oauth: SignupOAuth, callback = f
     const heading = element('h1', title)
     heading.tabIndex = -1
     root.replaceChildren(heading, ...content)
+    if (app.logo) {
+      const logo = element('img')
+      logo.src = app.logo
+      logo.alt = app.appName
+      logo.className = 'app-logo'
+      root.prepend(logo)
+    }
     heading.focus({ preventScroll: true })
   }
   function unknownAppNotice() {
@@ -101,9 +108,16 @@ export async function launch(root: HTMLElement, oauth: SignupOAuth, callback = f
     link.className = 'button'
     link.href = destination
     link.onclick = stopCountdown
+    const stay = element('button', t('complete.stay'))
+    stay.className = 'secondary'
     let remaining = 5
     const status = element('p', t('complete.countdown', { appName: app.appName, count: remaining }))
-    root.append(link, status)
+    stay.onclick = () => {
+      stopCountdown()
+      status.textContent = t('complete.paused')
+      stay.remove()
+    }
+    root.append(link, stay, status)
     countdown = window.setInterval(() => {
       remaining -= 1
       if (remaining === 0) {

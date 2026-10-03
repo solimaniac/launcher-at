@@ -11,6 +11,9 @@ function record(value: unknown): Record<string, unknown> {
   return value as Record<string, unknown>
 }
 function text(value: unknown): value is string { return typeof value === 'string' && value.trim().length > 0 }
+function validateLogo(value: unknown) {
+  if (!text(value) || !/^\/[a-zA-Z0-9/_ .-]+$/.test(value) || value.startsWith('//') || value.includes('..')) throw new Error('Invalid local logo path')
+}
 export function parseProviders(value: unknown): Provider[] {
   if (!Array.isArray(value)) throw new Error('Expected provider array')
   const ids = new Set<string>(), services = new Set<string>()
@@ -21,7 +24,7 @@ export function parseProviders(value: unknown): Provider[] {
     const serviceUrl = parsedUrl.pathname === '/' && !parsedUrl.search && !parsedUrl.hash ? parsedUrl.origin : parsedUrl.href
     if (ids.has(p.id) || services.has(serviceUrl)) throw new Error('Duplicate provider')
     ids.add(p.id); services.add(serviceUrl)
-    if (p.logo !== undefined && (!text(p.logo) || !/^\/[a-zA-Z0-9/_ .-]+$/.test(p.logo) || p.logo.includes('..'))) throw new Error('Invalid logo path')
+    if (p.logo !== undefined) validateLogo(p.logo)
     return { id: p.id, name: p.name, description: p.description, enabled: p.enabled, serviceUrl, ...(p.logo ? { logo: p.logo as string } : {}) }
   })
 }
@@ -29,6 +32,7 @@ export interface AppConfig {
   id: string
   appName: string
   redirectUrl?: string
+  logo?: string
   theme: { primaryColor: string; secondaryColor: string; backgroundColor: string; textColor: string; fontFamily: string }
 }
 export function parseApps(value: unknown[]): AppConfig[] {
@@ -42,6 +46,7 @@ export function parseApps(value: unknown[]): AppConfig[] {
     }
     if (!text(theme.fontFamily) || /[;{}<>]/.test(theme.fontFamily)) throw new Error('Invalid theme font')
     if (app.redirectUrl !== undefined) httpsUrl(app.redirectUrl)
+    if (app.logo !== undefined) validateLogo(app.logo)
     if (app.id === 'default' && app.redirectUrl !== undefined) throw new Error('Default app cannot redirect')
     return app as unknown as AppConfig
   })
