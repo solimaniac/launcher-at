@@ -1,6 +1,6 @@
 import { IdResolver, getPds, getHandle } from '@atproto/identity'
 import { isValidHandle } from '@atproto/syntax'
-import type { FastifyBaseLogger } from 'fastify'
+import type { Logger } from 'pino'
 
 export interface ResolvedIdentity { pds?: string; claimedHandle?: string }
 export interface Identity {
@@ -8,7 +8,7 @@ export interface Identity {
   verifyHandle(did: string, claimedHandle?: string): Promise<string | undefined>
 }
 
-export function createIdentity(log: FastifyBaseLogger, resolver: Pick<IdResolver, 'did' | 'handle'> = new IdResolver({ timeout: 3000 })): Identity {
+export function createIdentity(log: Logger, resolver: Pick<IdResolver, 'did' | 'handle'> = new IdResolver({ timeout: 3000 })): Identity {
   return {
     async resolveDid(did) {
       // No long-lived identity cache: hosting transitions need current DID data.

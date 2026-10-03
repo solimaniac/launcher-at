@@ -1,8 +1,8 @@
-import type { FastifyInstance } from 'fastify'
+import type { Hono } from 'hono'
 import type { Redis } from 'ioredis'
 
-export function healthRoute(app: FastifyInstance, redis: Pick<Redis, 'ping'>) {
-  app.get('/health', async (_request, reply) => {
+export function healthRoute(app: Hono, redis: Pick<Redis, 'ping'>) {
+  app.get('/health', async c => {
     const timeout = Promise.withResolvers<never>()
     const timer = setTimeout(() => timeout.reject(new Error('Redis ping timeout')), 2000)
     try {
@@ -10,9 +10,9 @@ export function healthRoute(app: FastifyInstance, redis: Pick<Redis, 'ping'>) {
         redis.ping(),
         timeout.promise,
       ])
-      return { status: 'ok' }
+      return c.json({ status: 'ok' })
     } catch {
-      return reply.code(503).send({ status: 'unavailable' })
+      return c.json({ status: 'unavailable' }, 503)
     } finally {
       clearTimeout(timer)
     }

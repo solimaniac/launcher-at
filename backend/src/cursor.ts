@@ -1,13 +1,13 @@
 import type { CursorStore } from '@bsky/jetstream'
 import type { Redis } from 'ioredis'
-import type { FastifyBaseLogger } from 'fastify'
+import type { Logger } from 'pino'
 import { setTimeout as delay } from 'node:timers/promises'
 
 export const CURSOR_KEY = 'atmosphere:jetstream:cursor'
 export class RedisCursorStore implements CursorStore {
   private redis: Pick<Redis, 'get' | 'set'>
-  private log: FastifyBaseLogger
-  constructor(redis: Pick<Redis, 'get' | 'set'>, log: FastifyBaseLogger) { this.redis = redis; this.log = log }
+  private log: Logger
+  constructor(redis: Pick<Redis, 'get' | 'set'>, log: Logger) { this.redis = redis; this.log = log }
   async load() {
     // Persist a live timestamp boundary before the first event. Without it,
     // a failed first write would restart at live and silently skip that event.

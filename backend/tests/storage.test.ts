@@ -3,7 +3,7 @@ import RedisMock from 'ioredis-mock'
 import { Storage, DAY_MS, RECENT_MS, RECENT_KEY, countKey } from '../src/storage.ts'
 import { createAccountHandler } from '../src/jetstream.ts'
 import { loadProviders } from '../src/providers.ts'
-import { buildServer } from '../src/server.ts'
+import { pino } from 'pino'
 import type { AccountEvent } from '@bsky/jetstream'
 const now = Date.parse('2026-10-03T00:01:00Z')
 const join = (seq: number, observedAt = now) => ({ seq, did: 'did:plc:abcdefghijklmnopqrstuvwx', handle: 'alice.example', providerId: 'bluesky', observedAt })
@@ -47,7 +47,7 @@ test('five-minute boundary, newest order, bounded volume and removed-provider fi
 test('failed handle verification still counts, but never publishes unverified handles', async () => {
   const redis = new RedisMock(); await redis.flushall()
   const storage = new Storage(redis)
-  const handle = createAccountHandler({ resolveDid: async () => ({ pds: 'https://eurosky.social', claimedHandle: 'wrong.example' }), verifyHandle: async () => undefined }, loadProviders(), j => storage.record(j, now), buildServer({ ping: async () => 'PONG' }, 'silent').log, () => now)
+  const handle = createAccountHandler({ resolveDid: async () => ({ pds: 'https://eurosky.social', claimedHandle: 'wrong.example' }), verifyHandle: async () => undefined }, loadProviders(), j => storage.record(j, now), pino({ level: 'silent' }), () => now)
   await handle({ active: true, seq: 1, did: join(1).did } as AccountEvent)
   expect((await storage.counts(['eurosky'], now)).totals.eurosky).toBe(1)
   expect(await storage.recent(['eurosky'], 50, now)).toEqual([])

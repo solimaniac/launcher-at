@@ -1,8 +1,8 @@
 import { Redis } from 'ioredis'
-import type { FastifyBaseLogger } from 'fastify'
+import type { Logger } from 'pino'
 import type { Join } from './jetstream.ts'
 
-export function connectRedis(url: string, log: FastifyBaseLogger) {
+export function connectRedis(url: string, log: Logger) {
   const redis = new Redis(url, { family: 0, lazyConnect: true, maxRetriesPerRequest: 1, commandTimeout: 5000 })
   redis.on('ready', () => log.info('Redis connected'))
   redis.on('reconnecting', () => log.warn('Redis reconnecting'))

@@ -1,6 +1,6 @@
 # Activity backend
 
-One persistent Node process: Fastify HTTP, official `@bsky/jetstream` v2 consumer, official `@atproto/identity` resolution, and one Redis service. No workers, queue, Postgres, profiles, authentication, or frontend push connections. The static frontend can poll the two REST endpoints; this change does not add frontend UI or polling.
+One persistent Node process: Hono HTTP with `@hono/node-server` and Pino structured logging, official `@bsky/jetstream` v2 consumer, official `@atproto/identity` resolution, and one Redis service. No workers, queue, Postgres, profiles, authentication, or frontend push connections. The static frontend can poll the two REST endpoints; this change does not add frontend UI or polling.
 
 ## Meaning of “joined”
 

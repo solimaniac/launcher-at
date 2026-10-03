@@ -2,12 +2,12 @@ import { expect, test, vi } from 'vitest'
 import RedisMock from 'ioredis-mock'
 import { Jetstream, LexIndexer } from '@bsky/jetstream'
 import type { AccountEvent, LiveTransport } from '@bsky/jetstream'
-import { buildServer } from '../src/server.ts'
+import { pino } from 'pino'
 import { createAccountHandler, consumeAccounts } from '../src/jetstream.ts'
 import { RedisCursorStore, CURSOR_KEY } from '../src/cursor.ts'
 import { loadProviders } from '../src/providers.ts'
 
-const log = buildServer({ ping: async () => 'PONG' }, 'silent').log
+const log = pino({ level: 'silent' })
 const did = 'did:plc:abcdefghijklmnopqrstuvwx'
 const event = { did, seq: 2, active: true } as AccountEvent
 const frame = (seq: number) => JSON.stringify({ $type: 'message', payload: { $type: 'network.bsky.jetstream.subscribeEvents#account', did, seq, time: new Date().toISOString(), account: { did, active: true } } })

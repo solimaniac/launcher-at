@@ -1,13 +1,13 @@
 import { Jetstream, LexIndexer, websocketTransport } from '@bsky/jetstream'
 import type { AccountEvent, CursorStore, LiveTransport, JetstreamConsumer } from '@bsky/jetstream'
-import type { FastifyBaseLogger } from 'fastify'
+import type { Logger } from 'pino'
 import { setTimeout as delay } from 'node:timers/promises'
 import type { Identity } from './identity.ts'
 import { matchProvider } from './providers.ts'
 import type { TrackedProvider } from './providers.ts'
 
 export interface Join { seq: number; did: string; handle?: string; providerId: string; observedAt: number }
-export function createAccountHandler(identity: Identity, providers: TrackedProvider[], record: (join: Join) => Promise<void>, log: FastifyBaseLogger, now = Date.now) {
+export function createAccountHandler(identity: Identity, providers: TrackedProvider[], record: (join: Join) => Promise<void>, log: Logger, now = Date.now) {
   return async (event: AccountEvent) => {
     if (event.active !== true) return
     let resolved
@@ -26,7 +26,7 @@ export function createAccountHandler(identity: Identity, providers: TrackedProvi
 
 export async function consumeAccounts(options: {
   url: string; cursor: CursorStore; handle: (event: AccountEvent) => Promise<void>
-  log: FastifyBaseLogger; signal: AbortSignal; concurrency?: number; transport?: LiveTransport
+  log: Logger; signal: AbortSignal; concurrency?: number; transport?: LiveTransport
 }) {
   const { log, signal } = options
   const js = new Jetstream(options.url)

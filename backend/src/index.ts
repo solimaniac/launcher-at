@@ -5,30 +5,41 @@ import { loadProviders } from './providers.ts'
 import { createIdentity } from './identity.ts'
 import { RedisCursorStore } from './cursor.ts'
 import { consumeAccounts, createAccountHandler } from './jetstream.ts'
+import { serve } from '@hono/node-server'
+import type { ServerType } from '@hono/node-server'
+import { once } from 'node:events'
+import { pino } from 'pino'
 
 const config = loadEnv()
-// Health route closes over the client initialized before HTTP starts.
-const app = buildServer({ ping: () => redis.ping() }, config.logLevel)
-const redis = connectRedis(config.redisUrl, app.log)
+const log = pino({ level: config.logLevel })
+const redis = connectRedis(config.redisUrl, log)
+const app = buildServer(redis, log)
 const storage = new Storage(redis)
 const providers = loadProviders()
 const abort = new AbortController()
 let consumer: Promise<void> | undefined
 let pruneTimer: ReturnType<typeof setInterval> | undefined
+let server: ServerType | undefined
+async function closeServer() {
+  if (!server) return
+  const closed = Promise.withResolvers<void>()
+  server.close(err => err ? closed.reject(err) : closed.resolve())
+  await closed.promise
+}
 let stopping = false
 async function shutdown(signal: string) {
   if (stopping) return
   stopping = true
-  app.log.info({ signal }, 'Graceful shutdown')
+  log.info({ signal }, 'Graceful shutdown')
   const deadline = setTimeout(() => process.exit(1), 10000).unref()
   try {
     clearInterval(pruneTimer)
     abort.abort()
     await consumer
-    await app.close()
+    await closeServer()
     await redis.quit()
   } catch (err) {
-    app.log.error({ err }, 'Shutdown failed')
+    log.error({ err }, 'Shutdown failed')
     process.exitCode = 1
   } finally { redis.disconnect(); clearTimeout(deadline) }
 }
@@ -40,20 +51,22 @@ try {
   await storage.recent(providers.map(p => p.id))
   pruneTimer = setInterval(() => {
     void storage.redis.zremrangebyscore(RECENT_KEY, '-inf', '(' + (Date.now() - RECENT_MS))
-      .catch(err => app.log.error({ err }, 'Recent activity pruning failed'))
+      .catch(err => log.error({ err }, 'Recent activity pruning failed'))
   }, 30000).unref()
-  await activityRoutes(app, storage, providers, config.allowedOrigins)
-  await app.listen({ port: config.port, host: '0.0.0.0' })
-  consumer = consumeAccounts({ url: config.jetstreamUrl, cursor: new RedisCursorStore(redis, app.log),
-    handle: createAccountHandler(createIdentity(app.log), providers, join => storage.record(join), app.log),
-    concurrency: config.concurrency, log: app.log, signal: abort.signal,
+  activityRoutes(app, storage, providers, config.allowedOrigins)
+  server = serve({ fetch: app.fetch, port: config.port, hostname: '0.0.0.0' })
+  await once(server, 'listening')
+  log.info({ port: config.port }, 'HTTP server listening')
+  consumer = consumeAccounts({ url: config.jetstreamUrl, cursor: new RedisCursorStore(redis, log),
+    handle: createAccountHandler(createIdentity(log), providers, join => storage.record(join), log),
+    concurrency: config.concurrency, log, signal: abort.signal,
   })
 } catch (err) {
-  app.log.error({ err }, 'Startup failed')
+  log.error({ err }, 'Startup failed')
   clearInterval(pruneTimer)
   abort.abort()
   await consumer
   redis.disconnect()
-  await app.close()
+  await closeServer()
   process.exitCode = 1
 }
