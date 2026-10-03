@@ -5,7 +5,11 @@
     "serviceUrl": "https://bsky.social",
     "description": "providers.bluesky",
     "region": "United States",
-    "enabled": true
+    "enabled": true,
+    "tracking": {
+      "enabled": true,
+      "pdsHostMatchers": [{ "type": "suffix", "value": ".host.bsky.network" }]
+    }
   },
   {
     "id": "eurosky",
@@ -13,7 +17,11 @@
     "serviceUrl": "https://eurosky.social",
     "description": "providers.eurosky",
     "region": "Europe",
-    "enabled": true
+    "enabled": true,
+    "tracking": {
+      "enabled": true,
+      "pdsHostMatchers": [{ "type": "exact", "value": "eurosky.social" }]
+    }
   },
   {
     "id": "blacksky",
@@ -21,7 +29,11 @@
     "serviceUrl": "https://blacksky.app",
     "description": "providers.blacksky",
     "region": "United States",
-    "enabled": true
+    "enabled": true,
+    "tracking": {
+      "enabled": true,
+      "pdsHostMatchers": [{ "type": "exact", "value": "blacksky.app" }]
+    }
   },
   {
     "id": "w-social",
@@ -29,7 +41,11 @@
     "serviceUrl": "https://pds.wsocial.network",
     "description": "providers.w-social",
     "region": "Europe",
-    "enabled": true
+    "enabled": true,
+    "tracking": {
+      "enabled": true,
+      "pdsHostMatchers": [{ "type": "exact", "value": "pds.wsocial.network" }]
+    }
   },
   {
     "id": "northsky",
@@ -37,7 +53,11 @@
     "serviceUrl": "https://northsky.social",
     "description": "providers.northsky",
     "region": "Canada",
-    "enabled": true
+    "enabled": true,
+    "tracking": {
+      "enabled": true,
+      "pdsHostMatchers": [{ "type": "exact", "value": "northsky.social" }]
+    }
   },
   {
     "id": "selfhosted-social",
@@ -45,7 +65,11 @@
     "serviceUrl": "https://selfhosted.social",
     "description": "providers.selfhosted-social",
     "region": "United States",
-    "enabled": true
+    "enabled": true,
+    "tracking": {
+      "enabled": true,
+      "pdsHostMatchers": [{ "type": "exact", "value": "selfhosted.social" }]
+    }
   },
   {
     "id": "tangled",
@@ -53,7 +77,11 @@
     "serviceUrl": "https://tngl.sh",
     "description": "providers.tangled",
     "region": "Europe",
-    "enabled": true
+    "enabled": true,
+    "tracking": {
+      "enabled": true,
+      "pdsHostMatchers": [{ "type": "exact", "value": "tngl.sh" }]
+    }
   },
   {
     "id": "spark",
@@ -61,7 +89,11 @@
     "serviceUrl": "https://pds.sprk.so",
     "description": "providers.spark",
     "region": "United States",
-    "enabled": true
+    "enabled": true,
+    "tracking": {
+      "enabled": true,
+      "pdsHostMatchers": [{ "type": "exact", "value": "pds.sprk.so" }]
+    }
   },
   {
     "id": "npmx",
@@ -69,7 +101,11 @@
     "serviceUrl": "https://npmx.social",
     "description": "providers.npmx",
     "region": "Europe",
-    "enabled": true
+    "enabled": true,
+    "tracking": {
+      "enabled": true,
+      "pdsHostMatchers": [{ "type": "exact", "value": "npmx.social" }]
+    }
   },
   {
     "id": "pckt",
@@ -77,7 +113,11 @@
     "serviceUrl": "https://pds.pckt.cafe",
     "description": "providers.pckt",
     "region": "United States",
-    "enabled": true
+    "enabled": true,
+    "tracking": {
+      "enabled": true,
+      "pdsHostMatchers": [{ "type": "exact", "value": "pds.pckt.cafe" }]
+    }
   },
   {
     "id": "witchcraft-systems",
@@ -85,6 +125,10 @@
     "serviceUrl": "https://pds.witchcraft.systems",
     "description": "providers.witchcraft-systems",
     "region": "Japan",
-    "enabled": true
+    "enabled": true,
+    "tracking": {
+      "enabled": true,
+      "pdsHostMatchers": [{ "type": "exact", "value": "pds.witchcraft.systems" }]
+    }
   }
 ]
