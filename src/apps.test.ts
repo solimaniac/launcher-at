@@ -15,6 +15,10 @@ test('unknown, path-like and inherited property IDs cannot redirect', () => {
   }
   expect(lookupApp(apps, null).unknown).toBe(false)
 })
+test('non-default apps may omit the return destination', () => {
+  const { redirectUrl: _omitted, ...noReturn } = example
+  expect(lookupApp(parseApps([generic, noReturn]), 'example-app').app.redirectUrl).toBeUndefined()
+})
 test('rejects unsafe return destinations and incomplete themes', () => {
   for (const redirectUrl of ['http://example.com', 'javascript:alert(1)', '//example.com']) expect(() => parseApps([generic, { ...example, redirectUrl }])).toThrow()
   expect(() => parseApps([generic, { ...example, theme: {} }])).toThrow()
