@@ -1,12 +1,5 @@
 import { BrowserOAuthClient, OAuthResolverError, OAuthCallbackError, type OAuthClientMetadataInput } from '@atproto/oauth-client-browser'
-import { validId } from './config'
-export interface SignupResult { did: string; appId: string | null; cleanupFailed: boolean }
-export interface SignupOAuth { start(serviceUrl: string, appId: string): Promise<void>; finish(): Promise<SignupResult> }
-export class SignupError extends Error {
-  readonly key: string
-  constructor(key: string) { super(key); this.key = key }
-}
-export function recoverAppId(state: unknown): string | null { return validId(state) ? state : null }
+import { SignupError, recoverAppId, type SignupOAuth } from './signup'
 let client: BrowserOAuthClient | undefined
 async function getClient() {
   if (client) return client
@@ -25,15 +18,17 @@ export const oauth: SignupOAuth = {
     catch (error) { throw new SignupError(error instanceof OAuthResolverError ? 'errors.unsupportedProvider' : 'errors.authorization') }
   },
   async finish() {
-    const c = await getClient()
+    const params = new URLSearchParams(location.hash.slice(1))
+    history.replaceState(null, '', location.pathname)
     try {
-      const result = await c.initCallback()
+      const c = await getClient()
+      const result = await c.initCallback(params)
       const did = result.session.did
       let cleanupFailed = false
       try { await result.session.signOut() } catch { cleanupFailed = true }
       return { did, appId: recoverAppId(result.state), cleanupFailed }
     } catch (error) {
-      throw new SignupError(error instanceof OAuthCallbackError && error.params.get('error') === 'access_denied' ? 'errors.cancelled' : 'errors.callback')
+      throw new SignupError(error instanceof OAuthCallbackError && error.params.get('error') === 'access_denied' ? 'errors.cancelled' : error instanceof SignupError ? error.key : 'errors.callback', error instanceof OAuthCallbackError ? recoverAppId(error.state) : null)
     } finally { history.replaceState(null, '', location.pathname) }
   },
 }

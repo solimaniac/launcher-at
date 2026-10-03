@@ -10,6 +10,7 @@ export default defineConfig(({ mode }) => {
   const metadata = JSON.stringify(metadataFor(origin), null, 2)
   return {
   server: { host: '127.0.0.1' },
+  build: { rolldownOptions: { input: ['index.html', 'callback.html'] } },
   plugins: [{
     name: 'launcher-static-data',
     generateBundle() {

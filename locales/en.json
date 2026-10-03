@@ -25,6 +25,14 @@
     "eurosky": "An account hosted by Eurosky, based in Europe."
   },
   "oauth": { "opening": "Opening your provider’s secure signup…", "finishing": "Finishing your account setup…" },
+  "complete": {
+    "title": "Your Atmosphere account is ready.",
+    "generic": "You can now use your account with compatible Atmosphere applications.",
+    "app": "You’re ready to return to {{appName}}. That app will ask you to sign in separately.",
+    "return": "Return to {{appName}}",
+    "countdown_one": "Returning to {{appName}} in {{count}} second.",
+    "countdown_other": "Returning to {{appName}} in {{count}} seconds."
+  },
   "errors": {
     "title": "We couldn’t complete this step",
     "unknownApp": "That app is not registered. You can still create an account, but we won’t redirect you afterward.",
@@ -32,6 +40,9 @@
     "unsupportedProvider": "This provider’s OAuth configuration is unavailable or unsupported. Try again or choose another provider.",
     "authorization": "We couldn’t open the provider’s signup flow. Please try again.",
     "cancelled": "Signup authorization was cancelled. You can start again when you’re ready.",
-    "callback": "We couldn’t verify the signup result. Please start again."
+    "callback": "We couldn’t verify the signup result. Please start again.",
+    "providers": "The provider list is unavailable. Please try again.",
+    "redirect": "This app’s return URL is invalid. Your account is ready, but we won’t redirect you.",
+    "cleanup": "Your account is ready and the launcher has discarded its local session. The provider could not confirm token revocation; any issued token will expire."
   }
 }
