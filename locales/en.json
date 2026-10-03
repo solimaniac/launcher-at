@@ -1,0 +1,25 @@
+{
+  "site": {
+    "title": "Atmosphere Account Launcher"
+  },
+  "intro": {
+    "title": "One account. A whole Atmosphere.",
+    "generic": "Create an account for the Atmosphere.",
+    "app": "To use {{appName}}, you’ll first need an account on the Atmosphere.",
+    "network": "The Atmosphere is a network of applications built using AT Protocol.",
+    "hosting": "Your account is hosted by an account provider (PDS).",
+    "reuse": "Use the same account across compatible applications.",
+    "create": "Create an Account"
+  },
+  "actions": {
+    "back": "Back",
+    "restart": "Start over",
+    "retry": "Try again"
+  },
+  "providers": {
+    "title": "Choose an account provider",
+    "intro": "Your provider hosts your account and handles signup.",
+    "choose": "Continue with {{name}}",
+    "empty": "No account providers are currently available."
+  }
+}
