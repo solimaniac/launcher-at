@@ -72,6 +72,8 @@ Edit **`config/providers.json`**, the single provider source. Add an object:
 
 Add the description at `providers.newProvider` in `locales/en.json`. `region` is required plain text naming the country/region where the provider hosts accounts (e.g. `"United States"`, `"Europe"`); it is shown on the provider card. If using `logo`, put the asset at `public/providers/new-provider.svg`; otherwise omit it. Logos are optional, same-site absolute paths, and decorative inside the named provider button. IDs, URLs, required fields, and duplicates are validated. Disabled providers stay in the public registry but do not appear in the picker.
 
+The picker shows primary providers in a responsive grid. Set optional `"secondary": true` to place a provider under the native **More providers** disclosure; omitted or `false` keeps it in the primary list. Both groups retain configuration order and use the same signup flow.
+
 Use the PDS **or provider entryway** URL accepted by ATProto OAuth, not an arbitrary signup homepage or a user's eventual physical PDS. Confirm the provider supports server-first OAuth account creation. Do not duplicate the list in UI code or `public/`.
 
 ## Add an app/theme
@@ -121,6 +123,7 @@ Add `locales/fr.json` with the same keys, register it in `src/i18n.ts` under `re
 | `region` | string | Country/region where the provider hosts accounts |
 | `logo` | string, optional | Same-site path; resolve against the registry origin |
 | `enabled` | boolean | Whether the launcher offers this provider |
+| `secondary` | boolean, optional | Whether the picker places this provider under More providers |
 
 Consumers should honor `enabled`. Changes incompatible with this schema require a new `/v2/` resource. The public file is generated; edit only the contributor source. For browser consumers on other origins, configure your static host to send `Access-Control-Allow-Origin: *` on this JSON resource. This is a static-host header, not an API server.
 

@@ -74,6 +74,6 @@ test('provider failure enables retry and never reveals library error details', a
   await vi.waitFor(() => expect(page.textContent).toContain(t('errors.authorization')))
   expect(page.textContent).not.toContain('secret code')
   page.querySelector<HTMLButtonElement>('button')!.click()
-  expect([...page.querySelectorAll<HTMLButtonElement>('.provider')].map(button => button.disabled)).toEqual([false, false])
+  expect([...page.querySelectorAll<HTMLButtonElement>('.provider')].every(button => !button.disabled)).toBe(true)
   expect(document.activeElement).toBe(page.querySelector('h1'))
 })

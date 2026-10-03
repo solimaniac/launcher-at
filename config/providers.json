@@ -14,5 +14,82 @@
     "description": "providers.eurosky",
     "region": "Europe",
     "enabled": true
+  },
+  {
+    "id": "blacksky",
+    "name": "Blacksky",
+    "serviceUrl": "https://blacksky.app",
+    "description": "providers.blacksky",
+    "region": "United States",
+    "enabled": true
+  },
+  {
+    "id": "w-social",
+    "name": "W Social",
+    "serviceUrl": "https://pds.wsocial.network",
+    "description": "providers.w-social",
+    "region": "Europe",
+    "enabled": true
+  },
+  {
+    "id": "northsky",
+    "name": "Northsky",
+    "serviceUrl": "https://northsky.social",
+    "description": "providers.northsky",
+    "region": "Canada",
+    "enabled": true
+  },
+  {
+    "id": "selfhosted-social",
+    "name": "selfhosted.social",
+    "serviceUrl": "https://selfhosted.social",
+    "description": "providers.selfhosted-social",
+    "region": "United States",
+    "enabled": true
+  },
+  {
+    "id": "tangled",
+    "name": "Tangled",
+    "serviceUrl": "https://tngl.sh",
+    "description": "providers.tangled",
+    "region": "Europe",
+    "enabled": true,
+    "secondary": true
+  },
+  {
+    "id": "spark",
+    "name": "Spark",
+    "serviceUrl": "https://pds.sprk.so",
+    "description": "providers.spark",
+    "region": "United States",
+    "enabled": true,
+    "secondary": true
+  },
+  {
+    "id": "npmx",
+    "name": "npmx",
+    "serviceUrl": "https://npmx.social",
+    "description": "providers.npmx",
+    "region": "Europe",
+    "enabled": true,
+    "secondary": true
+  },
+  {
+    "id": "pckt",
+    "name": "pckt",
+    "serviceUrl": "https://pds.pckt.cafe",
+    "description": "providers.pckt",
+    "region": "United States",
+    "enabled": true,
+    "secondary": true
+  },
+  {
+    "id": "witchcraft-systems",
+    "name": "Witchcraft Systems",
+    "serviceUrl": "https://pds.witchcraft.systems",
+    "description": "providers.witchcraft-systems",
+    "region": "Japan",
+    "enabled": true,
+    "secondary": true
   }
 ]

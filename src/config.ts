@@ -1,4 +1,4 @@
-export interface Provider { id: string; name: string; serviceUrl: string; description: string; region: string; logo?: string; enabled: boolean }
+export interface Provider { id: string; name: string; serviceUrl: string; description: string; region: string; logo?: string; enabled: boolean; secondary?: boolean }
 export function httpsUrl(value: unknown): string {
   if (typeof value !== 'string') throw new Error('URL must be a string')
   const url = new URL(value)
@@ -25,7 +25,8 @@ export function parseProviders(value: unknown): Provider[] {
     if (ids.has(p.id) || services.has(serviceUrl)) throw new Error('Duplicate provider')
     ids.add(p.id); services.add(serviceUrl)
     if (p.logo !== undefined) validateLogo(p.logo)
-    return { id: p.id, name: p.name, description: p.description, region: p.region.trim(), enabled: p.enabled, serviceUrl, ...(p.logo ? { logo: p.logo as string } : {}) }
+    if (p.secondary !== undefined && typeof p.secondary !== 'boolean') throw new Error('Invalid provider secondary flag')
+    return { id: p.id, name: p.name, description: p.description, region: p.region.trim(), enabled: p.enabled, serviceUrl, ...(p.logo ? { logo: p.logo as string } : {}), ...(p.secondary !== undefined ? { secondary: p.secondary } : {}) }
   })
 }
 export interface AppConfig {

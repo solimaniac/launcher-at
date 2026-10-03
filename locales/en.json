@@ -24,7 +24,17 @@
     "empty": "No account providers are currently available.",
     "region": "Region: {{region}}",
     "bluesky": "An account hosted by Bluesky.",
-    "eurosky": "An account hosted by Eurosky, based in Europe."
+    "eurosky": "An account hosted by Eurosky, based in Europe.",
+    "blacksky": "An account hosted by Blacksky.",
+    "w-social": "An account hosted by W Social.",
+    "northsky": "An account hosted by Northsky.",
+    "selfhosted-social": "An account hosted by selfhosted.social.",
+    "tangled": "An account hosted by Tangled.",
+    "spark": "An account hosted by Spark.",
+    "npmx": "An account hosted by npmx.",
+    "pckt": "An account hosted by pckt.",
+    "witchcraft-systems": "An account hosted by Witchcraft Systems.",
+    "more": "More providers"
   },
   "oauth": { "opening": "Opening your provider’s secure signup…", "finishing": "Finishing your account setup…" },
   "complete": {
