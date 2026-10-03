@@ -1,5 +1,5 @@
 import { loadEnv } from './env.ts'
-import { buildServer } from './server.ts'
+import { buildServer, activityRoutes } from './server.ts'
 import { connectRedis, Storage } from './storage.ts'
 import { loadProviders } from './providers.ts'
 import { createIdentity } from './identity.ts'
@@ -11,6 +11,7 @@ const config = loadEnv()
 const app = buildServer({ ping: () => redis.ping() }, config.logLevel)
 const redis = connectRedis(config.redisUrl, app.log)
 const storage = new Storage(redis)
+const providers = loadProviders()
 const abort = new AbortController()
 let consumer: Promise<void> | undefined
 let stopping = false
@@ -32,9 +33,10 @@ try {
   await redis.connect()
   await storage.initialize()
   consumer = consumeAccounts({ url: config.jetstreamUrl, cursor: new RedisCursorStore(redis, app.log),
-    handle: createAccountHandler(createIdentity(app.log), loadProviders(), join => storage.record(join), app.log),
+    handle: createAccountHandler(createIdentity(app.log), providers, join => storage.record(join), app.log),
     concurrency: config.concurrency, log: app.log, signal: abort.signal,
   })
+  await activityRoutes(app, storage, providers, config.allowedOrigins)
   await app.listen({ port: config.port, host: '0.0.0.0' })
 } catch (err) {
   app.log.error({ err }, 'Startup failed')
