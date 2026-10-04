@@ -1,0 +1,12 @@
+{
+  "id": "example-app-dark",
+  "appName": "Example App Dark",
+  "redirectUrl": "https://example.com/",
+  "theme": {
+    "primaryColor": "#a78bfa",
+    "secondaryColor": "#232c42",
+    "backgroundColor": "#121826",
+    "textColor": "#e8ecf4",
+    "fontFamily": "system-ui, sans-serif"
+  }
+}
