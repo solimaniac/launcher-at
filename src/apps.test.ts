@@ -27,3 +27,11 @@ test('rejects unsafe return destinations and incomplete themes', () => {
   expect(() => parseApps([generic, { ...example, launchAnimation: 'false' }])).toThrow()
   expect(lookupApp(parseApps([generic, { ...example, launchAnimation: false }]), 'example-app').app.launchAnimation).toBe(false)
 })
+test('app logos require absolute HTTPS URLs and reject local paths or unsafe destinations', () => {
+  for (const logo_url of ['https://example.com/logo.svg', 'https://example.com/logo.png?v=2']) {
+    expect(lookupApp(parseApps([generic, { ...example, logo_url }]), 'example-app').app.logo_url).toBe(logo_url)
+  }
+  for (const logo_url of ['', null, 123, '/apps/example-app/logo.svg', 'logo.png', '//example.com/logo.svg', '/../logo.svg', 'http://example.com/logo.svg', 'javascript:alert(1)', 'data:image/png;base64,abc', 'https://user:pass@example.com/logo.svg']) {
+    expect(() => parseApps([generic, { ...example, logo_url }])).toThrow()
+  }
+})

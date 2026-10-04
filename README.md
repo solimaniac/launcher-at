@@ -4,7 +4,7 @@ A small, MIT-licensed, static wizard: Atmosphere primer → provider selection �
 
 Vite, vanilla TypeScript, SCSS, i18next, and the official `@atproto/oauth-client-browser`. The launcher remains static; no account database, PDS hosting, or token handoff.
 
-The supplied launcher logo is stored at `public/logo.png`. Both the launcher and OAuth callback pages use `public/favicon.png`, a 64×64 PNG with a transparent background and antialiased edges. The icon URL includes `?v=transparent` to bypass cached copies of the old black-background favicon.
+Generic screens display **Launcher** with the supplied image at `public/logo.png`. App screens retain their configured name and can replace the header logo through `logo_url`. Browser favicons remain `public/favicon.png`, a 64×64 PNG with transparent background and antialiased edges; their URL includes `?v=transparent` to bypass cached copies of the old black-background favicon.
 
 The optional [activity backend](server/README.md) runs as one Node process with Redis. It observes Jetstream account hosting transitions and exposes provider counts and the most recent joins. It reads the same `config/providers.json`.
 
@@ -105,11 +105,11 @@ Edit **`config/providers.json`**, the single provider source. Add an object:
 }
 ```
 
-Add the description at `providers.newProvider` in `locales/en.json`. `region` is required plain text naming the country/region where the provider hosts accounts (e.g. `"United States"`, `"Europe"`); the provider card shows it in a pill preceded by an emoji flag. The picker maps United States, Europe, Canada, and Japan to 🇺🇸, 🇪🇺, 🇨🇦, and 🇯🇵; other regions use 🌐 until added to `regionFlags` in `src/launcher.ts`. Emoji appearance depends on platform flag support. If using `logo`, put the asset at `public/providers/new-provider.svg`; otherwise omit it. Logos are optional, same-site absolute paths, and decorative inside the named provider button. IDs, URLs, required fields, and duplicates are validated. Disabled providers stay in the public registry but do not appear in the picker.
+Add the description at `providers.newProvider` in `locales/en.json`. `region` is required plain text naming the country/region where the provider hosts accounts (e.g. `"United States"`, `"Europe"`); it appears below the provider name alongside a decorative flag. United States, Europe, Canada, and Japan map to 🇺🇸, 🇪🇺, 🇨🇦, and 🇯🇵; other regions use 🌐. Emoji rendering depends on platform support. Flags are hidden from assistive technology; the region text and provider description remain the button's accessible description. If using `logo`, put the asset at `public/providers/new-provider.svg`; otherwise omit it. Provider logos are optional, same-site absolute paths, and decorative inside the named provider button. IDs, URLs, required fields, and duplicates are validated. Disabled providers stay in the public registry but do not appear in the picker.
 
 Set optional `requiresInvite: true` for providers that require an invite code before signup. The picker displays an “Invite code required” pill and includes the requirement in the button's accessible name; selection still opens the provider's signup flow. Omit the field or set it to `false` to show no invite pill. Northsky is currently marked as invite-only.
 
-The picker shows all enabled providers in one responsive grid, in configuration order, with equal visibility. Region filtering and sorting controls are not currently included.
+The picker shows all enabled providers in configuration order, with equal visibility: two columns from 768px, one column below. Region filtering and sorting controls are not currently included. Provider logos use a white backing to retain legibility with custom background colors.
 
 ### Provider logo assets
 
@@ -142,6 +142,7 @@ Create **`apps/your-app/config.json`**:
   "id": "your-app",
   "appName": "Your App",
   "redirectUrl": "https://your-app.example/welcome",
+  "logo_url": "https://your-app.example/logo.png",
   "theme": {
     "primaryColor": "#1859b8",
     "secondaryColor": "#e5edfa",
@@ -153,10 +154,10 @@ Create **`apps/your-app/config.json`**:
 ```
 
 - Match the directory name and ID. IDs use lowercase letters/numbers with single hyphen separators. App names are required.
-- All five theme fields are required. Colors use six-digit hex; choose readable contrast, especially white button text against `primaryColor`. `fontFamily` uses available system fonts unless you supply local font assets and SCSS.
-- All foreground UI sits inside one rounded, translucent panel tinted from `backgroundColor`, with a 16-pixel backdrop blur, subtle border and shadow, and responsive padding. Browsers without backdrop-filter support retain the translucent panel without blur.
+- All five theme fields are required. Colors use six-digit hex. Primary buttons automatically choose black or white text for the higher WCAG contrast against `primaryColor`. Choose `textColor` with at least 4.5:1 contrast against both `backgroundColor` and `secondaryColor`; arbitrary theme combinations are not automatically corrected. `fontFamily` uses available system fonts unless you supply local font assets and SCSS.
+- All foreground UI sits inside one solid rounded panel using `backgroundColor`, with a subtle border and shadow and responsive padding. App names and optional logos remain visible on every screen. The intro places its primary action before the explanatory list; benefits and providers collapse explicitly to one column below 768px. Actions are at least 48px high and become full-width below 480px. Keyboard focus rings, screen-heading focus, reduced-motion feedback, and forced-color borders are supported. Configured colors remain authoritative rather than being replaced by an automatic dark palette.
 - `redirectUrl` is optional, repository-reviewed, HTTPS, and cannot contain URL credentials. Omit it to show completion without navigation.
-- Optional top-level `logo` uses a same-site path such as `/apps/your-app/logo.svg`; put the corresponding asset at `public/apps/your-app/logo.svg`.
+- Optional top-level `logo_url` replaces the supplied launcher image in the header. Supply an absolute HTTPS image URL such as `https://your-app.example/logo.png`; no image file needs to be added to this project. Local paths, HTTP, protocol-relative URLs, and embedded credentials are rejected. Remote image requests omit the referrer. The header logo's height is 1.5 times the brand text's capital-letter height (`1.5cap`), with automatic width preserving the image's aspect ratio. Omit `logo_url` to use `public/logo.png`. Provider configuration still uses `logo` with local asset paths.
 - Optional `launchAnimation: false` turns off the background rocket launches for that app, and the recent-joins poll is skipped too. It is on when omitted. Provider join counts are unaffected. The sky gradient is always shown and is tinted from `primaryColor` and `backgroundColor`.
 - Link to **`https://your-launcher.example/?app=your-app`**. Configurations are discovered automatically at build time; no application-code edit is needed.
 - `apps/default/config.json` is generic and cannot contain a return URL. Unknown/invalid app IDs show a translated notice and fall back to the default without redirecting. Query parameters such as `redirect=` are ignored.

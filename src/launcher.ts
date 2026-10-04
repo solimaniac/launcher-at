@@ -11,7 +11,6 @@ const regionFlags: Record<string, string> = {
   Canada: '🇨🇦',
   Japan: '🇯🇵',
 }
-
 function element<K extends keyof HTMLElementTagNameMap>(tag: K, text = '') {
   const node = document.createElement(tag)
   node.textContent = text
@@ -45,14 +44,15 @@ export async function launch(root: HTMLElement, oauth: SignupOAuth, callback = f
     root.removeAttribute('aria-busy')
     const heading = element('h1', title)
     heading.tabIndex = -1
-    root.replaceChildren(heading, ...content)
-    if (app.logo) {
-      const logo = element('img')
-      logo.src = app.logo
-      logo.alt = app.appName
-      logo.className = 'app-logo'
-      root.prepend(logo)
-    }
+    const brand = element('div', app.appName)
+    brand.className = 'brand'
+    root.replaceChildren(brand, heading, ...content)
+    const logo = element('img')
+    logo.src = app.logo_url ?? '/logo.png'
+    logo.alt = ''
+    logo.className = 'app-logo'
+    logo.referrerPolicy = 'no-referrer'
+    brand.prepend(logo)
     heading.focus({ preventScroll: true })
   }
   function unknownAppNotice() {
@@ -63,23 +63,32 @@ export async function launch(root: HTMLElement, oauth: SignupOAuth, callback = f
   }
   function intro() {
     screen(t('intro.title'), element('p', app.id === 'default' ? t('intro.generic') : t('intro.app', { appName: app.appName })))
+    root.dataset.view = 'intro'
     unknownAppNotice()
     const list = element('ul')
-    for (const key of ['network', 'hosting', 'reuse', 'ownership']) list.append(element('li', t(`intro.${key}`)))
+    list.className = 'benefits'
+    for (const key of ['network', 'hosting', 'reuse', 'ownership']) {
+      const item = element('li')
+      item.append(element('strong', t(`intro.${key}Title`)), element('p', t(`intro.${key}`)))
+      list.append(item)
+    }
     const create = element('button', t('intro.create'))
     create.onclick = selector
-    root.append(list, create)
+    root.append(create, list)
   }
   function selector() {
     try { providers ??= parseProviders(providerSource).filter(p => p.enabled) }
     catch { showError('errors.providers', selector); return }
     screen(t('providers.title'), element('p', t('providers.intro')))
+    root.dataset.view = 'providers'
     const cards = element('div')
     cards.className = 'providers'
     for (const provider of providers) {
       const card = element('button')
       card.className = 'provider'
       card.setAttribute('aria-label', t('providers.choose', { name: provider.name }))
+      const details = element('span')
+      details.className = 'provider-details'
       if (provider.logo) {
         const logo = element('img')
         logo.src = provider.logo
@@ -87,24 +96,33 @@ export async function launch(root: HTMLElement, oauth: SignupOAuth, callback = f
         card.append(logo)
       }
       const region = element('span')
-      region.className = 'region'
       const flag = element('span', regionFlags[provider.region] ?? '🌐')
       flag.setAttribute('aria-hidden', 'true')
-      region.append(flag, document.createTextNode(provider.region))
+      region.append(flag, document.createTextNode(` ${provider.region}`))
+      region.className = 'region'
+      region.id = `provider-${provider.id}-region`
       const joins = element('span')
       joins.className = 'joins'
       joins.dataset.provider = provider.id
-      card.append(element('strong', provider.name), region, joins, element('span', t(provider.description)))
+      const description = element('span', t(provider.description))
+      description.className = 'provider-description'
+      description.id = `provider-${provider.id}-description`
+      card.setAttribute('aria-describedby', `${region.id} ${description.id}`)
+      details.append(element('strong', provider.name), region, description, joins)
+      card.append(details)
       if (provider.requiresInvite) {
         const invite = element('span', t('providers.inviteRequired'))
         invite.className = 'invite-required'
-        card.append(invite)
+        details.append(invite)
         card.setAttribute('aria-label', `${t('providers.choose', { name: provider.name })}. ${t('providers.inviteRequired')}`)
       }
       card.onclick = async () => {
         for (const button of root.querySelectorAll('button')) button.disabled = true
         root.setAttribute('aria-busy', 'true')
-        root.append(element('p', t('oauth.opening')))
+        const status = element('p', t('oauth.opening'))
+        status.className = 'notice'
+        status.setAttribute('role', 'status')
+        root.append(status)
         try { await oauth.start(provider.serviceUrl, app.id) }
         catch (error) { showError(error instanceof SignupError ? error.key : 'errors.authorization', selector) }
       }
@@ -112,6 +130,7 @@ export async function launch(root: HTMLElement, oauth: SignupOAuth, callback = f
     }
     if (!providers.length) cards.append(element('p', t('providers.empty')))
     const back = element('button', t('actions.back'))
+    back.className = 'secondary'
     back.onclick = intro
     root.append(cards)
     root.append(back)
@@ -123,6 +142,7 @@ export async function launch(root: HTMLElement, oauth: SignupOAuth, callback = f
   }
   function showError(key: string, retry: () => void) {
     screen(t('errors.title'), element('p', t(key)))
+    root.dataset.view = 'error'
     const button = element('button', t('actions.retry'))
     button.onclick = retry
     const startOver = element('button', t('actions.restart'))
@@ -132,6 +152,7 @@ export async function launch(root: HTMLElement, oauth: SignupOAuth, callback = f
   }
   function complete(cleanupFailed: boolean) {
     screen(t('complete.title'), element('p', app.id === 'default' ? t('complete.generic') : t('complete.app', { appName: app.appName })))
+    root.dataset.view = 'complete'
     unknownAppNotice()
     if (cleanupFailed) root.append(element('p', t('errors.cleanup')))
     if (!app.redirectUrl) return
@@ -163,6 +184,7 @@ export async function launch(root: HTMLElement, oauth: SignupOAuth, callback = f
   window.addEventListener('pagehide', stopCountdown)
   if (callback) {
     screen(t('oauth.finishing'))
+    root.dataset.view = 'pending'
     root.setAttribute('aria-busy', 'true')
     try {
       const result = await oauth.finish()
