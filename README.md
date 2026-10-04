@@ -4,6 +4,8 @@ A small, MIT-licensed, static wizard: Atmosphere primer → provider selection �
 
 Vite, vanilla TypeScript, SCSS, i18next, and the official `@atproto/oauth-client-browser`. The launcher remains static; no account database, PDS hosting, or token handoff.
 
+The supplied launcher logo is stored at `public/logo.png`. Both the launcher and OAuth callback pages use `public/favicon.png`, a 64×64 PNG version fitted without stretching onto a black square.
+
 The optional [activity backend](server/README.md) runs as one Node process with Redis. It observes Jetstream account hosting transitions and exposes provider counts and five-minute recent joins. It reads the same `config/providers.json`.
 
 ### Activity display
