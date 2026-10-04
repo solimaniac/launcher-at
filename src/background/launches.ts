@@ -1,9 +1,15 @@
 import { planTrajectory, type Trajectory } from './trajectory'
 import './launches.scss'
 
+export interface LaunchLabel {
+  beforeLogo: string
+  afterLogo: string
+  logo?: string
+}
+
 /** Draws labelled rocket launches across the sky. Knows nothing about where labels come from. */
 export interface LaunchLayer {
-  launch(label: string): void
+  launch(label: LaunchLabel): void
   dispose(): void
 }
 
@@ -18,6 +24,8 @@ const STILL_AT = 0.7
 const MAX_FLIGHTS = 7
 // Pixels between the rocket and the end of its trailing label.
 const LABEL_GAP = 14
+const LOGO_SIZE = 12
+const LOGO_GAP = 4
 // Rocket chevron pointing along +x, centred on the trajectory head.
 const ROCKET = 'M5 0L-4 -3.5L-2 0L-4 3.5Z'
 
@@ -37,22 +45,35 @@ interface Flight {
 
 let flightIds = 0
 
-function createFlight(trajectory: Trajectory, label: string, still: boolean): Flight {
+function createFlight(trajectory: Trajectory, label: LaunchLabel, still: boolean): Flight {
   const id = `launch-trail-${++flightIds}`
   const group = node('g', { class: 'launch' })
   const trail = node('path', { id, class: 'launch-trail', d: trajectory.path, 'stroke-dasharray': `${trajectory.length}` })
   const text = node('text', { class: 'launch-label', dy: '-7' })
-  // text-anchor="end" makes startOffset the label's trailing edge, so no text measurement is needed.
+  // Anchor the complete label to the rocket; reserve an inline slot for the logo.
   const path = node('textPath', { href: `#${id}`, 'text-anchor': 'end' })
-  path.textContent = label
+  const before = node('tspan')
+  before.textContent = label.beforeLogo
+  const after = node('tspan', label.logo ? { dx: `${LOGO_SIZE + LOGO_GAP * 2}` } : {})
+  after.textContent = label.afterLogo
+  path.append(before, after)
   text.append(path)
+  const logo = label.logo ? node('image', {
+    class: 'launch-logo', href: label.logo,
+    x: `${-LOGO_SIZE / 2}`, y: `${-7 - LOGO_SIZE}`,
+    width: `${LOGO_SIZE}`, height: `${LOGO_SIZE}`, preserveAspectRatio: 'xMidYMid meet',
+  }) : undefined
   const rocket = node('path', { class: 'launch-rocket', d: ROCKET })
   group.append(trail, text, rocket)
+  if (logo) group.append(logo)
+  let afterWidth: number | undefined
   let start: number | undefined
   return {
     group,
     update(now) {
       start ??= now
+      // Measure once after mounting; never perform text layout on every animation frame.
+      if (logo) afterWidth ??= after.getComputedTextLength()
       const elapsed = now - start
       // Accelerating ascent: a slow lift-off that speeds up as it pitches over.
       const progress = still ? STILL_AT : clamp(elapsed / FLIGHT_MS) ** 1.8
@@ -63,6 +84,12 @@ function createFlight(trajectory: Trajectory, label: string, still: boolean): Fl
       const pose = trajectory.poseAt(head)
       trail.setAttribute('stroke-dashoffset', `${trajectory.length - head}`)
       path.setAttribute('startOffset', `${head - LABEL_GAP}`)
+      if (logo) {
+        const distance = head - LABEL_GAP - afterWidth! - LOGO_GAP - LOGO_SIZE / 2
+        const logoPose = trajectory.poseAt(distance)
+        logo.setAttribute('transform', `translate(${logoPose.x} ${logoPose.y}) rotate(${logoPose.angle})`)
+        logo.setAttribute('visibility', distance >= LOGO_SIZE / 2 ? 'visible' : 'hidden')
+      }
       rocket.setAttribute('transform', `translate(${pose.x} ${pose.y}) rotate(${pose.angle})`)
       group.setAttribute('opacity', `${opacity}`)
       return elapsed < (still ? STILL_MS : FLIGHT_MS + FADE_MS)
