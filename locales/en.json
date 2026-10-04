@@ -4,18 +4,18 @@
     "source": "view source code on"
   },
   "intro": {
-    "title": "One account. Your data.",
+    "title": "One account. Wherever you go. Your data.",
     "generic": "Create an account on the Atmosphere.",
     "app": "To use {{appName}}, you’ll first need an account on the Atmosphere.",
     "networkTitle": "A connected network",
-    "hostingTitle": "Your choice of provider",
+    "hostingTitle": "Choose your provider",
     "reuseTitle": "One account, many apps",
-    "ownershipTitle": "Your data stays yours",
-    "network": "The Atmosphere is a network of applications built using AT Protocol.",
-    "hosting": "Your account is hosted by an account provider (PDS).",
-    "reuse": "Use the same account across compatible applications.",
-    "ownership": "Your data belongs to you, and you can move it to another provider at any time.",
-    "create": "Create an Account"
+    "ownershipTitle": "Take your account with you",
+    "network": "The Atmosphere is a network of connected apps built on a shared protocol.",
+    "hosting": "Your account and data are hosted by a provider of your choice.",
+    "reuse": "Use the same account to sign in to compatible apps across the Atmosphere.",
+    "ownership": "You can move your account and data to another provider without starting over.",
+    "create": "Sign up"
   },
   "actions": {
     "back": "Back",
