@@ -82,7 +82,7 @@ h1:focus { outline: none; }
   button:not(:disabled):active, .button:active { transform: translateY(1px); }
 }
 @media (max-width: 767px) {
-  body { padding-block: 1rem; }
+  body { padding-block: 1rem clamp(10rem, 30svh, 18rem); }
   main { margin-block: 0; }
   .brand { margin-bottom: 1.5rem; }
   .benefits, .providers { grid-template-columns: minmax(0, 1fr); }
