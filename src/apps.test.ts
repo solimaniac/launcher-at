@@ -24,4 +24,6 @@ test('rejects unsafe return destinations and incomplete themes', () => {
   expect(() => parseApps([generic, { ...example, theme: {} }])).toThrow()
   expect(() => parseApps([generic, example, example])).toThrow()
   expect(() => parseApps([generic, { ...example, appName: '' }])).toThrow()
+  expect(() => parseApps([generic, { ...example, launchAnimation: 'false' }])).toThrow()
+  expect(lookupApp(parseApps([generic, { ...example, launchAnimation: false }]), 'example-app').app.launchAnimation).toBe(false)
 })

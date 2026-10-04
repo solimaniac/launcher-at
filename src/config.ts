@@ -33,6 +33,8 @@ export interface AppConfig {
   appName: string
   redirectUrl?: string
   logo?: string
+  /** Rocket launches for recent signups in the background sky; on unless `false`. */
+  launchAnimation?: boolean
   theme: { primaryColor: string; secondaryColor: string; backgroundColor: string; textColor: string; fontFamily: string }
 }
 export function parseApps(value: unknown[]): AppConfig[] {
@@ -47,6 +49,7 @@ export function parseApps(value: unknown[]): AppConfig[] {
     if (!text(theme.fontFamily) || /[;{}<>]/.test(theme.fontFamily)) throw new Error('Invalid theme font')
     if (app.redirectUrl !== undefined) httpsUrl(app.redirectUrl)
     if (app.logo !== undefined) validateLogo(app.logo)
+    if (app.launchAnimation !== undefined && typeof app.launchAnimation !== 'boolean') throw new Error('launchAnimation must be a boolean')
     if (app.id === 'default' && app.redirectUrl !== undefined) throw new Error('Default app cannot redirect')
     return app as unknown as AppConfig
   })

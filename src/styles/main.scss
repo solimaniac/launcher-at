@@ -1,3 +1,5 @@
+@use '../background/sky';
+
 :root {
   --color-primary: #1859b8;
   --color-secondary: #e5edfa;
@@ -6,7 +8,6 @@
   --font-family: system-ui, sans-serif;
   font-family: var(--font-family);
   color: var(--color-text);
-  background: var(--color-background);
   line-height: 1.6;
 }
 * { box-sizing: border-box; }
@@ -29,6 +30,3 @@ button, .button { min-height: 44px; }
 h1, p, li { overflow-wrap: anywhere; }
 @media (max-width: 480px) { main { margin-block: 2rem; } }
 .app-logo { width: 4rem; height: 4rem; object-fit: contain; }
-.activity { max-width: 36rem; margin: 0 auto; font-size: 0.875em; opacity: 0.8; }
-.activity ul { list-style: none; padding: 0; }
-.activity li { margin-block: .25rem; overflow-wrap: anywhere; }

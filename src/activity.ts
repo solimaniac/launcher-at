@@ -1,4 +1,4 @@
-import { i18n, t } from './i18n'
+import { i18n } from './i18n'
 
 export interface JoinCounts { windowDays: number; providers: Map<string, number> }
 export interface RecentJoin { handle: string; providerId: string; providerName: string; joinedAt: string }
@@ -16,7 +16,6 @@ export const MAX_BACKOFF_MS = 300_000
 const REQUEST_TIMEOUT_MS = 10_000
 // Enough to keep revealing until the next poll; older surplus is dropped so the feed stays current.
 const QUEUE_MAX = POLL_MS / REVEAL_MS
-const VISIBLE = 5
 
 export class ActivityError extends Error {
   readonly retryAfterMs: number
@@ -62,13 +61,9 @@ export function formatJoinCount(count: number): string {
 
 const joinKey = (join: RecentJoin) => `${join.joinedAt}|${join.providerId}|${join.handle}`
 
-// Polls recent joins and reveals at most one per REVEAL_MS, newest at the top.
-// Deliberately not a live region: periodic announcements would drown out the wizard.
-export function startJoinFeed(container: HTMLElement, load: () => Promise<RecentJoin[]>): () => void {
-  const list = document.createElement('ul')
-  container.setAttribute('aria-label', t('activity.label'))
-  container.replaceChildren(list)
-  container.hidden = true
+// Polls recent joins and hands them to `show` oldest first, at most one per REVEAL_MS.
+// Rendering is the caller's concern; this only owns polling, pacing and dedupe.
+export function startJoinFeed(load: () => Promise<RecentJoin[]>, show: (join: RecentJoin) => void): () => void {
   const queue: RecentJoin[] = []
   // The server never re-adds an entry once it leaves the response (newer entries expire later),
   // so the latest response's keys are a complete, bounded dedupe set.
@@ -77,17 +72,15 @@ export function startJoinFeed(container: HTMLElement, load: () => Promise<Recent
   let nextPoll = 0
   let inFlight = false
   let stopped = false
+  let revealed = false
   let pollTimer: number | undefined
   let revealTimer: number | undefined
 
   function reveal() {
     const join = queue.shift()
     if (!join) return
-    const item = document.createElement('li')
-    item.textContent = t('activity.joined', { handle: join.handle, provider: join.providerName })
-    list.prepend(item)
-    while (list.children.length > VISIBLE) list.lastElementChild!.remove()
-    container.hidden = false
+    revealed = true
+    show(join)
   }
   async function poll() {
     pollTimer = undefined
@@ -100,7 +93,7 @@ export function startJoinFeed(container: HTMLElement, load: () => Promise<Recent
       seen = new Set(joins.map(joinKey))
       queue.push(...fresh)
       if (queue.length > QUEUE_MAX) queue.splice(0, queue.length - QUEUE_MAX)
-      if (!list.children.length) reveal()
+      if (!revealed) reveal()
     } catch (error) {
       // Never retry-loop a 429/503: honor Retry-After and back off exponentially.
       failures++

@@ -37,7 +37,7 @@
     "witchcraft-systems": "An account hosted by Witchcraft Systems."
   },
   "oauth": { "opening": "Opening your provider’s secure signup…", "finishing": "Finishing your account setup…" },
-  "activity": { "label": "Recent signups", "joined": "{{handle}} joined on {{provider}}" },
+  "activity": { "joined": "{{handle}} joined on {{provider}}" },
   "complete": {
     "title": "Your Atmosphere account is ready.",
     "generic": "You can now use your account with compatible Atmosphere applications.",

@@ -11,7 +11,7 @@ afterEach(() => {
 const join = (n: number): RecentJoin => ({ handle: `user${n}.example`, providerId: 'bluesky', providerName: 'Bluesky', joinedAt: new Date(Date.UTC(2026, 9, 3, 12, 0, n)).toISOString() })
 // Server order: newest first.
 const newest = (...ns: number[]) => ns.sort((a, b) => b - a).map(join)
-const shown = (feed: HTMLElement) => [...feed.querySelectorAll('li')].map(li => li.textContent)
+const joinText = (join: RecentJoin) => `${join.handle} joined on ${join.providerName}`
 
 test('counts truncate to the largest whole compact unit', () => {
   expect([0, 7, 999].map(formatJoinCount)).toEqual(['0', '7', '999'])
@@ -21,27 +21,26 @@ test('counts truncate to the largest whole compact unit', () => {
 
 test('feed reveals one new join per interval, oldest first, and never repeats', async () => {
   vi.useFakeTimers()
-  const feed = document.createElement('aside')
+  const shown: string[] = []
   const responses = [newest(1, 2, 3), newest(1, 2, 3, 4)]
   const load = vi.fn(async () => responses.shift() ?? newest(1, 2, 3, 4))
-  stop = startJoinFeed(feed, load)
+  stop = startJoinFeed(load, join => shown.push(joinText(join)))
   await vi.advanceTimersByTimeAsync(0)
-  expect(feed.hidden).toBe(false)
-  expect(shown(feed)).toEqual(['user1.example joined on Bluesky'])
+  expect(shown).toEqual(['user1.example joined on Bluesky'])
   await vi.advanceTimersByTimeAsync(REVEAL_MS)
-  expect(shown(feed)).toEqual(['user2.example joined on Bluesky', 'user1.example joined on Bluesky'])
+  expect(shown).toEqual(['user1.example joined on Bluesky', 'user2.example joined on Bluesky'])
   await vi.advanceTimersByTimeAsync(POLL_MS)
   expect(load).toHaveBeenCalledTimes(2)
-  expect(shown(feed).slice(0, 3)).toEqual(['user4.example joined on Bluesky', 'user3.example joined on Bluesky', 'user2.example joined on Bluesky'])
+  expect(shown).toEqual([1, 2, 3, 4].map(n => joinText(join(n))))
   await vi.advanceTimersByTimeAsync(POLL_MS)
-  expect(new Set(shown(feed)).size).toBe(shown(feed).length)
+  expect(shown).toHaveLength(4)
 })
 
 test('feed waits for Retry-After and backs off on failure instead of retry-looping', async () => {
   vi.useFakeTimers()
-  const feed = document.createElement('aside')
+  const show = vi.fn()
   const load = vi.fn<() => Promise<RecentJoin[]>>().mockRejectedValueOnce(new ActivityError(MAX_BACKOFF_MS + 60_000)).mockRejectedValue(new Error('offline'))
-  stop = startJoinFeed(feed, load)
+  stop = startJoinFeed(load, show)
   await vi.advanceTimersByTimeAsync(MAX_BACKOFF_MS + 59_999)
   expect(load).toHaveBeenCalledTimes(1)
   await vi.advanceTimersByTimeAsync(1)
@@ -50,7 +49,7 @@ test('feed waits for Retry-After and backs off on failure instead of retry-loopi
   expect(load).toHaveBeenCalledTimes(2)
   await vi.advanceTimersByTimeAsync(1)
   expect(load).toHaveBeenCalledTimes(3)
-  expect(feed.hidden).toBe(true)
+  expect(show).not.toHaveBeenCalled()
 })
 
 test('rate-limited responses surface Retry-After; malformed joins are dropped', async () => {
