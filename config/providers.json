@@ -138,6 +138,7 @@
     "region": "Japan",
     "logo": "/providers/witchcraft-systems.png",
     "enabled": true,
+    "requiresInvite": true,
     "tracking": {
       "enabled": true,
       "pdsHostMatchers": [{ "type": "exact", "value": "pds.witchcraft.systems" }]
