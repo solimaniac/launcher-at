@@ -24,7 +24,7 @@ const MAX_FLIGHTS = 7
 // Pixels between the rocket and the end of its trailing label.
 const LABEL_GAP = 14
 const LOGO_SIZE = 12
-const LOGO_GAP = 16
+const LOGO_GAP = 4
 // Rocket chevron pointing along +x, centred on the trajectory head.
 const ROCKET = 'M5 0L-4 -3.5L-2 0L-4 3.5Z'
 
@@ -54,13 +54,14 @@ function createFlight(trajectory: Trajectory, label: LaunchLabel, still: boolean
   text.append(textPath)
   const logo = label.logo ? node('image', {
     class: 'launch-logo', href: label.logo,
-    x: `${-LOGO_SIZE / 2}`, y: `${-7 - LOGO_SIZE}`,
+    x: '0', y: `${-LOGO_SIZE}`,
     width: `${LOGO_SIZE}`, height: `${LOGO_SIZE}`, preserveAspectRatio: 'xMidYMid meet',
   }) : undefined
   const rocket = node('path', { class: 'launch-rocket', d: ROCKET })
   group.append(trail, text, rocket)
   if (logo) group.append(logo)
   let start: number | undefined
+  let lastCharacter: number | undefined
   return {
     group,
     update(now) {
@@ -77,10 +78,20 @@ function createFlight(trajectory: Trajectory, label: LaunchLabel, still: boolean
       const labelEnd = head - LABEL_GAP
       textPath.setAttribute('startOffset', `${labelEnd - (logo ? LOGO_SIZE + LOGO_GAP : 0)}`)
       if (logo) {
-        const distance = labelEnd - LOGO_SIZE / 2
-        const logoPose = trajectory.poseAt(distance)
-        logo.setAttribute('transform', `translate(${logoPose.x} ${logoPose.y}) rotate(${logoPose.angle})`)
-        logo.setAttribute('visibility', distance >= LOGO_SIZE / 2 ? 'visible' : 'hidden')
+        lastCharacter ??= text.getNumberOfChars() - 1
+        // SVG glyph positions already include the curved baseline and its offset.
+        // Project the final glyph's bounds onto its tangent to reserve real clearance.
+        const end = text.getEndPositionOfChar(lastCharacter)
+        const bounds = text.getExtentOfChar(lastCharacter)
+        const angle = text.getRotationOfChar(lastCharacter)
+        const radians = angle * Math.PI / 180
+        const cos = Math.cos(radians), sin = Math.sin(radians)
+        const edge = (cos >= 0 ? bounds.x + bounds.width : bounds.x) * cos
+          + (sin >= 0 ? bounds.y + bounds.height : bounds.y) * sin
+          - end.x * cos - end.y * sin
+        logo.setAttribute('x', `${edge + LOGO_GAP}`)
+        logo.setAttribute('transform', `translate(${end.x} ${end.y}) rotate(${angle})`)
+        logo.setAttribute('visibility', bounds.width > 0 && bounds.height > 0 ? 'visible' : 'hidden')
       }
       rocket.setAttribute('transform', `translate(${pose.x} ${pose.y}) rotate(${pose.angle})`)
       group.setAttribute('opacity', `${opacity}`)
