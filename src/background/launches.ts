@@ -8,14 +8,14 @@ export interface LaunchLayer {
 }
 
 const SVG = 'http://www.w3.org/2000/svg'
-const FLIGHT_MS = 9_000
+const FLIGHT_MS = 18_000
 const FADE_MS = 1_200
 // Reduced motion: the launch appears frozen mid-flight, then fades. Shorter than the feed's
 // 3-second reveal interval so static launches never stack on top of each other.
 const STILL_MS = 2_800
 const STILL_AT = 0.7
-// The feed reveals one join per few seconds; this bounds clutter if it ever bursts.
-const MAX_FLIGHTS = 4
+// Seven slots let 18-second flights finish fading at the feed's 3-second cadence.
+const MAX_FLIGHTS = 7
 // Pixels between the rocket and the end of its trailing label.
 const LABEL_GAP = 14
 // Rocket chevron pointing along +x, centred on the trajectory head.
