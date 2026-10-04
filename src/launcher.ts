@@ -5,6 +5,13 @@ import { selectApp, applyTheme } from './apps'
 import { SignupError, type SignupOAuth } from './signup'
 import { formatJoinCount, type JoinCounts } from './activity'
 
+const regionFlags: Record<string, string> = {
+  'United States': '🇺🇸',
+  Europe: '🇪🇺',
+  Canada: '🇨🇦',
+  Japan: '🇯🇵',
+}
+
 function element<K extends keyof HTMLElementTagNameMap>(tag: K, text = '') {
   const node = document.createElement(tag)
   node.textContent = text
@@ -79,8 +86,11 @@ export async function launch(root: HTMLElement, oauth: SignupOAuth, callback = f
         logo.alt = ''
         card.append(logo)
       }
-      const region = element('span', t('providers.region', { region: provider.region }))
+      const region = element('span')
       region.className = 'region'
+      const flag = element('span', regionFlags[provider.region] ?? '🌐')
+      flag.setAttribute('aria-hidden', 'true')
+      region.append(flag, document.createTextNode(provider.region))
       const joins = element('span')
       joins.className = 'joins'
       joins.dataset.provider = provider.id

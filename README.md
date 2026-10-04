@@ -83,7 +83,7 @@ Edit **`config/providers.json`**, the single provider source. Add an object:
 }
 ```
 
-Add the description at `providers.newProvider` in `locales/en.json`. `region` is required plain text naming the country/region where the provider hosts accounts (e.g. `"United States"`, `"Europe"`); it is shown on the provider card. If using `logo`, put the asset at `public/providers/new-provider.svg`; otherwise omit it. Logos are optional, same-site absolute paths, and decorative inside the named provider button. IDs, URLs, required fields, and duplicates are validated. Disabled providers stay in the public registry but do not appear in the picker.
+Add the description at `providers.newProvider` in `locales/en.json`. `region` is required plain text naming the country/region where the provider hosts accounts (e.g. `"United States"`, `"Europe"`); the provider card shows it in a pill preceded by an emoji flag. The picker maps United States, Europe, Canada, and Japan to 🇺🇸, 🇪🇺, 🇨🇦, and 🇯🇵; other regions use 🌐 until added to `regionFlags` in `src/launcher.ts`. Emoji appearance depends on platform flag support. If using `logo`, put the asset at `public/providers/new-provider.svg`; otherwise omit it. Logos are optional, same-site absolute paths, and decorative inside the named provider button. IDs, URLs, required fields, and duplicates are validated. Disabled providers stay in the public registry but do not appear in the picker.
 
 The picker shows all enabled providers in one responsive grid, in configuration order, with equal visibility. Region filtering and sorting controls are not currently included.
 

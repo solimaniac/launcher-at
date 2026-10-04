@@ -22,7 +22,6 @@
     "intro": "Your provider hosts your account and handles signup.",
     "choose": "Continue with {{name}}",
     "empty": "No account providers are currently available.",
-    "region": "Region: {{region}}",
     "joined": "{{joined}} joined in the last {{days}} days",
     "bluesky": "An account hosted by Bluesky.",
     "eurosky": "An account hosted by Eurosky, based in Europe.",
