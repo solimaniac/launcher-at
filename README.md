@@ -6,6 +6,8 @@ Vite, vanilla TypeScript, SCSS, i18next, and the official `@atproto/oauth-client
 
 Generic screens display **Launcher** with the supplied image at `public/logo.png`. App screens retain their configured name and can replace the header logo through `logo_url`. Browser favicons remain `public/favicon.png`, a 64×64 PNG with transparent background and antialiased edges; their URL includes `?v=transparent` to bypass cached copies of the old black-background favicon.
 
+Both launcher and callback screens include a small, muted footer beneath the main panel: the version from `package.json`, followed by “view source code on GitHub”, with only “GitHub” linking to [this repository](https://github.com/solimaniac/launcher-at). The sentence prefix is translated through `site.source`; the link retains keyboard focus styling.
+
 The optional [activity backend](server/README.md) runs as one Node process with Redis. It observes Jetstream account hosting transitions and exposes provider counts and the most recent joins. It reads the same `config/providers.json`.
 
 ### Activity display

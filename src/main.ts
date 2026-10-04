@@ -5,9 +5,17 @@ import { selectApp } from './apps'
 import { t } from './i18n'
 import { createLaunchLayer } from './background/launches'
 import providerSource from '../config/providers.json'
+import { version } from '../package.json'
 import { parseProviders } from './config'
 import './styles/main.scss'
 
+const footer = document.createElement('footer')
+footer.className = 'source-footer'
+const source = document.createElement('a')
+source.href = 'https://github.com/solimaniac/launcher-at'
+source.textContent = 'GitHub'
+footer.append(document.createTextNode(`v${version} · ${t('site.source')} `), source)
+document.querySelector('#app')!.after(footer)
 const callback = location.pathname === '/callback.html'
 const activity = __ACTIVITY_API__ && !callback ? __ACTIVITY_API__ : ''
 const sky = document.querySelector<HTMLElement>('#launches')
