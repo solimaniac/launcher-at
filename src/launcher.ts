@@ -18,7 +18,6 @@ function element<K extends keyof HTMLElementTagNameMap>(tag: K, text = '') {
 }
 
 export async function launch(root: HTMLElement, oauth: SignupOAuth, callback = false, counts?: Promise<JoinCounts>) {
-  document.title = t('site.title')
   let selection = selectApp(callback ? null : new URLSearchParams(location.search).get('app'))
   let app = selection.app
   let providers: Provider[] | undefined
@@ -40,6 +39,7 @@ export async function launch(root: HTMLElement, oauth: SignupOAuth, callback = f
     countdown = undefined
   }
   function screen(title: string, ...content: HTMLElement[]) {
+    document.title = app.id === 'default' ? t('site.title') : t('embed.appTitle', { appName: app.appName })
     stopCountdown()
     root.removeAttribute('aria-busy')
     const heading = element('h1', title)

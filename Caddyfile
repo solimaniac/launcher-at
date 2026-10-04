@@ -1,0 +1,14 @@
+{
+	admin off
+	persist_config off
+	auto_https off
+}
+
+:{$PORT:80} {
+	root * /app/dist
+	encode gzip zstd
+	route {
+		import /app/dist/embed-routes.caddy
+		file_server
+	}
+}

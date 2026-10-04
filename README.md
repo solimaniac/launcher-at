@@ -35,9 +35,19 @@ npm run preview
 
 Open **http://127.0.0.1:5173/**. Use the IP address, not `localhost`, so OAuth leaves and returns to the same browser-storage origin. The development port is fixed; if changing it, set `PUBLIC_ORIGIN=http://127.0.0.1:YOUR_PORT` to match. `npm run preview` serves the built files on Vite's preview port; live OAuth requires visiting the exact origin used when building metadata.
 
-`npm run build` creates `dist/`, including `index.html`, `callback.html`, `oauth-client-metadata.json`, `/v1/providers.json`, and bundled assets. Serve it at an origin's root; no rewrite rules or runtime Node.js are required.
+`npm run build` creates `dist/`, including `index.html`, `callback.html`, `oauth-client-metadata.json`, `/v1/providers.json`, bundled assets, and branded HTML/PNG previews under `/embeds/`. Serve it at an origin's root; no runtime Node.js is required. App-specific previews for `?app=...` require the query-aware static-host routing described below.
 
 Configuration is validated when Vite starts/builds. Tests cover parsing, app lookup and fallback, redirect allowlisting, interpolation, recovered callback context, countdown controls, and recoverable UI failures.
+
+### Rich link previews
+
+Shared links expose Open Graph and Twitter Card text plus a 1200×630 PNG. The default preview uses the launcher's headline and branding. Registered `/?app=your-app` links use **Sign up for Your App**, the app-specific introduction, configured theme colors and font, and `logo_url` (or the launcher logo). Unknown IDs fall back to the generic preview. The minimalist composition preserves the page's tinted sky, rounded panel, and left-aligned typography, following the [Taste Skill guidance](https://github.com/Leonxlnx/taste-skill).
+
+Metadata is delivered in the initial HTML: crawlers do not need JavaScript. Vite development and preview servers select the correct document automatically. In production, the root `Caddyfile` imports generated `dist/embed-routes.caddy` and internally rewrites known app query URLs to their prebuilt HTML, retaining the original URL and normal signup behavior. [Railpack supports a root Caddyfile](https://railpack.com/languages/node/). Other static hosts must implement equivalent query-aware rewrites; serving only `index.html` gives every shared URL the generic preview.
+
+Set `PUBLIC_ORIGIN` to the public site origin before building so image and page URLs are accessible to external crawlers. Loopback URLs cannot be fetched by other websites. Redeploy after changing app branding; sharing platforms may cache older previews. Their presentation of title, description, image, and cropping remains platform-controlled.
+
+Preview PNGs are generated at build time with `@resvg/resvg-js`; remote app logos must be reachable and renderable during the build. Fonts available on the build machine are used when configured; bundled Noto Sans regular/bold supplies the system-ui and missing-font fallback. To match a custom font exactly, add its licensed font files to `build/fonts/` and the renderer's `fontFiles` list. Bundled Noto Sans is covered by `build/fonts/OFL.txt` and is not shipped to browser clients.
 
 ## Production and OAuth development
 

@@ -3,6 +3,7 @@ import { loadEnv } from 'vite'
 import { readFileSync, readdirSync } from 'node:fs'
 import { parseProviders, parseApps } from './src/config.ts'
 import { metadataFor } from './build/metadata.ts'
+import { embedsPlugin } from './build/embeds.ts'
 import en from './locales/en.json' with { type: 'json' }
 const providers = parseProviders(JSON.parse(readFileSync('config/providers.json', 'utf8')))
 const registry = JSON.stringify(providers.map(provider => {
@@ -13,7 +14,7 @@ const registry = JSON.stringify(providers.map(provider => {
   if (typeof description !== 'string') throw new Error(`Missing English provider description: ${provider.description}`)
   return { ...provider, description }
 }), null, 2)
-parseApps(readdirSync('apps').map(id => JSON.parse(readFileSync(`apps/${id}/config.json`, 'utf8'))))
+const apps = parseApps(readdirSync('apps').map(id => JSON.parse(readFileSync(`apps/${id}/config.json`, 'utf8'))))
 function activityOrigin(value: string | undefined) {
   if (!value) return ''
   const url = new URL(value)
@@ -30,7 +31,7 @@ export default defineConfig(({ mode }) => {
   test: { include: ['src/**/*.test.ts', 'build/**/*.test.ts'] },
   server: { host: '127.0.0.1', port: 5173, strictPort: true },
   build: { rolldownOptions: { input: ['index.html', 'callback.html'] } },
-  plugins: [{
+  plugins: [embedsPlugin(apps, origin), {
     name: 'launcher-static-data',
     generateBundle() {
       this.emitFile({ type: 'asset', fileName: 'v1/providers.json', source: registry })

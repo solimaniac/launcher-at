@@ -3,6 +3,9 @@
     "title": "Atmosphere Account Launcher",
     "source": "view source code on"
   },
+  "embed": {
+    "appTitle": "Sign up for {{appName}}"
+  },
   "intro": {
     "title": "One account. Wherever you go. Your data.",
     "generic": "Create an account on the Atmosphere.",
