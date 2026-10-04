@@ -84,6 +84,26 @@ Add the description at `providers.newProvider` in `locales/en.json`. `region` is
 
 The picker shows all enabled providers in one responsive grid, in configuration order, with equal visibility. Region filtering and sorting controls are not currently included.
 
+### Provider logo assets
+
+All 11 configured providers have local assets in `public/providers/`. The picker uses a shared 48×48 CSS-pixel box (`3rem`) with `object-fit: contain`, preserving each mark's aspect ratio. Eight assets are SVGs; Eurosky and Witchcraft Systems use PNGs. selfhosted.social uses its original 48×48 favicon converted losslessly to PNG without upscaling. Wide or tall marks occupy less of the square box.
+
+| Provider | Source asset | Format / source size |
+| --- | --- | --- |
+| Bluesky | [Official media-kit butterfly](https://bsky.social/about/brand-assets/butterfly/bluesky_media_kit_logo_transparent_1.svg) | SVG, 568×501 |
+| Eurosky | [Official portal icon](https://portal.eurosky.tech/icons/android-icon-192x192.png) | PNG, 184×184 |
+| Blacksky | [Blacksky Algorithms mark](https://commons.wikimedia.org/wiki/File:Blacksky_Algorithms_Logo_(black).svg), attributed to blackskyweb.xyz | SVG, approximately 88×75 |
+| W Social | [Official homepage splash SVG](https://wsocial.eu/) | SVG, 73×73 viewBox |
+| Northsky | [Official color icon](https://northskysocial.ca/northsky-icon-color.svg) | SVG, 1024×1024 viewBox |
+| selfhosted.social | [Official favicon](https://selfhosted.social/_app/immutable/assets/favicon.D87KDQmG.ico) | PNG conversion, 48×48 |
+| Tangled | [Official Dolly mark](https://assets.tangled.network/tangled_dolly_face_only_black_on_trans.svg) | SVG, approximately 24×23 |
+| Spark | [Official icon](https://sprk.so/icon.svg) | SVG, 551×551 |
+| npmx | [Official cute logo](https://npmx.dev/extra/npmx-cute.svg) | SVG, 246×112 |
+| pckt | [Official favicon](https://pckt.blog/favicon.svg) | SVG, 93×107 |
+| Witchcraft Systems | [Official homepage base artwork](https://witchcraft.systems/img/WitchSysBase.png) | PNG, 256×512 |
+
+These assets identify their respective providers; the launcher's MIT license does not grant rights to provider trademarks. Follow [Bluesky's brand guidelines](https://bsky.social/about/support/branding). Commons lists the Blacksky mark as public domain; explicit redistribution licenses were not established for the other assets. Witchcraft Systems uses its homepage base artwork rather than the site's animated accent overlay.
+
 Use the PDS **or provider entryway** URL accepted by ATProto OAuth, not an arbitrary signup homepage or a user's eventual physical PDS. Confirm the provider supports server-first OAuth account creation. Do not duplicate the list in UI code or `public/`.
 
 ## Add an app/theme

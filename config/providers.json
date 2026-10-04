@@ -5,6 +5,7 @@
     "serviceUrl": "https://bsky.social",
     "description": "providers.bluesky",
     "region": "United States",
+    "logo": "/providers/bluesky.svg",
     "enabled": true,
     "tracking": {
       "enabled": true,
@@ -17,6 +18,7 @@
     "serviceUrl": "https://eurosky.social",
     "description": "providers.eurosky",
     "region": "Europe",
+    "logo": "/providers/eurosky.png",
     "enabled": true,
     "tracking": {
       "enabled": true,
@@ -29,6 +31,7 @@
     "serviceUrl": "https://blacksky.app",
     "description": "providers.blacksky",
     "region": "United States",
+    "logo": "/providers/blacksky.svg",
     "enabled": true,
     "tracking": {
       "enabled": true,
@@ -41,6 +44,7 @@
     "serviceUrl": "https://pds.wsocial.network",
     "description": "providers.w-social",
     "region": "Europe",
+    "logo": "/providers/w-social.svg",
     "enabled": true,
     "tracking": {
       "enabled": true,
@@ -53,6 +57,7 @@
     "serviceUrl": "https://northsky.social",
     "description": "providers.northsky",
     "region": "Canada",
+    "logo": "/providers/northsky.svg",
     "enabled": true,
     "tracking": {
       "enabled": true,
@@ -65,6 +70,7 @@
     "serviceUrl": "https://selfhosted.social",
     "description": "providers.selfhosted-social",
     "region": "United States",
+    "logo": "/providers/selfhosted-social.png",
     "enabled": true,
     "tracking": {
       "enabled": true,
@@ -77,6 +83,7 @@
     "serviceUrl": "https://tngl.sh",
     "description": "providers.tangled",
     "region": "Europe",
+    "logo": "/providers/tangled.svg",
     "enabled": true,
     "tracking": {
       "enabled": true,
@@ -89,6 +96,7 @@
     "serviceUrl": "https://pds.sprk.so",
     "description": "providers.spark",
     "region": "United States",
+    "logo": "/providers/spark.svg",
     "enabled": true,
     "tracking": {
       "enabled": true,
@@ -101,6 +109,7 @@
     "serviceUrl": "https://npmx.social",
     "description": "providers.npmx",
     "region": "Europe",
+    "logo": "/providers/npmx.svg",
     "enabled": true,
     "tracking": {
       "enabled": true,
@@ -113,6 +122,7 @@
     "serviceUrl": "https://pds.pckt.cafe",
     "description": "providers.pckt",
     "region": "United States",
+    "logo": "/providers/pckt.svg",
     "enabled": true,
     "tracking": {
       "enabled": true,
@@ -125,6 +135,7 @@
     "serviceUrl": "https://pds.witchcraft.systems",
     "description": "providers.witchcraft-systems",
     "region": "Japan",
+    "logo": "/providers/witchcraft-systems.png",
     "enabled": true,
     "tracking": {
       "enabled": true,
