@@ -24,5 +24,5 @@ export function buildServer(redis: Pick<Redis, 'ping'>, log: Logger, protection:
 export function activityRoutes(app: Hono, storage: Storage, providers: TrackedProvider[], allowedOrigins: string[], now = Date.now) {
   app.use('/api/*', cors({ origin: allowedOrigins.includes('*') ? '*' : allowedOrigins, credentials: false, allowMethods: ['GET'], exposeHeaders: ['Retry-After'], maxAge: 600 }))
   countsRoute(app, storage, providers, now)
-  recentRoute(app, storage, providers, now)
+  recentRoute(app, storage, providers)
 }

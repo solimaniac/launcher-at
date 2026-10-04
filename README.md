@@ -6,7 +6,7 @@ Vite, vanilla TypeScript, SCSS, i18next, and the official `@atproto/oauth-client
 
 The supplied launcher logo is stored at `public/logo.png`. Both the launcher and OAuth callback pages use `public/favicon.png`, a 64×64 PNG with a transparent background and antialiased edges. The icon URL includes `?v=transparent` to bypass cached copies of the old black-background favicon.
 
-The optional [activity backend](server/README.md) runs as one Node process with Redis. It observes Jetstream account hosting transitions and exposes provider counts and five-minute recent joins. It reads the same `config/providers.json`.
+The optional [activity backend](server/README.md) runs as one Node process with Redis. It observes Jetstream account hosting transitions and exposes provider counts and the most recent joins. It reads the same `config/providers.json`.
 
 ### Activity display
 
@@ -55,6 +55,27 @@ Deploy `dist/` unchanged. The authorization server must be able to GET `https://
 Without `PUBLIC_ORIGIN`, builds use the local development origin. **Do not deploy that metadata as production configuration.** Public HTTPS metadata advertises only `atproto`, the authorization-code grant, a public web client, and DPoP-bound tokens. The official localhost development exception includes `refresh_token` in its virtual metadata; this is protocol-defined, not a production permission choice.
 
 For end-to-end testing on a publicly discoverable client ID, expose the site through a public HTTPS host/tunnel, set `PUBLIC_ORIGIN` to it, restart the dev server, and open that HTTPS URL for the entire flow. Providers must support the localhost exception to run OAuth without a public origin. No client secret is needed.
+
+### Railway deployment
+
+Project **launcher-at**, environment **production**, service **website**: [https://website-production-0a83.up.railway.app](https://website-production-0a83.up.railway.app). Railpack builds from the repository root using `npm run build` and serves `dist/` with Caddy; no Vite development/preview server runs in production.
+
+Website service variables:
+
+- `PUBLIC_ORIGIN=https://website-production-0a83.up.railway.app`
+- `PUBLIC_ACTIVITY_API=https://server-production-1e48d.up.railway.app`
+- `RAILPACK_NODE_VERSION=24`
+- `RAILPACK_SPA_OUTPUT_DIR=dist`
+
+Deploy from the repository root, linked to `launcher-at`:
+
+```sh
+railway up --service website --environment production --ci
+```
+
+The backend's `ALLOWED_ORIGINS` is the website's exact HTTPS origin, without a wildcard. Changing the website domain requires rebuilding with the new `PUBLIC_ORIGIN` and updating the backend allowlist; changing the API domain requires rebuilding with the new `PUBLIC_ACTIVITY_API`. Follow the [backend stop-before-deploy procedure](server/README.md#provisioned-production-deployment) when applying backend configuration changes so Jetstream consumers never overlap.
+
+Deployment verification: the public OAuth metadata returned JSON with the production client ID and callback URL; Chromium loaded all 11 provider counts and the recent-joins feed through successful cross-origin API requests. Allowed-origin preflight returned 204; an unlisted origin received no `Access-Control-Allow-Origin` header. Full provider account creation was not exercised.
 
 ### OAuth boundary and callback
 

@@ -40,6 +40,26 @@ test('restores durable cursor and never advances it past a failed persistent wri
   expect(await new RedisCursorStore(redis, log).load()).toBe(2)
   await redis.quit()
 })
+test('a silent stream is restarted from the durable cursor', async () => {
+  const redis = new RedisMock(); await redis.flushall()
+  await redis.set(CURSOR_KEY, '1')
+  const abort = new AbortController()
+  const cursors: string[] = []
+  // Mimics resuming into a Jetstream seq hole: one event, then silence until aborted.
+  const transport: LiveTransport = {
+    async *stream(getUrl, signal) {
+      cursors.push(new URL(getUrl()).searchParams.get('cursor')!)
+      if (cursors.length === 3) abort.abort()
+      yield frame(cursors.length + 1)
+      const { promise, resolve } = Promise.withResolvers<unknown>()
+      signal.addEventListener('abort', resolve, { once: true })
+      if (!signal.aborted) await promise
+    },
+  }
+  await consumeAccounts({ url: 'https://example.test', cursor: new RedisCursorStore(redis, log), handle: async () => {}, log, signal: abort.signal, transport, stallMs: 50 })
+  expect(cursors).toEqual(['1', '2', '3'])
+  await redis.quit()
+}, 10_000)
 test('first connection starts at a persisted live boundary, not historical backfill', async () => {
   vi.useFakeTimers({ now: Date.parse('2026-10-03T12:00:00Z') })
   try {

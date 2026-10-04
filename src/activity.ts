@@ -7,8 +7,8 @@ export interface RecentJoin { handle: string; providerId: string; providerName: 
 // RATE_LIMIT_PER_MINUTE=120 per client IP and GLOBAL_RATE_LIMIT_PER_MINUTE=1200 per process,
 // shared by both endpoints. Each visible tab spends one counts request per page load plus
 // 60_000 / POLL_MS recent requests per minute: ~60 tabs behind one shared IP, ~600 concurrent
-// visible visitors process-wide. Hidden tabs do not poll. The server keeps five minutes of
-// recents, so 30-second polls miss nothing below its 50-item response cap.
+// visible visitors process-wide. Hidden tabs do not poll. The server returns its newest 50
+// joins regardless of age; entries already shown are skipped.
 // Revisit POLL_MS if those server limits change.
 export const POLL_MS = 30_000
 export const REVEAL_MS = 3_000

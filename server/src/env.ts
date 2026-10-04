@@ -10,6 +10,8 @@ export function loadEnv(env: NodeJS.ProcessEnv = process.env) {
     port: number('PORT', 3000, 65535),
     redisUrl: env.REDIS_URL ?? 'redis://127.0.0.1:6379',
     jetstreamUrl: env.JETSTREAM_URL ?? 'https://jetstream.us-east.bsky.network',
+    // Trimmed: a CRLF-terminated env file otherwise fails the SDK's header validation.
+    jetstreamApiKey: env.JETSTREAM_API_KEY?.trim() || undefined,
     allowedOrigins: (env.ALLOWED_ORIGINS ?? (env.NODE_ENV === 'production' ? '' : 'http://127.0.0.1:5173,http://localhost:5173')).split(',').map(s => s.trim()).filter(Boolean),
     concurrency: number('IDENTITY_CONCURRENCY', 8, 20),
     logLevel: env.LOG_LEVEL ?? 'info',

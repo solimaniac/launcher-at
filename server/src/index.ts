@@ -1,6 +1,6 @@
 import { loadEnv } from './env.ts'
 import { buildServer, activityRoutes } from './server.ts'
-import { connectRedis, Storage, RECENT_KEY, RECENT_MS } from './storage.ts'
+import { connectRedis, Storage } from './storage.ts'
 import { loadProviders } from './providers.ts'
 import { createIdentity } from './identity.ts'
 import { RedisCursorStore } from './cursor.ts'
@@ -19,7 +19,6 @@ const storage = new Storage(redis)
 const providers = loadProviders()
 const abort = new AbortController()
 let consumer: Promise<void> | undefined
-let pruneTimer: ReturnType<typeof setInterval> | undefined
 let server: ServerType | undefined
 async function closeServer() {
   if (!server) return
@@ -34,7 +33,6 @@ async function shutdown(signal: string) {
   log.info({ signal }, 'Graceful shutdown')
   const deadline = setTimeout(() => process.exit(1), 10000).unref()
   try {
-    clearInterval(pruneTimer)
     abort.abort()
     await consumer
     await closeServer()
@@ -50,10 +48,6 @@ try {
   await redis.connect()
   await storage.initialize()
   await storage.recent(providers.map(p => p.id))
-  pruneTimer = setInterval(() => {
-    void storage.redis.zremrangebyscore(RECENT_KEY, '-inf', '(' + (Date.now() - RECENT_MS))
-      .catch(err => log.error({ err }, 'Recent activity pruning failed'))
-  }, 30000).unref()
   activityRoutes(app, storage, providers, config.allowedOrigins)
   server = serve({ fetch: app.fetch, port: config.port, hostname: '0.0.0.0', serverOptions: {
     maxHeaderSize: 8192, headersTimeout: 10000, requestTimeout: 10000,
@@ -66,13 +60,12 @@ try {
   server.on('checkContinue', (_request, response) => { response.writeHead(417, { Connection: 'close' }); response.end() })
   await once(server, 'listening')
   log.info({ port: config.port }, 'HTTP server listening')
-  consumer = consumeAccounts({ url: config.jetstreamUrl, cursor: new RedisCursorStore(redis, log),
+  consumer = consumeAccounts({ url: config.jetstreamUrl, apiKey: config.jetstreamApiKey, cursor: new RedisCursorStore(redis, log),
     handle: createAccountHandler(createIdentity(log), providers, join => storage.record(join), log),
     concurrency: config.concurrency, log, signal: abort.signal,
   })
 } catch (err) {
   log.error({ err }, 'Startup failed')
-  clearInterval(pruneTimer)
   abort.abort()
   await consumer
   redis.disconnect()

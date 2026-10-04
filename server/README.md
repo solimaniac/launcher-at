@@ -45,6 +45,7 @@ Tests mock identity/network responses and Redis in-process; they never require t
 | `PORT` | `3000`; respects Railway's injected port; binds `0.0.0.0` |
 | `REDIS_URL` | `redis://127.0.0.1:6379` locally; required in production; `rediss://` supported by ioredis |
 | `JETSTREAM_URL` | `https://jetstream.us-east.bsky.network`, the public **v2** service origin |
+| `JETSTREAM_API_KEY` | Unset by default. Jetstream archive key; set it in production. With a key, every consumer (re)start reads the archive from the durable cursor before going live. Surrounding whitespace is trimmed. |
 | `ALLOWED_ORIGINS` | Comma-separated exact origins. Development defaults to `http://127.0.0.1:5173,http://localhost:5173`; production defaults to no cross-origin access. Explicit `*` is allowed; credentials are always disabled. |
 | `NODE_ENV` | Set to `production` when deployed |
 | `LOG_LEVEL` | `info`; use `debug` for untracked-provider and failed handle verification details |
@@ -82,7 +83,7 @@ Handles are display-only: a valid claimed handle must resolve back to the same D
 Read-only, no authentication or cookies:
 
 - **`GET /api/v1/providers/counts`** → `{ "windowDays": 30, "observedSince": "...", "providers": [{ "id": "...", "name": "...", "joined": 0 }] }`. Includes every tracked provider, even zero-count providers; ignores unknown Redis hash fields. Reads 30 daily hashes in one pipeline. `observedSince` is `null` if tracking metadata is absent.
-- **`GET /api/v1/joins/recent?limit=50`** → `{ "windowMinutes": 5, "joins": [{ "handle": "...", "providerId": "...", "providerName": "...", "joinedAt": "..." }] }`. Default/max 50; larger limits are capped. Non-integer or nonpositive limits return 400. Newest first, never older than five minutes, no public DIDs. Fewer valid handles means fewer results.
+- **`GET /api/v1/joins/recent?limit=50`** → `{ "joins": [{ "handle": "...", "providerId": "...", "providerName": "...", "joinedAt": "..." }] }`. Default/max 50; larger limits are capped. Non-integer or nonpositive limits return 400. The newest joins observed, newest first, however old; no public DIDs. Fewer valid handles means fewer results.
 - **`GET /health`** → HTTP 200 `{ "status": "ok" }` when Redis responds; HTTP 503 otherwise. Checks are single-flight with a one-second result cache and a two-second timeout. A Jetstream reconnect alone does not fail health. Excess health probes return 429.
 
 Unexpected API storage errors return HTTP 503, not fabricated empty/zero data.
@@ -115,21 +116,21 @@ Do not blindly enable [Railway Under Attack Mode](https://docs.railway.com/netwo
 
 | Key | Contents / retention |
 |---|---|
-| `atmosphere:joins:recent` | Sorted set of sequence, DID, verified handle, provider ID, observed timestamp; pruned on insert/read and every 30 seconds; five-minute key TTL when idle |
+| `atmosphere:joins:recent` | Sorted set of sequence, DID, verified handle, provider ID, observed timestamp; trimmed to the newest 50 by observed time on insert, so late archive replays never displace newer joins |
 | `atmosphere:joins:count:YYYY-MM-DD` | Hash of provider ID → aggregate count; expires 32 days after its last increment; no DIDs |
 | `atmosphere:jetstream:cursor` | Last contiguous successfully acknowledged v2 sequence (live timestamp boundary before first checkpoint); persistent operational metadata |
 | `atmosphere:tracking:startedAt` | Set once with `NX`; persistent operational timestamp |
 | `atmosphere:jetstream:counted:<seq>` | One-day replay marker containing only `1`; no DID/handle; atomic with count/feed write |
 
-Only aggregates survive beyond the short-lived feed, apart from non-user-identifying operational metadata. No permanent user histories or identity caches are stored. Redis needs persistence and a non-evicting policy; losing Redis data loses counts and the observation boundary. Redis persistence/backups should respect the same short-lived identity retention policy.
+Only aggregates and the latest 50 verified joins are kept, apart from non-user-identifying operational metadata. No permanent user histories or identity caches are stored. Redis needs persistence and a non-evicting policy; losing Redis data loses counts and the observation boundary. Redis persistence/backups should respect the same bounded identity retention policy.
 
-The SDK manages WebSocket reconnect/resume and bounded concurrency. An account handler acknowledges only after its persistent write succeeds. A Redis count-write error stops that indexing run; the small supervisor restarts from the durable cursor. One atomic Lua operation combines the counter, optional recent entry, and replay marker, preventing duplicate counts on ambiguous replies or concurrent completions replayed after an earlier failure. Markers expire after one day; this is deliberately not an unlimited exactly-once guarantee.
+The SDK manages WebSocket reconnect/resume and bounded concurrency. An account handler acknowledges only after its persistent write succeeds. A Redis count-write error stops that indexing run; the small supervisor restarts from the durable cursor. A stall check also restarts it from the durable cursor if no account event arrives for three minutes (normal traffic is about 20 per minute). This covers Jetstream sequence holes: a live resume from a cursor inside a hole receives one event and then nothing. With `JETSTREAM_API_KEY` set, each restart reads the archive first, which skips the hole. Without a key, restarts are live-only and can stay stuck. One atomic Lua operation combines the counter, optional recent entry, and replay marker, preventing duplicate counts on ambiguous replies or concurrent completions replayed after an earlier failure. Markers expire after one day; this is deliberately not an unlimited exactly-once guarantee.
 
 DID failures/malformed endpoints are logged and skipped; untracked providers are debug-only. Handle failures omit display data without dropping counts. Checkpoint failures retry without reporting success or producing an unhandled rejection. An unreachable Redis during cursor loading never falls back silently to live. SIGINT/SIGTERM stop the source, drain pending handlers, flush checkpoints, close HTTP, then quit Redis. Shutdown has a ten-second hard deadline if dependencies never recover.
 
 Use one backend replica. Do not overlap deployments that consume the same Redis state; the current process/cursor design is not a multi-replica processor. Railway's overlap setting controls the period **after** the new deployment becomes active; even zero overlap does not prevent both consumers running during startup/healthchecks. Stop the old backend deployment and wait for removal before uploading its replacement. Keep automatic deployments disconnected until consumer coordination is implemented.
 
-Cursors are not portable between Jetstream v1/v2 or necessarily between different instances. Do not point at numbered legacy v1 hosts. If changing Jetstream instances, inspect compatibility before resetting `atmosphere:jetstream:cursor`; an intentional reset starts live and creates a known observation gap. `OutdatedCursor` advisories are logged; a cursor rejected by the server requires operator intervention rather than silently discarding history.
+Cursors are not portable between Jetstream v1/v2 or necessarily between different instances. Do not point at numbered legacy v1 hosts. If changing Jetstream instances, inspect compatibility before resetting `atmosphere:jetstream:cursor`; an intentional reset starts live and creates a known observation gap. `OutdatedCursor` advisories are logged. With an archive key, a cursor older than the live retention window is filled from the archive; without one, it needs an operator.
 
 ## Railway
 
@@ -157,13 +158,14 @@ As of the current [Railway documentation](https://docs.railway.com/config-as-cod
 
 ### Provisioned production deployment
 
-Project [`launcher-at`](https://railway.com/project/44fb4fd8-4f01-4692-a781-d4e80dcab211), workspace **Personal Projects**, environment **production**. Public API: `https://server-production-1e48d.up.railway.app`. No frontend, Postgres, or worker is deployed.
+Project [`launcher-at`](https://railway.com/project/44fb4fd8-4f01-4692-a781-d4e80dcab211), workspace **Personal Projects**, environment **production**. Public API: `https://server-production-1e48d.up.railway.app`. The static frontend is deployed as service `website` at `https://website-production-0a83.up.railway.app`; see the [website deployment settings](../README.md#railway-deployment). No Postgres or worker is deployed.
 
 - `server`: repository-root `server/Dockerfile`, Node 24, one replica in `sfo`, sleeping disabled, `/health` healthcheck with a 120-second timeout, zero post-activation overlap, and 15-second shutdown drain. Railway supplies `PORT`. Source is a CLI upload, not automatic GitHub deployments; Watch Paths are empty so stop-then-upload also works for unchanged source.
 - `Redis`: Railway Redis 8.2 with a 5 GB volume mounted at `/data`, private-network-only access, password authentication, `appendonly yes`, `appendfsync everysec`, `save 60 1`, and `maxmemory-policy noeviction`. Credentials stay in Railway variables; the server uses `${{Redis.REDIS_URL}}`.
-- `NODE_ENV=production`, `TRUST_RAILWAY_PROXY=true`, and empty `ALLOWED_ORIGINS`. Configure the future frontend's exact HTTPS origin before browser polling; no wildcard CORS is enabled.
+- `NODE_ENV=production`, `TRUST_RAILWAY_PROXY=true`, and `ALLOWED_ORIGINS=https://website-production-0a83.up.railway.app`. Only the website's exact HTTPS origin is allowlisted; no wildcard CORS is enabled.
 - One service-wide edge rule blocks paths other than `/health`, `/api/v1/providers/counts`, and `/api/v1/joins/recent` with HTTP 404. It applies to every attached domain. No browser challenges or edge caching are enabled. This path filter is **not** volumetric DDoS/rate protection for the permitted API paths.
 - Live verification observed Redis health, Jetstream connection, nonzero counts for the 11 configured tracked providers, recent verified handles, invalid-limit rejection (400), unsupported-method rejection (405), and edge path rejection (404). Tracking began at `2026-10-03T17:35:18.924Z`; no historical backfill was performed.
+- Website deployment verification: both API endpoints returned 200 to Chromium at the allowlisted origin, provider counts and recent joins rendered, and GET preflight returned 204 with that exact origin. An unlisted origin received no CORS allow-origin header. The backend was stopped before redeployment; startup logs confirmed Redis connection and restoration of the persisted Jetstream cursor.
 
 Future deployments must stop the existing consumer first. From the repository root:
 
