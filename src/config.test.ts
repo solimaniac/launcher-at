@@ -15,3 +15,6 @@ test('rejects missing fields and remote or traversing logo paths', () => {
   expect(() => parseProviders([{ ...source[0], name: '' }])).toThrow()
   for (const logo of ['//evil.example/logo.svg', '/../logo.svg', 'https://evil.example/logo.svg']) expect(() => parseProviders([{ ...source[0], logo }])).toThrow()
 })
+test('invite requirements accept only booleans, not truthy strings', () => {
+  for (const requiresInvite of ['false', 'true', 1, null]) expect(() => parseProviders([{ ...source[0], requiresInvite }])).toThrow('requiresInvite must be a boolean')
+})

@@ -1,4 +1,4 @@
-export interface Provider { id: string; name: string; serviceUrl: string; description: string; region: string; logo?: string; enabled: boolean }
+export interface Provider { id: string; name: string; serviceUrl: string; description: string; region: string; logo?: string; enabled: boolean; requiresInvite?: boolean }
 export function httpsUrl(value: unknown): string {
   if (typeof value !== 'string') throw new Error('URL must be a string')
   const url = new URL(value)
@@ -20,12 +20,13 @@ export function parseProviders(value: unknown): Provider[] {
   return value.map(entry => {
     const p = record(entry)
     if (!validId(p.id) || !text(p.name) || !text(p.description) || !text(p.region) || typeof p.enabled !== 'boolean') throw new Error('Invalid provider fields')
+    if (p.requiresInvite !== undefined && typeof p.requiresInvite !== 'boolean') throw new Error('requiresInvite must be a boolean')
     const parsedUrl = new URL(httpsUrl(p.serviceUrl))
     const serviceUrl = parsedUrl.pathname === '/' && !parsedUrl.search && !parsedUrl.hash ? parsedUrl.origin : parsedUrl.href
     if (ids.has(p.id) || services.has(serviceUrl)) throw new Error('Duplicate provider')
     ids.add(p.id); services.add(serviceUrl)
     if (p.logo !== undefined) validateLogo(p.logo)
-    return { id: p.id, name: p.name, description: p.description, region: p.region.trim(), enabled: p.enabled, serviceUrl, ...(p.logo ? { logo: p.logo as string } : {}) }
+    return { id: p.id, name: p.name, description: p.description, region: p.region.trim(), enabled: p.enabled, serviceUrl, ...(p.logo ? { logo: p.logo as string } : {}), ...(p.requiresInvite !== undefined ? { requiresInvite: p.requiresInvite as boolean } : {}) }
   })
 }
 export interface AppConfig {

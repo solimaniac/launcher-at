@@ -59,6 +59,7 @@
     "region": "Canada",
     "logo": "/providers/northsky.svg",
     "enabled": true,
+    "requiresInvite": true,
     "tracking": {
       "enabled": true,
       "pdsHostMatchers": [{ "type": "exact", "value": "northsky.social" }]

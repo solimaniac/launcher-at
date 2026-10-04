@@ -95,6 +95,12 @@ export async function launch(root: HTMLElement, oauth: SignupOAuth, callback = f
       joins.className = 'joins'
       joins.dataset.provider = provider.id
       card.append(element('strong', provider.name), region, joins, element('span', t(provider.description)))
+      if (provider.requiresInvite) {
+        const invite = element('span', t('providers.inviteRequired'))
+        invite.className = 'invite-required'
+        card.append(invite)
+        card.setAttribute('aria-label', `${t('providers.choose', { name: provider.name })}. ${t('providers.inviteRequired')}`)
+      }
       card.onclick = async () => {
         for (const button of root.querySelectorAll('button')) button.disabled = true
         root.setAttribute('aria-busy', 'true')

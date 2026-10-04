@@ -107,6 +107,8 @@ Edit **`config/providers.json`**, the single provider source. Add an object:
 
 Add the description at `providers.newProvider` in `locales/en.json`. `region` is required plain text naming the country/region where the provider hosts accounts (e.g. `"United States"`, `"Europe"`); the provider card shows it in a pill preceded by an emoji flag. The picker maps United States, Europe, Canada, and Japan to 🇺🇸, 🇪🇺, 🇨🇦, and 🇯🇵; other regions use 🌐 until added to `regionFlags` in `src/launcher.ts`. Emoji appearance depends on platform flag support. If using `logo`, put the asset at `public/providers/new-provider.svg`; otherwise omit it. Logos are optional, same-site absolute paths, and decorative inside the named provider button. IDs, URLs, required fields, and duplicates are validated. Disabled providers stay in the public registry but do not appear in the picker.
 
+Set optional `requiresInvite: true` for providers that require an invite code before signup. The picker displays an “Invite code required” pill and includes the requirement in the button's accessible name; selection still opens the provider's signup flow. Omit the field or set it to `false` to show no invite pill. Northsky is currently marked as invite-only.
+
 The picker shows all enabled providers in one responsive grid, in configuration order, with equal visibility. Region filtering and sorting controls are not currently included.
 
 ### Provider logo assets
@@ -180,6 +182,7 @@ Add `locales/fr.json` with the same keys, register it in `src/i18n.ts` under `re
 | `region` | string | Country/region where the provider hosts accounts |
 | `logo` | string, optional | Same-site path; resolve against the registry origin |
 | `enabled` | boolean | Whether the launcher offers this provider |
+| `requiresInvite` | boolean, optional | Whether signup requires an invite code beforehand; omitted means no invite requirement |
 
 Consumers should honor `enabled`. Changes incompatible with this schema require a new `/v2/` resource. The public file is generated; edit only the contributor source. For browser consumers on other origins, configure your static host to send `Access-Control-Allow-Origin: *` on this JSON resource. This is a static-host header, not an API server.
 
