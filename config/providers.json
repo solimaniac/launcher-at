@@ -46,6 +46,7 @@
     "region": "Europe",
     "logo": "/providers/w-social.svg",
     "enabled": true,
+    "requiresInvite": true,
     "tracking": {
       "enabled": true,
       "pdsHostMatchers": [{ "type": "exact", "value": "pds.wsocial.network" }]
