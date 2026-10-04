@@ -16,7 +16,8 @@ if (activity && sky && selectApp(new URLSearchParams(location.search).get('app')
   const launches = createLaunchLayer(sky)
   const logos: Record<string, string | undefined> = Object.fromEntries(parseProviders(providerSource).map(provider => [provider.id, provider.logo]))
   startJoinFeed(() => fetchRecentJoins(activity), join => {
-    launches.launch({ text: t('activity.joined', { handle: join.handle, provider: join.providerName }), logo: logos[join.providerId] })
+    const handle = join.handle.split('.', 1)[0]
+    launches.launch({ text: t('activity.joined', { handle, provider: join.providerName }), logo: logos[join.providerId] })
   })
 }
 await launch(document.querySelector<HTMLElement>('#app')!, oauth, callback, activity ? fetchJoinCounts(activity) : undefined)

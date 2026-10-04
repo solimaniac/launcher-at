@@ -24,7 +24,7 @@ const MAX_FLIGHTS = 7
 // Pixels between the rocket and the end of its trailing label.
 const LABEL_GAP = 14
 const LOGO_SIZE = 12
-const LOGO_GAP = 4
+const LOGO_GAP = 16
 // Rocket chevron pointing along +x, centred on the trajectory head.
 const ROCKET = 'M5 0L-4 -3.5L-2 0L-4 3.5Z'
 
@@ -48,32 +48,23 @@ function createFlight(trajectory: Trajectory, label: LaunchLabel, still: boolean
   const id = `launch-trail-${++flightIds}`
   const group = node('g', { class: 'launch' })
   const trail = node('path', { id, class: 'launch-trail', d: trajectory.path, 'stroke-dasharray': `${trajectory.length}` })
-  // Text and logo share one coordinate system and transform. Keep the logo after
-  // the complete sentence rather than independently positioning it on a curve.
-  const labelGroup = node('g')
-  const text = node('text', { class: 'launch-label', y: '-7', 'text-anchor': 'end' })
-  text.textContent = label.text
+  const text = node('text', { class: 'launch-label', dy: '-7' })
+  const textPath = node('textPath', { href: `#${id}`, 'text-anchor': 'end' })
+  textPath.textContent = label.text
+  text.append(textPath)
   const logo = label.logo ? node('image', {
     class: 'launch-logo', href: label.logo,
-    x: `${-LOGO_SIZE}`, y: `${-7 - LOGO_SIZE}`,
+    x: `${-LOGO_SIZE / 2}`, y: `${-7 - LOGO_SIZE}`,
     width: `${LOGO_SIZE}`, height: `${LOGO_SIZE}`, preserveAspectRatio: 'xMidYMid meet',
   }) : undefined
   const rocket = node('path', { class: 'launch-rocket', d: ROCKET })
-  labelGroup.append(text)
-  if (logo) labelGroup.append(logo)
-  group.append(trail, labelGroup, rocket)
-  let labelMeasured = false
+  group.append(trail, text, rocket)
+  if (logo) group.append(logo)
   let start: number | undefined
   return {
     group,
     update(now) {
       start ??= now
-      if (!labelMeasured) {
-        // Account for actual glyph bounds, including italic overhang, once mounted.
-        const bounds = text.getBBox()
-        text.setAttribute('x', `${-(logo ? LOGO_SIZE + LOGO_GAP : 0) - bounds.x - bounds.width}`)
-        labelMeasured = true
-      }
       const elapsed = now - start
       // Accelerating ascent: a slow lift-off that speeds up as it pitches over.
       const progress = still ? STILL_AT : clamp(elapsed / FLIGHT_MS) ** 1.8
@@ -83,8 +74,14 @@ function createFlight(trajectory: Trajectory, label: LaunchLabel, still: boolean
       const head = trajectory.length * progress
       const pose = trajectory.poseAt(head)
       trail.setAttribute('stroke-dashoffset', `${trajectory.length - head}`)
-      const labelPose = trajectory.poseAt(head - LABEL_GAP)
-      labelGroup.setAttribute('transform', `translate(${labelPose.x} ${labelPose.y}) rotate(${labelPose.angle})`)
+      const labelEnd = head - LABEL_GAP
+      textPath.setAttribute('startOffset', `${labelEnd - (logo ? LOGO_SIZE + LOGO_GAP : 0)}`)
+      if (logo) {
+        const distance = labelEnd - LOGO_SIZE / 2
+        const logoPose = trajectory.poseAt(distance)
+        logo.setAttribute('transform', `translate(${logoPose.x} ${logoPose.y}) rotate(${logoPose.angle})`)
+        logo.setAttribute('visibility', distance >= LOGO_SIZE / 2 ? 'visible' : 'hidden')
+      }
       rocket.setAttribute('transform', `translate(${pose.x} ${pose.y}) rotate(${pose.angle})`)
       group.setAttribute('opacity', `${opacity}`)
       return elapsed < (still ? STILL_MS : FLIGHT_MS + FADE_MS)
