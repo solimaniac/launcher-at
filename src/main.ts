@@ -16,9 +16,7 @@ if (activity && sky && selectApp(new URLSearchParams(location.search).get('app')
   const launches = createLaunchLayer(sky)
   const logos: Record<string, string | undefined> = Object.fromEntries(parseProviders(providerSource).map(provider => [provider.id, provider.logo]))
   startJoinFeed(() => fetchRecentJoins(activity), join => {
-    // Split the translated sentence at its provider placeholder, not at user-supplied text.
-    const [beforeLogo, suffix] = t('activity.joined', { handle: join.handle, provider: '\uFFFC' }).split('\uFFFC')
-    launches.launch({ beforeLogo, afterLogo: join.providerName + suffix, logo: logos[join.providerId] })
+    launches.launch({ text: t('activity.joined', { handle: join.handle, provider: join.providerName }), logo: logos[join.providerId] })
   })
 }
 await launch(document.querySelector<HTMLElement>('#app')!, oauth, callback, activity ? fetchJoinCounts(activity) : undefined)
