@@ -103,8 +103,6 @@ Rebuild whenever the origin or app branding changes.
 
 Provider and app logos belong to their owners. The MIT license doesn't cover them.
 
-Tophhie Social uses the [Tophhie Cloud dot mark](https://www.tophhie.cloud/favicon.svg) from its official website.
-
 ## Project layout
 
 ```
