@@ -12,12 +12,18 @@ export function connectRedis(url: string, log: Logger) {
 
 export const DAY_MS = 86400000
 export const RECENT_LIMIT = 50
+/** Sorted set of the newest verified joins, scored by observed time. */
 export const RECENT_KEY = 'atmosphere:joins:recent'
+/** When tracking first started; reported as `observedSince`. */
 export const STARTED_KEY = 'atmosphere:tracking:startedAt'
+/** Per-UTC-day hash of provider ID → join count. */
 export const countKey = (time: number) => 'atmosphere:joins:count:' + new Date(time).toISOString().slice(0, 10)
 
 // One atomic write: replays cannot increment twice, including an ambiguous
 // network failure after Redis committed but before the client received a reply.
+//   KEYS: [1] replay marker for this event seq, [2] daily count hash, [3] recent-joins sorted set
+//   ARGV: [1] provider ID, [2] recent-join JSON ('' when the handle is unverified), [3] score, [4] recent limit
+// Count hashes expire after 32 days; replay markers after one day.
 const recordScript = `
 if redis.call('EXISTS', KEYS[1]) == 1 then return 0 end
 redis.call('HINCRBY', KEYS[2], ARGV[1], 1)

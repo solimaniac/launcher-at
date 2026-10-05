@@ -11,6 +11,8 @@ import { once } from 'node:events'
 import { pino } from 'pino'
 import type { Socket } from 'node:net'
 
+const SHUTDOWN_DEADLINE_MS = 10_000
+
 const config = loadEnv()
 const log = pino({ level: config.logLevel })
 const redis = connectRedis(config.redisUrl, log)
@@ -20,18 +22,49 @@ const providers = loadProviders()
 const abort = new AbortController()
 let consumer: Promise<void> | undefined
 let server: ServerType | undefined
+let stopping = false
+
+/** Starts the HTTP server with tight socket limits; see "Abuse protection" in the README. */
+async function startHttpServer() {
+  const httpServer = serve({
+    fetch: app.fetch,
+    port: config.port,
+    hostname: '0.0.0.0',
+    serverOptions: {
+      maxHeaderSize: 8192,
+      headersTimeout: 10_000,
+      requestTimeout: 10_000,
+      keepAliveTimeout: 5000,
+      connectionsCheckingInterval: 1000,
+    },
+  })
+  server = httpServer
+  httpServer.maxConnections = 256
+  httpServer.setTimeout(10_000)
+  httpServer.on('timeout', (socket: Socket) => socket.destroy())
+  if ('maxRequestsPerSocket' in httpServer) httpServer.maxRequestsPerSocket = 100
+  // Request bodies are never accepted, so refuse `Expect: 100-continue` uploads outright.
+  httpServer.on('checkContinue', (_request, response) => {
+    response.writeHead(417, { Connection: 'close' })
+    response.end()
+  })
+  await once(httpServer, 'listening')
+  log.info({ port: config.port }, 'HTTP server listening')
+}
+
 async function closeServer() {
   if (!server) return
   const closed = Promise.withResolvers<void>()
   server.close(err => (err ? closed.reject(err) : closed.resolve()))
   await closed.promise
 }
-let stopping = false
+
+/** Stops consuming, drains pending writes, then closes HTTP and Redis, in that order. */
 async function shutdown(signal: string) {
   if (stopping) return
   stopping = true
   log.info({ signal }, 'Graceful shutdown')
-  const deadline = setTimeout(() => process.exit(1), 10000).unref()
+  const deadline = setTimeout(() => process.exit(1), SHUTDOWN_DEADLINE_MS).unref()
   try {
     abort.abort()
     await consumer
@@ -45,35 +78,17 @@ async function shutdown(signal: string) {
     clearTimeout(deadline)
   }
 }
+
 process.once('SIGINT', () => void shutdown('SIGINT'))
 process.once('SIGTERM', () => void shutdown('SIGTERM'))
+
 try {
   await redis.connect()
   await storage.initialize()
-  await storage.recent(providers.map(p => p.id))
+  // Drops recent joins for providers that are no longer tracked.
+  await storage.recent(providers.map(provider => provider.id))
   activityRoutes(app, storage, providers, config.allowedOrigins)
-  server = serve({
-    fetch: app.fetch,
-    port: config.port,
-    hostname: '0.0.0.0',
-    serverOptions: {
-      maxHeaderSize: 8192,
-      headersTimeout: 10000,
-      requestTimeout: 10000,
-      keepAliveTimeout: 5000,
-      connectionsCheckingInterval: 1000,
-    },
-  })
-  server.maxConnections = 256
-  server.setTimeout(10000)
-  server.on('timeout', (socket: Socket) => socket.destroy())
-  if ('maxRequestsPerSocket' in server) server.maxRequestsPerSocket = 100
-  server.on('checkContinue', (_request, response) => {
-    response.writeHead(417, { Connection: 'close' })
-    response.end()
-  })
-  await once(server, 'listening')
-  log.info({ port: config.port }, 'HTTP server listening')
+  await startHttpServer()
   consumer = consumeAccounts({
     url: config.jetstreamUrl,
     apiKey: config.jetstreamApiKey,

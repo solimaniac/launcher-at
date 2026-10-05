@@ -11,32 +11,44 @@ export interface ProtectionOptions {
   maxConcurrentRequests?: number
 }
 
+const MINUTE_MS = 60_000
+/** Client keys tracked per budget and minute; new clients are refused once full. */
+const MAX_TRACKED_CLIENTS = 4096
+const MAX_URL_LENGTH = 2048
+const ALLOWED_METHODS = ['GET', 'HEAD', 'OPTIONS']
+
 // One process, one-minute fixed windows. Never evict a live client's quota:
 // reject new identities when the table fills, rather than allowing churn bypass.
 class RequestBudget {
+  private readonly perClientLimit: number
+  private readonly globalLimit: number
   private window = -1
   private total = 0
   private clients = new Map<string, number>()
-  constructor(privateLimit: number, globalLimit: number) {
-    this.privateLimit = privateLimit
+  constructor(perClientLimit: number, globalLimit: number) {
+    this.perClientLimit = perClientLimit
     this.globalLimit = globalLimit
   }
-  private privateLimit: number
-  private globalLimit: number
   take(client: string, now: number): boolean {
-    const window = Math.floor(now / 60000)
+    const window = Math.floor(now / MINUTE_MS)
     if (window !== this.window) {
       this.window = window
       this.total = 0
       this.clients.clear()
     }
+    // Every request counts toward the global limit, including ones the per-client limit rejects.
     if (this.total >= this.globalLimit) return false
     this.total++
     const count = this.clients.get(client) ?? 0
-    if (count >= this.privateLimit || (!count && this.clients.size >= 4096)) return false
+    if (count >= this.perClientLimit || (!count && this.clients.size >= MAX_TRACKED_CLIENTS)) return false
     this.clients.set(client, count + 1)
     return true
   }
+}
+
+function hasRequestBody(c: Context) {
+  const length = c.req.header('content-length')
+  return Boolean(c.req.header('transfer-encoding') || (length && length !== '0'))
 }
 
 function normalizeIp(address: string): string | undefined {
@@ -63,6 +75,10 @@ export function clientKey(c: Context, trustRailwayProxy: boolean): string {
   return peer ? (normalizeIp(peer) ?? 'unknown-peer') : 'unknown-peer'
 }
 
+/**
+ * Admission control that runs before every route: rate limits, method/URL/body checks and a
+ * concurrency cap. Rejected requests never reach Redis.
+ */
 export function requestProtection(options: ProtectionOptions = {}, now = Date.now): MiddlewareHandler {
   const api = new RequestBudget(options.requestsPerMinute ?? 120, options.globalRequestsPerMinute ?? 1200)
   // Health has a separate bounded allowance so API saturation does not consume
@@ -73,13 +89,11 @@ export function requestProtection(options: ProtectionOptions = {}, now = Date.no
   let active = 0
   return async (c, next) => {
     const timestamp = now()
-    const retryAfter = String(Math.max(1, Math.ceil((60000 - (timestamp % 60000)) / 1000)))
+    const secondsUntilNextWindow = Math.ceil((MINUTE_MS - (timestamp % MINUTE_MS)) / 1000)
     const reject = (error: string, status: 400 | 405 | 414 | 429 | 503) => {
       c.header('Cache-Control', 'no-store')
-      if (
-        c.req.header('transfer-encoding') ||
-        (c.req.header('content-length') && c.req.header('content-length') !== '0')
-      ) {
+      // Close upload connections instead of reading a body we will never use.
+      if (hasRequestBody(c)) {
         c.header('Connection', 'close')
         c.env?.outgoing?.once('finish', () => c.env.incoming.destroy())
       }
@@ -95,22 +109,23 @@ export function requestProtection(options: ProtectionOptions = {}, now = Date.no
       }
       return c.json({ error }, status)
     }
+
     const budget = c.req.path === '/health' ? health : api
     if (!budget.take(clientKey(c, options.trustRailwayProxy ?? false), timestamp)) {
-      c.header('Retry-After', retryAfter)
+      c.header('Retry-After', String(Math.max(1, secondsUntilNextWindow)))
       return reject('Too many requests', 429)
     }
-    if (c.req.url.length > 2048) return reject('Request URL too long', 414)
-    if (!['GET', 'HEAD', 'OPTIONS'].includes(c.req.method)) {
-      c.header('Allow', 'GET, HEAD, OPTIONS')
+    if (c.req.url.length > MAX_URL_LENGTH) return reject('Request URL too long', 414)
+    if (!ALLOWED_METHODS.includes(c.req.method)) {
+      c.header('Allow', ALLOWED_METHODS.join(', '))
       return reject('Method not allowed', 405)
     }
-    if (c.req.header('transfer-encoding') || (c.req.header('content-length') && c.req.header('content-length') !== '0'))
-      return reject('Request bodies are not accepted', 400)
+    if (hasRequestBody(c)) return reject('Request bodies are not accepted', 400)
     if (active >= maxConcurrent) {
       c.header('Retry-After', '1')
       return reject('Server busy', 503)
     }
+
     active++
     try {
       await next()
