@@ -37,7 +37,8 @@ test('missing or unknown authenticated context cannot inherit a query-string red
     history.replaceState(null, '', '/callback.html?app=example-app&redirect=https://evil.example')
     const page = root()
     dispose = await launch(page, result(id), true)
-    expect(page.querySelector('a')).toBeNull()
+    expect(page.querySelector('a.button')).toBeNull()
+    expect([...page.querySelectorAll<HTMLAnchorElement>('a')].every(link => !link.href.includes('evil.example') && !link.href.includes('example.com'))).toBe(true)
     expect(page.querySelector('h1')?.textContent).toBe(t('complete.title'))
     dispose()
   }
@@ -183,4 +184,17 @@ test('join-count sort is omitted for failed, empty, or unrelated counts but incl
   page.querySelector<HTMLButtonElement>('button')!.click()
   expect(page.querySelector<HTMLSelectElement>('#provider-sort')!.value).toBe('joins')
   expect(visibleProviders(page)[0]).toBe('spark')
+})
+
+test('discovery is available only after generic signup, never for custom app callbacks', async () => {
+  vi.useFakeTimers()
+  for (const id of [null, 'default', 'example-app', 'example-app-dark']) {
+    const page = root()
+    dispose = await launch(page, result(id), true)
+    expect(!!page.querySelector('.app-carousel')).toBe(id === null || id === 'default')
+    dispose()
+  }
+  const page = root()
+  dispose = await launch(page, result(null))
+  expect(page.querySelector('.app-carousel')).toBeNull()
 })

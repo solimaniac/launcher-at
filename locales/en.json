@@ -65,6 +65,8 @@
   "complete": {
     "title": "Your Atmosphere account is ready.",
     "generic": "You can now use your account with compatible Atmosphere applications.",
+    "explore": "Find your next app",
+    "exploreHint": "One account, a whole host of applications.",
     "app": "You’re ready to return to {{appName}}. That app will ask you to sign in separately.",
     "return": "Return to {{appName}}",
     "countdown_one": "Returning to {{appName}} in {{count}} second.",

@@ -156,7 +156,9 @@ Use the PDS **or provider entryway** URL accepted by ATProto OAuth, not an arbit
 
 `config/atmosphere-apps.json` contains the application directory data, separate from OAuth providers and launcher app/theme configurations. Each entry has `name`, `url` (the application's HTTPS homepage, without tracking parameters), and `logo` (a root-relative path under `/atmosphere-apps/`). Logo files live in `public/atmosphere-apps/` and are served unchanged by Vite. Apps without an available logo are omitted rather than given placeholder assets.
 
-This is data for a future application list; it does not add a launcher screen or a public JSON endpoint. To add an application, save its official logo in `public/atmosphere-apps/` and add the matching entry to the catalog. These assets identify their respective applications; the launcher's MIT license does not grant rights to their trademarks.
+After successful signup, the default launcher's OAuth callback shows every catalog logo in a horizontally scrollable discovery carousel. It moves at approximately 18 CSS pixels per second and wraps back to the start at the end instead of reversing direction. Hovering or focusing the strip stops movement, and touch or wheel interaction pauses it for manual browsing. Reduced-motion users receive a static scrollable strip. Each logo links directly to its configured homepage in the same tab. Custom app callbacks never show the carousel and retain their existing return flow. No public JSON endpoint is added.
+
+To add an application, save its official logo in `public/atmosphere-apps/` and add the matching entry to the catalog. These assets identify their respective applications; the launcher's MIT license does not grant rights to their trademarks. The carousel's restrained layout and motion follow the relevant guidance from [Taste Skill](https://github.com/Leonxlnx/taste-skill).
 
 ## Add an app/theme
 

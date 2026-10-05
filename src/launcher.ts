@@ -1,5 +1,6 @@
 import { t } from './i18n'
 import providerSource from '../config/providers.json'
+import atmosphereApps from '../config/atmosphere-apps.json'
 import { parseProviders, httpsUrl, type Provider } from './config'
 import { selectApp, applyTheme } from './apps'
 import { SignupError, type SignupOAuth } from './signup'
@@ -22,6 +23,7 @@ export async function launch(root: HTMLElement, oauth: SignupOAuth, callback = f
   let app = selection.app
   let providers: Provider[] | undefined
   let countdown: number | undefined
+  let stopCarousel: (() => void) | undefined
   applyTheme(app)
   let joinCounts: JoinCounts | undefined
   let sortBy = 'joins'
@@ -45,6 +47,8 @@ export async function launch(root: HTMLElement, oauth: SignupOAuth, callback = f
     document.title = app.id === 'default' ? t('site.title') : t('embed.appTitle', { appName: app.appName })
     refreshProviders = undefined
     stopCountdown()
+    stopCarousel?.()
+    stopCarousel = undefined
     root.removeAttribute('aria-busy')
     const heading = element('h1', title)
     heading.tabIndex = -1
@@ -271,11 +275,69 @@ export async function launch(root: HTMLElement, oauth: SignupOAuth, callback = f
     startOver.onclick = restart
     root.append(button, startOver)
   }
+  function appCarousel() {
+    const section = element('section')
+    section.className = 'app-carousel'
+    section.setAttribute('aria-labelledby', 'app-carousel-title')
+    const title = element('h2', t('complete.explore'))
+    title.id = 'app-carousel-title'
+    const viewport = element('div')
+    viewport.className = 'app-carousel-viewport'
+    const list = element('ul')
+    for (const entry of atmosphereApps) {
+      const item = element('li')
+      const link = element('a')
+      link.href = entry.url
+      link.title = entry.name
+      const logo = element('img')
+      logo.src = entry.logo
+      logo.alt = entry.name
+      logo.width = logo.height = 48
+      logo.draggable = false
+      link.append(logo)
+      item.append(link)
+      list.append(item)
+    }
+    viewport.append(list)
+    section.append(title, element('p', t('complete.exploreHint')), viewport)
+    const motion = matchMedia('(prefers-reduced-motion: reduce)')
+    let paused = false, hovered = false, frame = 0, previous = 0, position = 0
+    function tick(now: number) {
+      const end = viewport.scrollWidth - viewport.clientWidth
+      position += Math.min(now - previous, 50) * .018
+      previous = now
+      if (position >= end) position = 0
+      viewport.scrollLeft = position
+      frame = requestAnimationFrame(tick)
+    }
+    function update() {
+      cancelAnimationFrame(frame)
+      if (paused || hovered || motion.matches || document.hidden || section.contains(document.activeElement)) return
+      position = viewport.scrollLeft
+      previous = performance.now()
+      frame = requestAnimationFrame(tick)
+    }
+    viewport.onpointerenter = () => { hovered = true; update() }
+    viewport.onpointerleave = () => { hovered = false; update() }
+    viewport.onpointerdown = viewport.onwheel = () => { paused = true; update() }
+    section.addEventListener('focusin', update)
+    section.addEventListener('focusout', () => queueMicrotask(update))
+    motion.addEventListener('change', update)
+    document.addEventListener('visibilitychange', update)
+    root.append(section)
+    update()
+    stopCarousel = () => {
+      cancelAnimationFrame(frame)
+      motion.removeEventListener('change', update)
+      document.removeEventListener('visibilitychange', update)
+    }
+  }
   function complete(cleanupFailed: boolean) {
     screen(t('complete.title'), element('p', app.id === 'default' ? t('complete.generic') : t('complete.app', { appName: app.appName })))
     root.dataset.view = 'complete'
     unknownAppNotice()
     if (cleanupFailed) root.append(element('p', t('errors.cleanup')))
+    if (app.id === 'default') appCarousel()
     if (!app.redirectUrl) return
     let destination: string
     try { destination = httpsUrl(app.redirectUrl) }
@@ -322,6 +384,7 @@ export async function launch(root: HTMLElement, oauth: SignupOAuth, callback = f
   } else intro()
   return () => {
     stopCountdown()
+    stopCarousel?.()
     window.removeEventListener('pagehide', stopCountdown)
   }
 }
