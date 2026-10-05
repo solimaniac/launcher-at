@@ -22,11 +22,12 @@ const STILL_AT = 0.7
 // Seven slots let 18-second flights finish fading at the feed's 3-second cadence.
 const MAX_FLIGHTS = 7
 // Pixels between the rocket and the end of its trailing label.
-const LABEL_GAP = 14
+const LABEL_GAP = 22
 const LOGO_SIZE = 12
 const LOGO_GAP = 4
-// Rocket chevron pointing along +x, centred on the trajectory head.
-const ROCKET = 'M5 0L-4 -3.5L-2 0L-4 3.5Z'
+// Rounded spacecraft pointing along +x, centred on the trajectory head.
+const ROCKET_BODY = 'M-7 -4Q4 -6 11 0Q4 6 -7 4Z'
+const ROCKET_FINS = 'M-5 -3Q-10 -9 -11 -8L-9 -1M-5 3Q-10 9 -11 8L-9 1'
 
 const clamp = (value: number) => Math.min(Math.max(value, 0), 1)
 
@@ -68,7 +69,12 @@ function createFlight(trajectory: Trajectory, label: LaunchLabel, still: boolean
         preserveAspectRatio: 'xMidYMid meet',
       })
     : undefined
-  const rocket = node('path', { class: 'launch-rocket', d: ROCKET })
+  const rocket = node('g', { class: 'launch-rocket' })
+  rocket.append(
+    node('path', { d: ROCKET_FINS }),
+    node('path', { d: ROCKET_BODY }),
+    node('circle', { class: 'launch-window', cx: '2', cy: '0', r: '2.5' }),
+  )
   group.append(trail, text, rocket)
   if (logo) group.append(logo)
   let start: number | undefined

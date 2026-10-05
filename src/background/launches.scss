@@ -21,6 +21,12 @@
 }
 .launch-rocket {
   fill: var(--color-primary);
+  stroke: var(--color-primary);
+  stroke-width: 1;
+  stroke-linejoin: round;
+}
+.launch-window {
+  fill: var(--color-background);
 }
 .launch-label {
   fill: var(--color-text);
