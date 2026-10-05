@@ -36,5 +36,12 @@
     "typescript-eslint": "^8.71.0",
     "vite": "^8.3.2",
     "vitest": "^5.0.3"
+  },
+  "prettier": {
+    "semi": false,
+    "singleQuote": true,
+    "printWidth": 120,
+    "arrowParens": "avoid",
+    "trailingComma": "all"
   }
 }

@@ -138,7 +138,7 @@ Then:
 
 ## Code style
 
-- ESLint (`eslint.config.js`) and Prettier (`.prettierrc.json`: no semicolons, single quotes, 120 columns) are enforced. Run `npm run format` rather than formatting by hand.
+- ESLint (`eslint.config.js`) and Prettier (`"prettier"` in `package.json`: no semicolons, single quotes, 120 columns) are enforced. Run `npm run format` rather than formatting by hand.
 - Use type-only imports (`import type` or inline `type`); the linter enforces this.
 - Keep it boring: plain functions and closures, no framework, no new runtime dependencies without a strong reason. The frontend ships three dependencies; keep it lean.
 - Name your magic numbers (`REDIRECT_SECONDS`, `MAX_URL_LENGTH`, …). Comments explain _why_, not _what_.
