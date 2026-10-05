@@ -2,6 +2,7 @@
   "id": "example-app",
   "appName": "Bluesky",
   "redirectUrl": "https://bsky.app/",
+  "logo_url": "https://bsky.social/about/brand-assets/butterfly/bluesky_media_kit_logo_transparent_1.svg",
   "theme": {
     "primaryColor": "#006aff",
     "secondaryColor": "#eff2f6",

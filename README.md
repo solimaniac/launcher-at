@@ -52,6 +52,7 @@ Good to know:
 - Pick a `textColor` with at least 4.5:1 contrast against both `backgroundColor` and `secondaryColor`.
 - Unknown `?app=` IDs fall back to `apps/default`, which can't redirect.
 - See [`apps/example-app`](apps/example-app/config.json) and [`apps/example-app-dark`](apps/example-app-dark/config.json) for Bluesky light and dark examples. Both redirect to `https://bsky.app/`; colours come from [Bluesky's ALF palette](https://www.npmjs.com/package/@bsky.app/alf) (`primary_500` in light mode, `primary_600` in dark mode, plus `bg_contrast_50`, `bg` and `text`). The dark example uses the black-background dark theme, not the separate dim theme.
+- The examples use official [Bluesky butterfly SVGs](https://bsky.social/about/support/icons): blue in light mode and white in dark mode, loaded via `logo_url`.
 
 ## Run locally
 
