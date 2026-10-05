@@ -13,7 +13,9 @@
     "preview": "vite preview",
     "typecheck": "tsc -b",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "lint": "eslint . && prettier --check .",
+    "format": "prettier --write . && eslint --fix ."
   },
   "dependencies": {
     "@atproto/oauth-client-browser": "^0.5.9",
@@ -21,11 +23,17 @@
     "i18next": "^26.4.2"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@resvg/resvg-js": "^2.6.2",
     "@types/node": "^24.19.1",
+    "eslint": "^10.12.0",
+    "eslint-config-prettier": "^10.1.8",
+    "globals": "^17.13.0",
     "happy-dom": "^20.14.5",
+    "prettier": "^3.9.9",
     "sass": "^1.105.1",
     "typescript": "~6.0.3",
+    "typescript-eslint": "^8.71.0",
     "vite": "^8.3.2",
     "vitest": "^5.0.3"
   }
