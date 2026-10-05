@@ -5,7 +5,10 @@ import {
   type OAuthClientMetadataInput,
 } from '@atproto/oauth-client-browser'
 import { SignupError, recoverAppId, type SignupOAuth } from './signup'
+
 let client: BrowserOAuthClient | undefined
+
+/** Lazily creates the OAuth client from the metadata generated at build time. */
 async function getClient() {
   if (client) return client
   try {
@@ -22,22 +25,34 @@ async function getClient() {
     throw new SignupError('errors.initialization')
   }
 }
+
+/** Maps a callback failure to the locale key shown to the user. */
+function callbackErrorKey(error: unknown) {
+  if (error instanceof OAuthCallbackError && error.params.get('error') === 'access_denied') return 'errors.cancelled'
+  if (error instanceof SignupError) return error.key
+  return 'errors.callback'
+}
+
 export const oauth: SignupOAuth = {
   async start(serviceUrl, appId) {
-    const c = await getClient()
+    const client = await getClient()
     try {
-      await c.signInRedirect(serviceUrl, { scope: 'atproto', prompt: 'create', state: appId })
+      // `prompt: 'create'` asks the provider for its account-creation screen; `state` carries only the app ID.
+      await client.signInRedirect(serviceUrl, { scope: 'atproto', prompt: 'create', state: appId })
     } catch (error) {
       throw new SignupError(error instanceof OAuthResolverError ? 'errors.unsupportedProvider' : 'errors.authorization')
     }
   },
+
   async finish() {
     const params = new URLSearchParams(location.hash.slice(1))
+    // Remove the authorization response from the address bar and history straight away.
     history.replaceState(null, '', location.pathname)
     try {
-      const c = await getClient()
-      const result = await c.initCallback(params)
+      const client = await getClient()
+      const result = await client.initCallback(params)
       const did = result.session.did
+      // The launcher only needs proof of signup, so it discards its own session immediately.
       let cleanupFailed = false
       try {
         await result.session.signOut()
@@ -46,14 +61,8 @@ export const oauth: SignupOAuth = {
       }
       return { did, appId: recoverAppId(result.state), cleanupFailed }
     } catch (error) {
-      throw new SignupError(
-        error instanceof OAuthCallbackError && error.params.get('error') === 'access_denied'
-          ? 'errors.cancelled'
-          : error instanceof SignupError
-            ? error.key
-            : 'errors.callback',
-        error instanceof OAuthCallbackError ? recoverAppId(error.state) : null,
-      )
+      const appId = error instanceof OAuthCallbackError ? recoverAppId(error.state) : null
+      throw new SignupError(callbackErrorKey(error), appId)
     } finally {
       history.replaceState(null, '', location.pathname)
     }
