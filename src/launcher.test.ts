@@ -119,6 +119,7 @@ test('join sorting handles late counts, ties, zero and unavailable counts withou
     'blacksky',
     'bluesky',
     'eurosky',
+    'margin-cafe',
     'northsky',
     'npmx',
     'pckt',
@@ -151,6 +152,7 @@ test('join sorting handles late counts, ties, zero and unavailable counts withou
     'spark',
     'bluesky',
     'blacksky',
+    'margin-cafe',
     'northsky',
     'npmx',
     'pckt',
@@ -172,6 +174,7 @@ test('join sorting handles late counts, ties, zero and unavailable counts withou
     'pckt',
     'npmx',
     'northsky',
+    'margin-cafe',
     'eurosky',
     'bluesky',
     'blacksky',
@@ -187,11 +190,11 @@ test('multiple regions combine with invite requirements and clear filters recove
   expect(page.querySelector<HTMLElement>('.provider-controls')!.hidden).toBe(true)
   region(page, 'Europe')
   region(page, 'Canada')
-  expect(visibleProviders(page)).toEqual(['eurosky', 'northsky', 'npmx', 'tangled', 'w-social'])
+  expect(visibleProviders(page)).toEqual(['eurosky', 'margin-cafe', 'northsky', 'npmx', 'tangled', 'w-social'])
   choose(page, 'provider-invites', 'required')
   expect(visibleProviders(page)).toEqual(['northsky', 'w-social'])
   choose(page, 'provider-invites', 'none')
-  expect(visibleProviders(page)).toEqual(['eurosky', 'npmx', 'tangled'])
+  expect(visibleProviders(page)).toEqual(['eurosky', 'margin-cafe', 'npmx', 'tangled'])
   page.querySelector<HTMLButtonElement>('.provider-toggle')!.click()
   expect(page.querySelector<HTMLElement>('.provider-controls')!.hidden).toBe(true)
   region(page, 'Europe')
@@ -210,6 +213,7 @@ test('multiple regions combine with invite requirements and clear filters recove
     'pckt',
     'npmx',
     'northsky',
+    'margin-cafe',
     'eurosky',
     'bluesky',
     'blacksky',
@@ -239,7 +243,7 @@ test('late counts respect alphabetical selection and failed signup preserves fil
   choose(page, 'provider-invites', 'none')
   resolve({ windowDays: 30, providers: new Map([['eurosky', 42]]) })
   await counts
-  expect(visibleProviders(page)).toEqual(['tangled', 'npmx', 'eurosky'])
+  expect(visibleProviders(page)).toEqual(['tangled', 'npmx', 'margin-cafe', 'eurosky'])
   page.querySelector<HTMLButtonElement>('.provider:not([hidden])')!.click()
   expect(
     [...page.querySelectorAll<HTMLInputElement | HTMLSelectElement>('input, select')].every(
@@ -248,7 +252,7 @@ test('late counts respect alphabetical selection and failed signup preserves fil
   ).toBe(true)
   await vi.waitFor(() => expect(page.dataset.view).toBe('error'))
   page.querySelector<HTMLButtonElement>('button')!.click()
-  expect(visibleProviders(page)).toEqual(['tangled', 'npmx', 'eurosky'])
+  expect(visibleProviders(page)).toEqual(['tangled', 'npmx', 'margin-cafe', 'eurosky'])
   expect(page.querySelector<HTMLSelectElement>('#provider-sort')!.disabled).toBe(false)
 })
 

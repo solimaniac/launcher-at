@@ -73,6 +73,8 @@ Add a `tracking` block to the provider in `config/providers.json`:
 
 Matchers are compared against the PDS hostname in each account's DID document. Use `"type": "suffix"` with a leading dot (e.g. `.host.bsky.network`) to match subdomains. Check real PDS hosts (for example with [`com.atproto.sync.listHosts`](https://relay1.us-east.bsky.network/xrpc/com.atproto.sync.listHosts?limit=1000)) rather than guessing from handles. Restart after changes.
 
+For a single-host PDS, use an exact matcher. Verify its hostname against the DID document of an account returned by that server's `com.atproto.sync.listRepos`; the signup URL and handle domain are not necessarily the PDS host.
+
 ## Things to know
 
 - **"Joined" is approximate.** It counts account-activation events, which also include migrations and reactivations. The 30-day window is today plus the previous 29 UTC days.

@@ -59,7 +59,8 @@
     "npmx": "A community-built npm client that adds social and discovery features using the Atmosphere.",
     "pckt": "An open-web publishing platform focused on blogging, creator ownership, and portable identity.",
     "witchcraft-systems": "An independent technology collective operating infrastructure for the Atmosphere and other open internet services from Japan.",
-    "tophhie-social": "A UK-based technology project focused on privacy, independent hosting, and open social infrastructure."
+    "tophhie-social": "A UK-based technology project focused on privacy, independent hosting, and open social infrastructure.",
+    "margin-cafe": "A social platform for collecting, annotating, and sharing content from around the web."
   },
   "oauth": { "opening": "Opening your provider’s secure signup…", "finishing": "Finishing your account setup…" },
   "activity": { "joined": "{{handle}} joined on {{provider}}" },

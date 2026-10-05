@@ -152,6 +152,22 @@
     "description": "providers.tophhie-social",
     "region": "United Kingdom",
     "logo": "/providers/tophhie-social.svg",
-    "enabled": true
+    "enabled": true,
+    "tracking": {
+      "enabled": true,
+      "pdsHostMatchers": [{ "type": "exact", "value": "pds.tophhie.cloud" }]
+    }
+  },
+  {
+    "id": "margin-cafe",
+    "name": "Margin Cafe",
+    "serviceUrl": "https://margin.cafe",
+    "description": "providers.margin-cafe",
+    "region": "Europe",
+    "enabled": true,
+    "tracking": {
+      "enabled": true,
+      "pdsHostMatchers": [{ "type": "exact", "value": "margin.cafe" }]
+    }
   }
 ]
