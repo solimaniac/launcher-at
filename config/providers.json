@@ -17,7 +17,7 @@
     "name": "Eurosky",
     "serviceUrl": "https://eurosky.social",
     "description": "providers.eurosky",
-    "region": "Europe",
+    "region": "European Union",
     "logo": "/providers/eurosky.png",
     "enabled": true,
     "tracking": {
@@ -43,7 +43,7 @@
     "name": "W Social",
     "serviceUrl": "https://pds.wsocial.network",
     "description": "providers.w-social",
-    "region": "Europe",
+    "region": "European Union",
     "logo": "/providers/w-social.svg",
     "enabled": true,
     "requiresInvite": true,
@@ -84,7 +84,7 @@
     "name": "Tangled",
     "serviceUrl": "https://tngl.sh",
     "description": "providers.tangled",
-    "region": "Europe",
+    "region": "European Union",
     "logo": "/providers/tangled.svg",
     "enabled": true,
     "tracking": {
@@ -110,7 +110,7 @@
     "name": "npmx",
     "serviceUrl": "https://npmx.social",
     "description": "providers.npmx",
-    "region": "Europe",
+    "region": "European Union",
     "logo": "/providers/npmx.svg",
     "enabled": true,
     "tracking": {
@@ -163,7 +163,7 @@
     "name": "Margin",
     "serviceUrl": "https://margin.cafe",
     "description": "providers.margin-cafe",
-    "region": "Europe",
+    "region": "European Union",
     "logo": "/providers/margin.svg",
     "enabled": true,
     "tracking": {
