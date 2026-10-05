@@ -58,7 +58,8 @@
     "spark": "An open-source social networking project focused on customizable, user-controlled feeds.",
     "npmx": "A community-built npm client that adds social and discovery features using the Atmosphere.",
     "pckt": "An open-web publishing platform focused on blogging, creator ownership, and portable identity.",
-    "witchcraft-systems": "An independent technology collective operating infrastructure for the Atmosphere and other open internet services from Japan."
+    "witchcraft-systems": "An independent technology collective operating infrastructure for the Atmosphere and other open internet services from Japan.",
+    "tophhie-social": "A UK-hosted account provider for the Atmosphere, operated by Tophhie Cloud."
   },
   "oauth": { "opening": "Opening your provider’s secure signup…", "finishing": "Finishing your account setup…" },
   "activity": { "joined": "{{handle}} joined on {{provider}}" },

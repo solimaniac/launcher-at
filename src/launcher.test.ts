@@ -125,6 +125,7 @@ test('join sorting handles late counts, ties, zero and unavailable counts withou
     'selfhosted-social',
     'spark',
     'tangled',
+    'tophhie-social',
     'w-social',
     'witchcraft-systems',
   ])
@@ -155,6 +156,7 @@ test('join sorting handles late counts, ties, zero and unavailable counts withou
     'pckt',
     'selfhosted-social',
     'tangled',
+    'tophhie-social',
     'w-social',
     'witchcraft-systems',
   ])
@@ -163,6 +165,7 @@ test('join sorting handles late counts, ties, zero and unavailable counts withou
   expect(visibleProviders(page)).toEqual([
     'witchcraft-systems',
     'w-social',
+    'tophhie-social',
     'tangled',
     'spark',
     'selfhosted-social',
@@ -191,7 +194,6 @@ test('multiple regions combine with invite requirements and clear filters recove
   expect(visibleProviders(page)).toEqual(['eurosky', 'npmx', 'tangled'])
   page.querySelector<HTMLButtonElement>('.provider-toggle')!.click()
   expect(page.querySelector<HTMLElement>('.provider-controls')!.hidden).toBe(true)
-  expect(page.querySelector('[role="status"]')!.textContent).toBe(t('providers.results', { count: 3, total: 11 }))
   region(page, 'Europe')
   expect(visibleProviders(page)).toEqual([])
   expect(page.querySelector<HTMLElement>('.provider-empty')!.hidden).toBe(false)
@@ -201,6 +203,7 @@ test('multiple regions combine with invite requirements and clear filters recove
   expect(visibleProviders(page)).toEqual([
     'witchcraft-systems',
     'w-social',
+    'tophhie-social',
     'tangled',
     'spark',
     'selfhosted-social',

@@ -144,5 +144,14 @@
       "enabled": true,
       "pdsHostMatchers": [{ "type": "exact", "value": "pds.witchcraft.systems" }]
     }
+  },
+  {
+    "id": "tophhie-social",
+    "name": "Tophhie Social",
+    "serviceUrl": "https://pds.tophhie.cloud",
+    "description": "providers.tophhie-social",
+    "region": "United Kingdom",
+    "logo": "/providers/tophhie-social.svg",
+    "enabled": true
   }
 ]

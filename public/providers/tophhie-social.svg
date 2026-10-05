@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 550">
+  <!-- Tophhie Cloud dot mark: 2 columns x 3 rows, varying sizes. -->
+  <g fill="#E8005A">
+    <circle cx="110" cy="80" r="42" />
+    <circle cx="110" cy="275" r="78" />
+    <circle cx="110" cy="470" r="72" />
+  </g>
+  <g fill="#8B0060">
+    <circle cx="300" cy="80" r="78" />
+    <circle cx="300" cy="275" r="72" />
+    <circle cx="300" cy="470" r="38" />
+  </g>
+</svg>
