@@ -15,7 +15,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "eslint . && prettier --check .",
-    "format": "prettier --write . && eslint --fix ."
+    "format": "eslint --fix . && prettier --write ."
   },
   "dependencies": {
     "@atproto/oauth-client-browser": "^0.5.9",

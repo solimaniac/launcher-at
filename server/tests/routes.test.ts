@@ -5,7 +5,9 @@ import { Storage, DAY_MS, countKey } from '../src/storage.ts'
 import { loadProviders } from '../src/providers.ts'
 import { pino } from 'pino'
 const now = Date.parse('2026-10-03T12:00:00Z')
-type RecentResponse = { joins: { handle: string; providerId: string; providerName: string; joinedAt: string }[] }
+interface RecentResponse {
+  joins: { handle: string; providerId: string; providerName: string; joinedAt: string }[]
+}
 
 test('counts include all tracked IDs, zeros, observedSince and exactly 30 UTC buckets', async () => {
   const redis = new RedisMock()
