@@ -342,20 +342,16 @@ export async function launch(root: HTMLElement, oauth: SignupOAuth, callback = f
     let destination: string
     try { destination = httpsUrl(app.redirectUrl) }
     catch { root.append(element('p', t('errors.redirect'))); return }
-    const link = element('a', t('complete.return', { appName: app.appName }))
-    link.className = 'button'
+    const fallback = element('p', `${t('complete.redirectFallback')} `)
+    fallback.className = 'redirect-fallback'
+    const link = element('a', t('complete.redirectHere'))
+    link.setAttribute('aria-label', t('complete.redirectLink', { appName: app.appName }))
     link.href = destination
     link.onclick = stopCountdown
-    const stay = element('button', t('complete.stay'))
-    stay.className = 'secondary'
-    let remaining = 5
+    fallback.append(link, document.createTextNode('.'))
+    let remaining = 8
     const status = element('p', t('complete.countdown', { appName: app.appName, count: remaining }))
-    stay.onclick = () => {
-      stopCountdown()
-      status.textContent = t('complete.paused')
-      stay.remove()
-    }
-    root.append(link, stay, status)
+    root.append(status, fallback)
     countdown = window.setInterval(() => {
       remaining -= 1
       if (remaining === 0) {

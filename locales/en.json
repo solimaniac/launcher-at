@@ -67,12 +67,12 @@
     "generic": "You can now use your account with compatible Atmosphere applications.",
     "explore": "Find your next app",
     "exploreHint": "One account, a whole host of applications.",
-    "app": "You’re ready to return to {{appName}}. That app will ask you to sign in separately.",
-    "return": "Return to {{appName}}",
+    "app": "You’re ready to return to {{appName}}. You will be asked to sign in separately.",
+    "redirectFallback": "Not redirecting? Click",
+    "redirectHere": "here",
+    "redirectLink": "Continue to {{appName}}",
     "countdown_one": "Returning to {{appName}} in {{count}} second.",
-    "countdown_other": "Returning to {{appName}} in {{count}} seconds.",
-    "stay": "Stay here",
-    "paused": "Automatic return paused. You can still use the return button."
+    "countdown_other": "Returning to {{appName}} in {{count}} seconds."
   },
   "errors": {
     "title": "We couldn’t complete this step",

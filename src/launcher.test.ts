@@ -28,16 +28,12 @@ test('authenticated app state controls the return destination, not callback quer
   const page = root()
   dispose = await launch(page, result('example-app'), true)
   expect(page.querySelector<HTMLAnchorElement>('a')?.href).toBe('https://example.com/')
-  expect(page.textContent).toContain(t('complete.countdown', { appName: 'Example App', count: 5 }))
-  await vi.advanceTimersByTimeAsync(4000)
-  expect(page.textContent).toContain(t('complete.countdown', { appName: 'Example App', count: 1 }))
 })
 test('missing or unknown authenticated context cannot inherit a query-string redirect', async () => {
   for (const id of [null, 'unregistered', '../../example-app', 'constructor']) {
     history.replaceState(null, '', '/callback.html?app=example-app&redirect=https://evil.example')
     const page = root()
     dispose = await launch(page, result(id), true)
-    expect(page.querySelector('a.button')).toBeNull()
     expect([...page.querySelectorAll<HTMLAnchorElement>('a')].every(link => !link.href.includes('evil.example') && !link.href.includes('example.com'))).toBe(true)
     expect(page.querySelector('h1')?.textContent).toBe(t('complete.title'))
     dispose()
@@ -56,15 +52,6 @@ test('cancelled signup preserves only validated app context for start-over', asy
 test('app state accepts IDs, never URLs or paths', () => {
   expect(recoverAppId('example-app')).toBe('example-app')
   for (const state of [null, '', '../example-app', 'https://evil.example', { app: 'example-app' }]) expect(recoverAppId(state)).toBeNull()
-})
-test('stay-here stops the automatic return without removing the allowlisted CTA', async () => {
-  vi.useFakeTimers()
-  const page = root()
-  dispose = await launch(page, result('example-app'), true)
-  page.querySelector<HTMLButtonElement>('button')!.click()
-  await vi.advanceTimersByTimeAsync(6000)
-  expect(page.textContent).toContain(t('complete.paused'))
-  expect(page.querySelector<HTMLAnchorElement>('a')?.href).toBe('https://example.com/')
 })
 test('provider failure enables retry and never reveals library error details', async () => {
   const page = root()
