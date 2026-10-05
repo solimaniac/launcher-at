@@ -1,71 +1,102 @@
+/**
+ * Rich link previews: Open Graph/Twitter tags and a 1200×630 PNG per app, generated at build time.
+ * In development and preview the plugin serves the matching document for `/?app=<id>`; in production
+ * `dist/embed-routes.caddy` rewrites those URLs to the prebuilt `dist/embeds/<id>.html`.
+ */
 import { readFileSync } from 'node:fs'
 import { Resvg } from '@resvg/resvg-js'
 import type { Plugin } from 'vite'
-import { lookupApp, type AppConfig } from '../src/config.ts'
+import { DEFAULT_APP_ID, lookupApp, type AppConfig } from '../src/config.ts'
 import en from '../locales/en.json' with { type: 'json' }
 
-function escape(value: string) {
-  return value.replace(
-    /[&<>"']/g,
-    char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]!,
-  )
-}
-export function embedCopy(app: AppConfig) {
-  return {
-    title: app.id === 'default' ? en.site.title : en.embed.appTitle.replace('{{appName}}', app.appName),
-    heading: app.id === 'default' ? en.intro.title : en.embed.appTitle.replace('{{appName}}', app.appName),
-    description: app.id === 'default' ? en.intro.generic : en.intro.app.replace('{{appName}}', app.appName),
-  }
-}
-export function embedTags(app: AppConfig, origin: string) {
-  const copy = embedCopy(app)
-  const url = `${origin}/${app.id === 'default' ? '' : `?app=${app.id}`}`
-  const image = `${origin}/embeds/${app.id}.png`
-  const meta = (key: string, value: string, property = true) =>
-    `<meta ${property ? 'property' : 'name'}="${key}" content="${escape(value)}">`
-  return `<!-- embed:start -->\n<title>${escape(copy.title)}</title>\n${[
-    meta('description', copy.description, false),
-    meta('og:type', 'website'),
-    meta('og:site_name', app.appName),
-    meta('og:title', copy.title),
-    meta('og:description', copy.description),
-    meta('og:url', url),
-    meta('og:image', image),
-    meta('og:image:type', 'image/png'),
-    meta('og:image:width', '1200'),
-    meta('og:image:height', '630'),
-    meta('og:image:alt', `${app.appName}: ${copy.heading}`),
-    meta('twitter:card', 'summary_large_image', false),
-    meta('twitter:title', copy.title, false),
-    meta('twitter:description', copy.description, false),
-    meta('twitter:image', image, false),
-    meta('twitter:image:alt', `${app.appName}: ${copy.heading}`, false),
-  ].join('\n')}\n<!-- embed:end -->`
-}
+const IMAGE_WIDTH = 1200
+const IMAGE_HEIGHT = 630
+/** Maximum width of wrapped heading and description lines. */
+const TEXT_WIDTH = 880
+const LINE_HEIGHT = 1.35
+const LOGO_TIMEOUT_MS = 15_000
 
+/** Bundled fonts; Noto Sans also stands in for `system-ui` and any font missing on the build machine. */
 const font = {
   fontFiles: ['build/fonts/NotoSans.ttf', 'build/fonts/NotoSans-Bold.ttf'],
   defaultFontFamily: 'Noto Sans',
   sansSerifFamily: 'Noto Sans',
 }
-function measure(text: string, size: number, family: string, weight: number) {
+
+const HTML_ESCAPES: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }
+
+function escape(value: string) {
+  return value.replace(/[&<>"']/g, char => HTML_ESCAPES[char]!)
+}
+
+// ---------------------------------------------------------------------------
+// Copy and meta tags
+// ---------------------------------------------------------------------------
+
+export function embedCopy(app: AppConfig) {
+  if (app.id === DEFAULT_APP_ID) {
+    return { title: en.site.title, heading: en.intro.title, description: en.intro.generic }
+  }
+  const appTitle = en.embed.appTitle.replace('{{appName}}', app.appName)
+  return { title: appTitle, heading: appTitle, description: en.intro.app.replace('{{appName}}', app.appName) }
+}
+
+export function embedTags(app: AppConfig, origin: string) {
+  const copy = embedCopy(app)
+  const url = `${origin}/${app.id === DEFAULT_APP_ID ? '' : `?app=${app.id}`}`
+  const image = `${origin}/embeds/${app.id}.png`
+  const imageAlt = `${app.appName}: ${copy.heading}`
+  const property = (key: string, value: string) => `<meta property="${key}" content="${escape(value)}">`
+  const name = (key: string, value: string) => `<meta name="${key}" content="${escape(value)}">`
+  const tags = [
+    name('description', copy.description),
+    property('og:type', 'website'),
+    property('og:site_name', app.appName),
+    property('og:title', copy.title),
+    property('og:description', copy.description),
+    property('og:url', url),
+    property('og:image', image),
+    property('og:image:type', 'image/png'),
+    property('og:image:width', String(IMAGE_WIDTH)),
+    property('og:image:height', String(IMAGE_HEIGHT)),
+    property('og:image:alt', imageAlt),
+    name('twitter:card', 'summary_large_image'),
+    name('twitter:title', copy.title),
+    name('twitter:description', copy.description),
+    name('twitter:image', image),
+    name('twitter:image:alt', imageAlt),
+  ]
+  return `<!-- embed:start -->\n<title>${escape(copy.title)}</title>\n${tags.join('\n')}\n<!-- embed:end -->`
+}
+
+// ---------------------------------------------------------------------------
+// Preview image
+// ---------------------------------------------------------------------------
+
+interface TextStyle {
+  family: string
+  weight: number
+}
+
+function measure(text: string, size: number, { family, weight }: TextStyle) {
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="5000" height="200"><text x="0" y="120" font-family="${escape(family)}" font-size="${size}" font-weight="${weight}">${escape(text)}</text></svg>`
   return new Resvg(svg, { font }).getBBox()?.width ?? 0
 }
-function wrap(text: string, size: number, family: string, weight: number, width: number) {
+
+/** Word-wraps `text` to `TEXT_WIDTH`, breaking inside words that are too long on their own. */
+function wrap(text: string, size: number, style: TextStyle) {
   const lines: string[] = []
   let line = ''
-  // Break even unspaced names rather than letting branding escape the image.
   for (const word of text.split(/\s+/)) {
     const candidate = line ? `${line} ${word}` : word
-    if (measure(candidate, size, family, weight) <= width) {
+    if (measure(candidate, size, style) <= TEXT_WIDTH) {
       line = candidate
       continue
     }
     if (line) lines.push(line)
     line = ''
     for (const char of word) {
-      if (line && measure(line + char, size, family, weight) > width) {
+      if (line && measure(line + char, size, style) > TEXT_WIDTH) {
         lines.push(line)
         line = ''
       }
@@ -75,59 +106,100 @@ function wrap(text: string, size: number, family: string, weight: number, width:
   if (line) lines.push(line)
   return lines
 }
+
+/** Shrinks the font size in `step`s until `fits` accepts the wrapped lines or `minSize` is reached. */
+function fitText(
+  text: string,
+  style: TextStyle,
+  size: number,
+  minSize: number,
+  step: number,
+  fits: (lines: string[], size: number) => boolean,
+) {
+  let lines = wrap(text, size, style)
+  while (!fits(lines, size) && size > minSize) {
+    size -= step
+    lines = wrap(text, size, style)
+  }
+  return { lines, size }
+}
+
+/** The app's `logo_url`, or the launcher logo, with the MIME type needed for a data URL. */
+async function loadLogo(app: AppConfig) {
+  let logo: Buffer
+  if (app.logo_url) {
+    const response = await fetch(app.logo_url, { signal: AbortSignal.timeout(LOGO_TIMEOUT_MS) })
+    if (!response.ok) throw new Error(`Could not load embed logo for ${app.id}: HTTP ${response.status}`)
+    logo = Buffer.from(await response.arrayBuffer())
+  } else {
+    logo = readFileSync('public/logo.png')
+  }
+  const start = logo.subarray(0, 100).toString()
+  const type = start.includes('<svg') || start.includes('<?xml') ? 'image/svg+xml' : 'image/png'
+  return { logo, type }
+}
+
+function textLines(lines: string[], y: number, fontSize: number, weight: number) {
+  return lines
+    .map(
+      (line, index) =>
+        `<text x="160" y="${y + index * fontSize * LINE_HEIGHT}" font-size="${fontSize}" font-weight="${weight}">${escape(line)}</text>`,
+    )
+    .join('')
+}
+
 export async function embedImage(app: AppConfig) {
   const copy = embedCopy(app)
   const theme = app.theme
   const family = `${theme.fontFamily.replace(/system-ui/g, 'Noto Sans')}, Noto Sans`
-  let size = 60
-  let heading = wrap(copy.heading, size, family, 700, 880)
-  while (heading.length > 2 && size > 24) {
-    size -= 2
-    heading = wrap(copy.heading, size, family, 700, 880)
-  }
-  let descriptionSize = 25
-  let description = wrap(copy.description, descriptionSize, family, 400, 880)
-  while (description.length * descriptionSize * 1.35 > 130 && descriptionSize > 12) {
-    descriptionSize -= 1
-    description = wrap(copy.description, descriptionSize, family, 400, 880)
-  }
-  const brandSize = Math.min(25, (25 * 770) / Math.max(770, measure(app.appName, 25, family, 650)))
-  let logo: Buffer
-  if (app.logo_url) {
-    const response = await fetch(app.logo_url, { signal: AbortSignal.timeout(15_000) })
-    if (!response.ok) throw new Error(`Could not load embed logo for ${app.id}: HTTP ${response.status}`)
-    logo = Buffer.from(await response.arrayBuffer())
-  } else logo = readFileSync('public/logo.png')
-  const logoType =
-    logo.subarray(0, 100).toString().includes('<svg') || logo.subarray(0, 100).toString().includes('<?xml')
-      ? 'image/svg+xml'
-      : 'image/png'
+
+  // Heading: at most two lines. Description: at most ~130px tall.
+  const heading = fitText(copy.heading, { family, weight: 700 }, 60, 24, 2, lines => lines.length <= 2)
+  const description = fitText(
+    copy.description,
+    { family, weight: 400 },
+    25,
+    12,
+    1,
+    (lines, size) => lines.length * size * LINE_HEIGHT <= 130,
+  )
+  // Long app names shrink so the brand line stays within 770px.
+  const brandSize = Math.min(25, (25 * 770) / Math.max(770, measure(app.appName, 25, { family, weight: 650 })))
+  const { logo, type: logoType } = await loadLogo(app)
+
   const headingY = 260
-  const descriptionY = headingY + heading.length * size * 1.18 + 28
-  const textLines = (lines: string[], y: number, fontSize: number, weight: number) =>
-    lines
-      .map(
-        (line, index) =>
-          `<text x="160" y="${y + index * fontSize * 1.35}" font-size="${fontSize}" font-weight="${weight}">${escape(line)}</text>`,
-      )
-      .join('')
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1200" height="630">
+  const descriptionY = headingY + heading.lines.length * heading.size * 1.18 + 28
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${IMAGE_WIDTH}" height="${IMAGE_HEIGHT}">
     <defs><linearGradient id="sky" x2="0" y2="1"><stop stop-color="${theme.primaryColor}" stop-opacity=".16"/><stop offset=".75" stop-color="${theme.backgroundColor}" stop-opacity="0"/></linearGradient></defs>
-    <rect width="1200" height="630" fill="${theme.backgroundColor}"/>
-    <rect width="1200" height="630" fill="url(#sky)"/>
+    <rect width="${IMAGE_WIDTH}" height="${IMAGE_HEIGHT}" fill="${theme.backgroundColor}"/>
+    <rect width="${IMAGE_WIDTH}" height="${IMAGE_HEIGHT}" fill="url(#sky)"/>
     <rect x="88" y="64" width="1024" height="502" rx="24" fill="${theme.backgroundColor}" stroke="${theme.textColor}" stroke-opacity=".22"/>
     <g fill="${theme.textColor}" font-family="${escape(family)}">
       <image x="160" y="121" width="48" height="48" preserveAspectRatio="xMidYMid meet" xlink:href="data:${logoType};base64,${logo.toString('base64')}"/>
       <text x="224" y="154" font-size="${brandSize}" font-weight="650">${escape(app.appName)}</text>
-      ${textLines(heading, headingY, size, 700)}
-      ${textLines(description, descriptionY, descriptionSize, 400)}
+      ${textLines(heading.lines, headingY, heading.size, 700)}
+      ${textLines(description.lines, descriptionY, description.size, 400)}
     </g>
   </svg>`
-  const renderer = new Resvg(svg, { font })
-  return renderer.render().asPng()
+  return new Resvg(svg, { font }).render().asPng()
+}
+
+// ---------------------------------------------------------------------------
+// Vite plugin
+// ---------------------------------------------------------------------------
+
+/** Caddy rules that serve `/embeds/<id>.html` for `/?app=<id>` while keeping the visible URL. */
+function caddyRoutes(apps: AppConfig[]) {
+  return apps
+    .map(
+      app =>
+        `@embed_${app.id} {\n  path / /index.html\n  query app=${app.id}\n}\nrewrite @embed_${app.id} /embeds/${app.id}.html`,
+    )
+    .join('\n')
 }
 
 export function embedsPlugin(apps: AppConfig[], origin: string): Plugin {
+  // Each image is rendered once and reused across requests and the build.
   const images = new Map<string, Promise<Buffer>>()
   const imageFor = (app: AppConfig) => {
     let image = images.get(app.id)
@@ -137,17 +209,18 @@ export function embedsPlugin(apps: AppConfig[], origin: string): Plugin {
     }
     return image
   }
-  const selected = (url: string) => lookupApp(apps, new URL(url, origin).searchParams.get('app')).app
+  const appForUrl = (url: string) => lookupApp(apps, new URL(url, origin).searchParams.get('app')).app
+  // Replaces a previous embed block, or the empty `<title>` in the source HTML.
   const replaceTags = (html: string, app: AppConfig) =>
     html.replace(/<!-- embed:start -->[\s\S]*?<!-- embed:end -->|<title><\/title>/, embedTags(app, origin))
+  const isIndex = (path: string) => path === '/' || path === '/index.html'
+
   return {
     name: 'launcher-embeds',
     transformIndexHtml: {
       order: 'pre',
       handler(html, context) {
-        return context.path === '/index.html' || context.path === '/'
-          ? replaceTags(html, selected(context.originalUrl ?? '/'))
-          : html
+        return isIndex(context.path) ? replaceTags(html, appForUrl(context.originalUrl ?? '/')) : html
       },
     },
     configureServer(server) {
@@ -166,8 +239,7 @@ export function embedsPlugin(apps: AppConfig[], origin: string): Plugin {
     configurePreviewServer(server) {
       server.middlewares.use((req, _res, next) => {
         const url = new URL(req.url ?? '/', origin)
-        if (url.pathname === '/' || url.pathname === '/index.html')
-          req.url = `/embeds/${selected(req.url ?? '/').id}.html${url.search}`
+        if (isIndex(url.pathname)) req.url = `/embeds/${appForUrl(req.url ?? '/').id}.html${url.search}`
         next()
       })
     },
@@ -184,13 +256,7 @@ export function embedsPlugin(apps: AppConfig[], origin: string): Plugin {
             source: replaceTags(String(index.source), app),
           })
         }
-        const routes = apps
-          .map(
-            app =>
-              `@embed_${app.id} {\n  path / /index.html\n  query app=${app.id}\n}\nrewrite @embed_${app.id} /embeds/${app.id}.html`,
-          )
-          .join('\n')
-        this.emitFile({ type: 'asset', fileName: 'embed-routes.caddy', source: routes })
+        this.emitFile({ type: 'asset', fileName: 'embed-routes.caddy', source: caddyRoutes(apps) })
       },
     },
   }
