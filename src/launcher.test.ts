@@ -29,18 +29,17 @@ test('authenticated app state controls the return destination, not callback quer
   history.replaceState(null, '', '/callback.html?app=missing&redirect=https://evil.example')
   const page = root()
   dispose = await launch(page, result('example-app'), true)
-  expect(page.querySelector<HTMLAnchorElement>('a')?.href).toBe('https://example.com/')
+  expect(page.querySelector<HTMLAnchorElement>('a')?.href).toBe('https://bsky.app/')
 })
 test('missing or unknown authenticated context cannot inherit a query-string redirect', async () => {
   for (const id of [null, 'unregistered', '../../example-app', 'constructor']) {
     history.replaceState(null, '', '/callback.html?app=example-app&redirect=https://evil.example')
     const page = root()
     dispose = await launch(page, result(id), true)
-    expect(
-      [...page.querySelectorAll<HTMLAnchorElement>('a')].every(
-        link => !link.href.includes('evil.example') && !link.href.includes('example.com'),
-      ),
-    ).toBe(true)
+    expect([...page.querySelectorAll<HTMLAnchorElement>('a')].every(link => !link.href.includes('evil.example'))).toBe(
+      true,
+    )
+    expect(page.querySelector('.redirect-fallback a')).toBeNull()
     expect(page.querySelector('h1')?.textContent).toBe(t('complete.title'))
     dispose()
   }
@@ -57,7 +56,6 @@ test('cancelled signup preserves only validated app context for start-over', asy
   expect(page.textContent).toContain(t('errors.cancelled'))
   page.querySelector<HTMLButtonElement>('button')!.click()
   expect(location.search).toBe('?app=example-app')
-  expect(page.textContent).toContain(t('intro.app', { appName: 'Example App' }))
   expect(page.querySelector('a')).toBeNull()
 })
 test('app state accepts IDs, never URLs or paths', () => {

@@ -1,12 +1,12 @@
 {
   "id": "example-app-dark",
-  "appName": "Example App Dark",
-  "redirectUrl": "https://example.com/",
+  "appName": "Bluesky",
+  "redirectUrl": "https://bsky.app/",
   "theme": {
-    "primaryColor": "#a78bfa",
-    "secondaryColor": "#232c42",
-    "backgroundColor": "#121826",
-    "textColor": "#e8ecf4",
+    "primaryColor": "#4291ff",
+    "secondaryColor": "#19222e",
+    "backgroundColor": "#000000",
+    "textColor": "#ffffff",
     "fontFamily": "system-ui, sans-serif"
   }
 }
