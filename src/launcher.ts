@@ -12,6 +12,7 @@ const REDIRECT_SECONDS = 8
 
 const REGION_FLAGS: Record<string, string> = {
   'United States': '🇺🇸',
+  'United Kingdom': '🇬🇧',
   Europe: '🇪🇺',
   Canada: '🇨🇦',
   Japan: '🇯🇵',

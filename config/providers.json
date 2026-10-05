@@ -160,10 +160,11 @@
   },
   {
     "id": "margin-cafe",
-    "name": "Margin Cafe",
+    "name": "Margin",
     "serviceUrl": "https://margin.cafe",
     "description": "providers.margin-cafe",
     "region": "Europe",
+    "logo": "/providers/margin.svg",
     "enabled": true,
     "tracking": {
       "enabled": true,

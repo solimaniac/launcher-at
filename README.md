@@ -101,6 +101,8 @@ Rebuild whenever the origin or app branding changes.
 - **App directory**: [`config/atmosphere-apps.json`](config/atmosphere-apps.json) lists the apps shown after a generic signup. Logos live in `public/atmosphere-apps/`.
 - **Text**: all UI strings are in [`locales/en.json`](locales/en.json).
 
+Region flags are mapped in `src/launcher.ts`; add a flag when introducing a new region. Unmapped regions use a globe.
+
 Provider and app logos belong to their owners. The MIT license doesn't cover them.
 
 ## Project layout
