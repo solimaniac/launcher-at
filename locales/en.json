@@ -31,7 +31,7 @@
     "choose": "Continue with {{name}}",
     "inviteRequired": "Invite code required",
     "empty": "No account providers are currently available.",
-    "joined": "{{joined}} joined in the last {{days}} days",
+    "joined": "{{joined}} joined recently",
     "filterSort": "Filter & sort",
     "filterSortActive": "Filter & sort ({{count}})",
     "sortBy": "Sort by",
