@@ -3,6 +3,7 @@ import { afterEach, expect, test, vi } from 'vitest'
 import { launch } from './launcher'
 import { SignupError, recoverAppId, type SignupOAuth } from './signup'
 import { t } from './i18n'
+import type { JoinCounts } from './activity'
 
 let dispose: (() => void) | undefined
 function root() {
@@ -76,4 +77,110 @@ test('provider failure enables retry and never reveals library error details', a
   page.querySelector<HTMLButtonElement>('button')!.click()
   expect([...page.querySelectorAll<HTMLButtonElement>('.provider')].every(button => !button.disabled)).toBe(true)
   expect(document.activeElement).toBe(page.querySelector('h1'))
+})
+
+function visibleProviders(page: HTMLElement) {
+  return [...page.querySelectorAll<HTMLElement>('.provider:not([hidden])')].map(card => card.dataset.provider)
+}
+function openControls(page: HTMLElement) {
+  if (page.querySelector<HTMLElement>('.provider-controls')!.hidden) page.querySelector<HTMLButtonElement>('.provider-toggle')!.click()
+}
+function choose(page: HTMLElement, id: string, value: string) {
+  openControls(page)
+  const select = page.querySelector<HTMLSelectElement>(`#${id}`)!
+  select.value = value
+  select.dispatchEvent(new Event('change'))
+}
+function region(page: HTMLElement, value: string) {
+  openControls(page)
+  page.querySelector<HTMLInputElement>(`input[value="${value}"]`)!.click()
+}
+
+test('join sorting handles late counts, ties, zero and unavailable counts without losing focus', async () => {
+  let resolve!: (value: JoinCounts) => void
+  const counts = new Promise<JoinCounts>(done => { resolve = done })
+  const page = root()
+  dispose = await launch(page, result(null), false, counts)
+  page.querySelector<HTMLButtonElement>('button')!.click()
+  expect([...page.querySelectorAll<HTMLOptionElement>('#provider-sort option')].map(option => option.value)).toEqual(['az', 'za'])
+  expect(page.querySelector<HTMLSelectElement>('#provider-sort')!.value).toBe('az')
+  expect(visibleProviders(page)).toEqual(['blacksky', 'bluesky', 'eurosky', 'northsky', 'npmx', 'pckt', 'selfhosted-social', 'spark', 'tangled', 'w-social', 'witchcraft-systems'])
+  const focused = page.querySelector<HTMLButtonElement>('[data-provider="bluesky"]')!
+  focused.focus()
+  resolve({ windowDays: 30, providers: new Map([['spark', 24], ['eurosky', 24], ['bluesky', 0]]) })
+  await counts
+  expect([...page.querySelectorAll<HTMLOptionElement>('#provider-sort option')].map(option => option.value)).toEqual(['joins', 'az', 'za'])
+  expect(page.querySelector<HTMLSelectElement>('#provider-sort')!.value).toBe('joins')
+  expect(visibleProviders(page)).toEqual(['eurosky', 'spark', 'bluesky', 'blacksky', 'northsky', 'npmx', 'pckt', 'selfhosted-social', 'tangled', 'w-social', 'witchcraft-systems'])
+  expect(document.activeElement).toBe(focused)
+  choose(page, 'provider-sort', 'za')
+  expect(visibleProviders(page)).toEqual(['witchcraft-systems', 'w-social', 'tangled', 'spark', 'selfhosted-social', 'pckt', 'npmx', 'northsky', 'eurosky', 'bluesky', 'blacksky'])
+  choose(page, 'provider-sort', 'az')
+  expect(visibleProviders(page)[0]).toBe('blacksky')
+})
+
+test('multiple regions combine with invite requirements and clear filters recovers empty results', async () => {
+  const page = root()
+  dispose = await launch(page, result(null))
+  page.querySelector<HTMLButtonElement>('button')!.click()
+  expect(page.querySelector<HTMLElement>('.provider-controls')!.hidden).toBe(true)
+  region(page, 'Europe')
+  region(page, 'Canada')
+  expect(visibleProviders(page)).toEqual(['eurosky', 'northsky', 'npmx', 'tangled', 'w-social'])
+  choose(page, 'provider-invites', 'required')
+  expect(visibleProviders(page)).toEqual(['northsky', 'w-social'])
+  choose(page, 'provider-invites', 'none')
+  expect(visibleProviders(page)).toEqual(['eurosky', 'npmx', 'tangled'])
+  page.querySelector<HTMLButtonElement>('.provider-toggle')!.click()
+  expect(page.querySelector<HTMLElement>('.provider-controls')!.hidden).toBe(true)
+  expect(page.querySelector('[role="status"]')!.textContent).toBe(t('providers.results', { count: 3, total: 11 }))
+  region(page, 'Europe')
+  expect(visibleProviders(page)).toEqual([])
+  expect(page.querySelector<HTMLElement>('.provider-empty')!.hidden).toBe(false)
+  choose(page, 'provider-sort', 'za')
+  page.querySelector<HTMLButtonElement>('.provider-toggle')!.click()
+  page.querySelector<HTMLButtonElement>('.clear-filters')!.click()
+  expect(visibleProviders(page)).toEqual(['witchcraft-systems', 'w-social', 'tangled', 'spark', 'selfhosted-social', 'pckt', 'npmx', 'northsky', 'eurosky', 'bluesky', 'blacksky'])
+  expect(page.querySelector<HTMLElement>('.provider-empty')!.hidden).toBe(true)
+  expect(page.querySelector<HTMLButtonElement>('.provider-toggle')!.getAttribute('aria-expanded')).toBe('false')
+  expect(page.querySelector<HTMLElement>('[role="status"]')!.hidden).toBe(true)
+  expect(document.activeElement).toBe(page.querySelector('.provider-toggle'))
+})
+
+test('late counts respect alphabetical selection and failed signup preserves filtered choices', async () => {
+  let resolve!: (value: JoinCounts) => void
+  const counts = new Promise<JoinCounts>(done => { resolve = done })
+  const page = root()
+  const failure: SignupOAuth = { ...result(null), start: async () => { throw new Error('failed') } }
+  dispose = await launch(page, failure, false, counts)
+  page.querySelector<HTMLButtonElement>('button')!.click()
+  choose(page, 'provider-sort', 'za')
+  region(page, 'Europe')
+  choose(page, 'provider-invites', 'none')
+  resolve({ windowDays: 30, providers: new Map([['eurosky', 42]]) })
+  await counts
+  expect(visibleProviders(page)).toEqual(['tangled', 'npmx', 'eurosky'])
+  page.querySelector<HTMLButtonElement>('.provider:not([hidden])')!.click()
+  expect([...page.querySelectorAll<HTMLInputElement | HTMLSelectElement>('input, select')].every(control => control.disabled)).toBe(true)
+  await vi.waitFor(() => expect(page.dataset.view).toBe('error'))
+  page.querySelector<HTMLButtonElement>('button')!.click()
+  expect(visibleProviders(page)).toEqual(['tangled', 'npmx', 'eurosky'])
+  expect(page.querySelector<HTMLSelectElement>('#provider-sort')!.disabled).toBe(false)
+})
+
+test('join-count sort is omitted for failed, empty, or unrelated counts but includes measured zero', async () => {
+  for (const counts of [undefined, Promise.reject(new Error('offline')), Promise.resolve({ windowDays: 30, providers: new Map<string, number>() }), Promise.resolve({ windowDays: 30, providers: new Map([['unknown-provider', 9]]) })]) {
+    const page = root()
+    dispose = await launch(page, result(null), false, counts)
+    page.querySelector<HTMLButtonElement>('button')!.click()
+    openControls(page)
+    expect([...page.querySelectorAll<HTMLOptionElement>('#provider-sort option')].map(option => option.value)).toEqual(['az', 'za'])
+    expect(page.querySelector<HTMLSelectElement>('#provider-sort')!.value).toBe('az')
+    dispose()
+  }
+  const page = root()
+  dispose = await launch(page, result(null), false, Promise.resolve({ windowDays: 30, providers: new Map([['spark', 0]]) }))
+  page.querySelector<HTMLButtonElement>('button')!.click()
+  expect(page.querySelector<HTMLSelectElement>('#provider-sort')!.value).toBe('joins')
+  expect(visibleProviders(page)[0]).toBe('spark')
 })

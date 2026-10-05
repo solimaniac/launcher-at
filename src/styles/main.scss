@@ -14,6 +14,7 @@
 }
 
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 body { margin: 0; min-height: 100dvh; padding: clamp(1rem, 4vw, 3rem) 1rem; }
 main {
   width: 100%;
@@ -61,7 +62,31 @@ h1:focus { outline: none; }
 .benefits { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.5rem 2rem; margin: 2rem 0 0; padding: 2rem 0 0; border-top: 1px solid var(--color-border); list-style: none; }
 .benefits strong { display: block; margin-bottom: .35rem; font-size: .9375rem; }
 .benefits p { margin: 0; font-size: .9375rem; }
-.providers { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; margin: 2rem 0 1.5rem; }
+.provider-controls { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem 1.5rem; margin-bottom: 1rem; padding: 1rem; border: 1px solid var(--color-border); border-radius: .625rem; }
+.provider-field { display: grid; gap: .5rem; min-width: 0; }
+.provider-field label, .provider-regions legend { font-size: .875rem; font-weight: 650; }
+.provider-field select { width: 100%; min-width: 0; min-height: 48px; padding: .625rem .75rem; border: 1px solid var(--color-border); border-radius: .625rem; background: var(--color-background); color: var(--color-text); font: inherit; font-size: .9375rem; cursor: pointer; color-scheme: light dark; }
+.provider-field select:disabled { opacity: .65; cursor: wait; }
+.provider-regions { grid-column: 1 / -1; min-width: 0; margin: 0; padding: 0; border: 0; }
+.provider-regions legend { margin-bottom: .625rem; padding: 0; }
+.region-choices { display: flex; flex-wrap: wrap; gap: .5rem; }
+.region-choice { display: inline-flex; align-items: center; gap: .5rem; min-height: 44px; padding: .5rem .75rem; border: 1px solid var(--color-border); border-radius: .625rem; font-size: .875rem; cursor: pointer; }
+.region-choice:has(:checked) { background: var(--color-secondary); border-color: var(--color-primary); }
+.region-choice input { width: 1rem; height: 1rem; margin: 0; accent-color: var(--color-primary); }
+.region-choice:has(:disabled) { opacity: .65; cursor: wait; }
+.provider-regions p { margin: .625rem 0 0; font-size: .8125rem; }
+.provider-summary { display: flex; align-items: center; flex-wrap: wrap; gap: .25rem .75rem; margin: -.5rem 0 .5rem; }
+.provider-summary p { margin: 0; font-size: .8125rem; font-variant-numeric: tabular-nums; }
+.provider-toggle, .clear-filters { min-height: 44px; margin: 0; padding: .375rem .25rem; border: 0; background: transparent; color: var(--color-text); font-size: .8125rem; font-weight: 400; }
+.provider-toggle { margin-left: auto; }
+.provider-toggle::after { content: '+'; margin-left: .5rem; }
+.provider-toggle[aria-expanded='true']::after { content: '−'; }
+.provider-toggle:not(:disabled):hover, .clear-filters:not(:disabled):hover { background: transparent; box-shadow: none; text-decoration: underline; text-underline-offset: .2em; }
+.providers { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; margin: 0 0 1.5rem; }
+.providers:not(:has(.provider:not([hidden]))) { display: none; }
+.provider-empty { margin-bottom: 1.5rem; padding: 2rem 1rem; border: 1px dashed var(--color-border); border-radius: .625rem; text-align: center; }
+.provider-empty strong { display: block; margin-bottom: .5rem; }
+.provider-empty p { margin: 0 auto; font-size: .875rem; }
 .provider { display: flex; align-items: flex-start; justify-content: flex-start; gap: 1rem; width: 100%; margin: 0; padding: 1rem; border-color: var(--color-border); background: var(--color-background); color: var(--color-text); font-weight: 400; text-align: left; }
 .provider img { flex: 0 0 3rem; width: 3rem; height: 3rem; object-fit: contain; padding: .25rem; border-radius: .5rem; background: #ffffff; }
 .provider-details { display: block; flex: 1; min-width: 0; }
@@ -90,6 +115,7 @@ h1:focus { outline: none; }
 }
 @media (max-width: 479px) {
   main > button, main > .button { width: 100%; margin-inline: 0; }
+  .provider-controls { grid-template-columns: minmax(0, 1fr); gap: 1rem; }
 }
 @media (forced-colors: active) {
   main, .provider, button, .button { border-color: CanvasText; }

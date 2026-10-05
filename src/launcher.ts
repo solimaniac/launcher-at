@@ -24,8 +24,11 @@ export async function launch(root: HTMLElement, oauth: SignupOAuth, callback = f
   let countdown: number | undefined
   applyTheme(app)
   let joinCounts: JoinCounts | undefined
-  // Counts are decoration: failures leave the selector unchanged.
-  counts?.then(result => { joinCounts = result; showCounts() }, () => {})
+  let sortBy = 'joins'
+  let inviteFilter = 'all'
+  const selectedRegions = new Set<string>()
+  let refreshProviders: (() => void) | undefined
+  counts?.then(result => { joinCounts = result; showCounts(); refreshProviders?.() }, () => {})
   function showCounts() {
     if (!joinCounts) return
     for (const node of root.querySelectorAll<HTMLElement>('.provider .joins')) {
@@ -40,6 +43,7 @@ export async function launch(root: HTMLElement, oauth: SignupOAuth, callback = f
   }
   function screen(title: string, ...content: HTMLElement[]) {
     document.title = app.id === 'default' ? t('site.title') : t('embed.appTitle', { appName: app.appName })
+    refreshProviders = undefined
     stopCountdown()
     root.removeAttribute('aria-busy')
     const heading = element('h1', title)
@@ -82,10 +86,90 @@ export async function launch(root: HTMLElement, oauth: SignupOAuth, callback = f
     screen(t('providers.title'), element('p', t('providers.intro')))
     root.dataset.view = 'providers'
     const cards = element('div')
+    const controls = element('div')
+    controls.className = 'provider-controls'
+    controls.id = 'provider-controls'
+    controls.hidden = true
+    const toggle = element('button', t('providers.filterSort'))
+    toggle.className = 'provider-toggle'
+    toggle.setAttribute('aria-expanded', 'false')
+    toggle.setAttribute('aria-controls', controls.id)
+    toggle.onclick = () => {
+      controls.hidden = !controls.hidden
+      toggle.setAttribute('aria-expanded', String(!controls.hidden))
+    }
+    function dropdown(id: string, title: string, options: [string, string][], value: string) {
+      const field = element('div')
+      field.className = 'provider-field'
+      const label = element('label', title)
+      label.htmlFor = id
+      const select = element('select')
+      select.id = id
+      for (const [value, title] of options) {
+        const option = element('option', title)
+        option.value = value
+        select.append(option)
+      }
+      select.value = value
+      field.append(label, select)
+      controls.append(field)
+      return select
+    }
+    const invites = dropdown('provider-invites', t('providers.inviteFilter'), [
+      ['all', t('providers.inviteAny')], ['none', t('providers.inviteNone')], ['required', t('providers.inviteRequired')],
+    ], inviteFilter)
+    const sort = dropdown('provider-sort', t('providers.sortBy'), [
+      ['az', t('providers.sortAZ')], ['za', t('providers.sortZA')],
+    ], sortBy)
+    const joinSortOption = element('option', t('providers.sortJoins'))
+    joinSortOption.value = 'joins'
+    const regions = element('fieldset')
+    regions.className = 'provider-regions'
+    regions.append(element('legend', t('providers.regions')))
+    const regionChoices = element('div')
+    regionChoices.className = 'region-choices'
+    for (const region of [...new Set(providers.map(provider => provider.region))].sort((a, b) => a.localeCompare(b))) {
+      const label = element('label')
+      label.className = 'region-choice'
+      const checkbox = element('input')
+      checkbox.type = 'checkbox'
+      checkbox.value = region
+      checkbox.checked = selectedRegions.has(region)
+      checkbox.onchange = () => {
+        if (checkbox.checked) selectedRegions.add(region)
+        else selectedRegions.delete(region)
+        refreshProviders?.()
+      }
+      label.append(checkbox, element('span', region))
+      regionChoices.append(label)
+    }
+    const regionHint = element('p', t('providers.regionHint'))
+    regionHint.id = 'provider-region-hint'
+    regions.setAttribute('aria-describedby', regionHint.id)
+    regions.append(regionChoices, regionHint)
+    controls.append(regions)
+    const summary = element('div')
+    summary.className = 'provider-summary'
+    const resultCount = element('p')
+    resultCount.setAttribute('role', 'status')
+    resultCount.setAttribute('aria-atomic', 'true')
+    const reset = element('button', t('providers.clearFilters'))
+    reset.className = 'secondary clear-filters'
+    reset.onclick = () => {
+      selectedRegions.clear()
+      inviteFilter = invites.value = 'all'
+      for (const checkbox of regionChoices.querySelectorAll('input')) checkbox.checked = false
+      if (controls.hidden) toggle.focus()
+      else invites.focus()
+      refreshProviders?.()
+    }
+    summary.append(resultCount, reset, toggle)
     cards.className = 'providers'
+    const providerCards = new Map<string, HTMLButtonElement>()
     for (const provider of providers) {
       const card = element('button')
       card.className = 'provider'
+      card.dataset.provider = provider.id
       card.setAttribute('aria-label', t('providers.choose', { name: provider.name }))
       const details = element('span')
       details.className = 'provider-details'
@@ -117,7 +201,7 @@ export async function launch(root: HTMLElement, oauth: SignupOAuth, callback = f
         card.setAttribute('aria-label', `${t('providers.choose', { name: provider.name })}. ${t('providers.inviteRequired')}`)
       }
       card.onclick = async () => {
-        for (const button of root.querySelectorAll('button')) button.disabled = true
+        for (const control of root.querySelectorAll<HTMLButtonElement | HTMLSelectElement | HTMLInputElement>('button, select, input')) control.disabled = true
         root.setAttribute('aria-busy', 'true')
         const status = element('p', t('oauth.opening'))
         status.className = 'notice'
@@ -127,14 +211,51 @@ export async function launch(root: HTMLElement, oauth: SignupOAuth, callback = f
         catch (error) { showError(error instanceof SignupError ? error.key : 'errors.authorization', selector) }
       }
       cards.append(card)
+      providerCards.set(provider.id, card)
     }
-    if (!providers.length) cards.append(element('p', t('providers.empty')))
+    const empty = element('div')
+    empty.className = 'provider-empty'
+    empty.append(element('strong', t('providers.noMatches')), element('p', t('providers.noMatchesHint')))
+    refreshProviders = () => {
+      if (root.hasAttribute('aria-busy')) return
+      const hasCounts = providers!.some(provider => joinCounts?.providers.has(provider.id))
+      if (hasCounts && !joinSortOption.parentNode) sort.prepend(joinSortOption)
+      sort.value = sortBy === 'joins' && !hasCounts ? 'az' : sortBy
+      const ordered = [...providers!].sort((a, b) => {
+        const alphabetical = a.name.localeCompare(b.name)
+        if (sortBy === 'az') return alphabetical
+        if (sortBy === 'za') return -alphabetical
+        // Missing counts rank below zero; ties and unavailable data use A-Z.
+        return (joinCounts?.providers.get(b.id) ?? -1) - (joinCounts?.providers.get(a.id) ?? -1) || alphabetical
+      })
+      const focused = document.activeElement instanceof HTMLButtonElement && cards.contains(document.activeElement) ? document.activeElement : null
+      let visible = 0
+      for (const provider of ordered) {
+        const card = providerCards.get(provider.id)!
+        card.hidden = (selectedRegions.size > 0 && !selectedRegions.has(provider.region))
+          || (inviteFilter === 'required' && !provider.requiresInvite)
+          || (inviteFilter === 'none' && !!provider.requiresInvite)
+        if (!card.hidden) visible++
+        cards.append(card)
+      }
+      if (focused && !focused.hidden) focused.focus({ preventScroll: true })
+      resultCount.textContent = t('providers.results', { count: visible, total: providers!.length })
+      const activeFilters = selectedRegions.size + Number(inviteFilter !== 'all')
+      resultCount.hidden = !activeFilters
+      reset.hidden = !activeFilters
+      toggle.textContent = activeFilters ? t('providers.filterSortActive', { count: activeFilters }) : t('providers.filterSort')
+      empty.hidden = visible > 0
+      if (!providers!.length) empty.replaceChildren(element('p', t('providers.empty')))
+    }
+    invites.onchange = () => { inviteFilter = invites.value; refreshProviders?.() }
+    sort.onchange = () => { sortBy = sort.value; refreshProviders?.() }
     const back = element('button', t('actions.back'))
     back.className = 'secondary'
     back.onclick = intro
-    root.append(cards)
+    root.append(summary, controls, cards, empty)
     root.append(back)
     showCounts()
+    refreshProviders()
   }
   function restart() {
     history.replaceState(null, '', app.id === 'default' ? '/' : `/?app=${encodeURIComponent(app.id)}`)
