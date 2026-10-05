@@ -152,6 +152,12 @@ These assets identify their respective providers; the launcher's MIT license doe
 
 Use the PDS **or provider entryway** URL accepted by ATProto OAuth, not an arbitrary signup homepage or a user's eventual physical PDS. Confirm the provider supports server-first OAuth account creation. Do not duplicate the list in UI code or `public/`.
 
+## Atmosphere application catalog
+
+`config/atmosphere-apps.json` contains the application directory data, separate from OAuth providers and launcher app/theme configurations. Each entry has `name`, `url` (the application's HTTPS homepage, without tracking parameters), and `logo` (a root-relative path under `/atmosphere-apps/`). Logo files live in `public/atmosphere-apps/` and are served unchanged by Vite. Apps without an available logo are omitted rather than given placeholder assets.
+
+This is data for a future application list; it does not add a launcher screen or a public JSON endpoint. To add an application, save its official logo in `public/atmosphere-apps/` and add the matching entry to the catalog. These assets identify their respective applications; the launcher's MIT license does not grant rights to their trademarks.
+
 ## Add an app/theme
 
 Create **`apps/your-app/config.json`**:
