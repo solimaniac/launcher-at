@@ -12,7 +12,10 @@ const readJson = (path: string): unknown => JSON.parse(readFileSync(path, 'utf8'
 
 // Configuration is validated here, so invalid providers or apps fail `npm run dev` and `npm run build`.
 const providers = parseProviders(readJson('config/providers.json'))
-const apps = parseApps(readdirSync('apps').map(id => readJson(`apps/${id}/config.json`)))
+const apps = parseApps(
+  readdirSync('apps').map(id => readJson(`apps/${id}/config.json`)),
+  providers,
+)
 
 /** Resolves a dotted locale key such as `providers.bluesky` in the English strings. */
 function englishText(key: string) {

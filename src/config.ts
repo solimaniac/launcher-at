@@ -29,6 +29,8 @@ export interface AppConfig {
   logo_url?: string
   /** Rocket launches for recent signups in the background sky; on unless `false`. */
   launchAnimation?: boolean
+  /** Provider IDs offered for signup; omitted means all enabled providers. */
+  providerAllowlist?: string[]
   theme: {
     primaryColor: string
     secondaryColor: string
@@ -118,8 +120,9 @@ export function parseProviders(value: unknown): Provider[] {
   })
 }
 
-export function parseApps(value: unknown[]): AppConfig[] {
+export function parseApps(value: unknown[], providers: Provider[]): AppConfig[] {
   const ids = new Set<string>()
+  const providerIds = new Set(providers.map(provider => provider.id))
 
   const apps = value.map(entry => {
     const app = record(entry)
@@ -141,6 +144,16 @@ export function parseApps(value: unknown[]): AppConfig[] {
     if (app.redirectUrl !== undefined) httpsUrl(app.redirectUrl)
     if (app.logo_url !== undefined) httpsUrl(app.logo_url)
     if (!optionalBoolean(app.launchAnimation)) throw new Error('launchAnimation must be a boolean')
+    if (app.providerAllowlist !== undefined) {
+      if (
+        !Array.isArray(app.providerAllowlist) ||
+        app.providerAllowlist.length === 0 ||
+        app.providerAllowlist.some(id => typeof id !== 'string' || !providerIds.has(id)) ||
+        new Set(app.providerAllowlist).size !== app.providerAllowlist.length
+      ) {
+        throw new Error('providerAllowlist must be a non-empty array of unique known provider IDs')
+      }
+    }
     if (app.id === DEFAULT_APP_ID && app.redirectUrl !== undefined) throw new Error('Default app cannot redirect')
 
     return app as unknown as AppConfig

@@ -209,7 +209,9 @@ export async function launch(root: HTMLElement, oauth: SignupOAuth, callback = f
 
   function selector() {
     try {
-      providers ??= parseProviders(providerSource).filter(provider => provider.enabled)
+      providers ??= parseProviders(providerSource).filter(
+        provider => provider.enabled && (!app.providerAllowlist || app.providerAllowlist.includes(provider.id)),
+      )
     } catch {
       showError('errors.providers', selector)
       return

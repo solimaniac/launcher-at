@@ -4,6 +4,8 @@ import { launch } from './launcher'
 import { SignupError, recoverAppId, type SignupOAuth } from './signup'
 import { t } from './i18n'
 import type { JoinCounts } from './activity'
+import providerSource from '../config/providers.json'
+import { apps } from './apps'
 
 let dispose: (() => void) | undefined
 function root() {
@@ -99,6 +101,58 @@ function region(page: HTMLElement, value: string) {
   openControls(page)
   page.querySelector<HTMLInputElement>(`input[value="${value}"]`)!.click()
 }
+
+test.each(['default', 'example-app', 'example-app-dark'])(
+  '%s only offers its allowed providers, including after filters are cleared and signup is retried',
+  async appId => {
+    history.replaceState(null, '', `/?app=${appId}`)
+    const page = root()
+    const start = vi.fn(async () => {
+      throw new SignupError('errors.authorization')
+    })
+    dispose = await launch(page, { ...result(null), start })
+    page.querySelector<HTMLButtonElement>('button')!.click()
+    const expected = providerSource
+      .filter(provider => provider.enabled && (appId === 'default' || provider.id !== 'bluesky'))
+      .map(provider => provider.id)
+      .sort()
+    expect(visibleProviders(page).sort()).toEqual(expected)
+    choose(page, 'provider-invites', 'required')
+    page.querySelector<HTMLButtonElement>('.clear-filters')!.click()
+    choose(page, 'provider-sort', 'za')
+    expect(visibleProviders(page).sort()).toEqual(expected)
+    page.querySelector<HTMLButtonElement>('.provider')!.click()
+    await vi.waitFor(() => expect(page.dataset.view).toBe('error'))
+    expect(start).toHaveBeenCalledWith(
+      providerSource.find(provider => provider.id === expected.at(-1))?.serviceUrl,
+      appId,
+    )
+    page.querySelector<HTMLButtonElement>('button')!.click()
+    expect(visibleProviders(page).sort()).toEqual(expected)
+  },
+)
+
+test('allowlists constrain region choices and cannot enable a disabled provider', async () => {
+  const app = apps.find(app => app.id === 'example-app')!
+  const original = app.providerAllowlist
+  app.providerAllowlist = ['eurosky', 'witchcraft-systems']
+  const provider = providerSource.find(provider => provider.id === 'witchcraft-systems')!
+  const enabled = provider.enabled
+  provider.enabled = false
+  try {
+    history.replaceState(null, '', '/?app=example-app')
+    const page = root()
+    dispose = await launch(page, result(null))
+    page.querySelector<HTMLButtonElement>('button')!.click()
+    expect(visibleProviders(page)).toEqual(['eurosky'])
+    expect([...page.querySelectorAll<HTMLInputElement>('.region-choices input')].map(input => input.value)).toEqual([
+      'European Union',
+    ])
+  } finally {
+    app.providerAllowlist = original
+    provider.enabled = enabled
+  }
+})
 
 test('join sorting handles late counts, ties, zero and unavailable counts without losing focus', async () => {
   let resolve!: (value: JoinCounts) => void

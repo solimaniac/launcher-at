@@ -26,6 +26,7 @@ Each app gets its own branded launcher at `/?app=<id>`.
      "appName": "Your App",
      "redirectUrl": "https://your-app.example/welcome",
      "logo_url": "https://your-app.example/logo.png",
+     "providerAllowlist": ["eurosky", "blacksky"],
      "theme": {
        "primaryColor": "#1859b8",
        "secondaryColor": "#e5edfa",
@@ -38,14 +39,15 @@ Each app gets its own branded launcher at `/?app=<id>`.
 
 2. Link people to `/?app=your-app`. Apps are picked up automatically at build time.
 
-| Field             | Required | Notes                                                                                         |
-| ----------------- | -------- | --------------------------------------------------------------------------------------------- |
-| `id`              | yes      | Same as the directory name. Lowercase letters, digits and single hyphens.                     |
-| `appName`         | yes      | Shown in the header and page title.                                                           |
-| `theme.*`         | yes      | All five fields. Colors are six-digit hex; button text color is picked for contrast.          |
-| `redirectUrl`     | no       | HTTPS URL to send people back to after signup (8-second countdown). Omit to stay on the page. |
-| `logo_url`        | no       | HTTPS image URL for the header. Defaults to the launcher logo.                                |
-| `launchAnimation` | no       | Set to `false` to hide the background rocket launches.                                        |
+| Field               | Required | Notes                                                                                                                                    |
+| ------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`                | yes      | Same as the directory name. Lowercase letters, digits and single hyphens.                                                                |
+| `appName`           | yes      | Shown in the header and page title.                                                                                                      |
+| `theme.*`           | yes      | All five fields. Colors are six-digit hex; button text color is picked for contrast.                                                     |
+| `redirectUrl`       | no       | HTTPS URL to send people back to after signup (8-second countdown). Omit to stay on the page.                                            |
+| `logo_url`          | no       | HTTPS image URL for the header. Defaults to the launcher logo.                                                                           |
+| `launchAnimation`   | no       | Set to `false` to hide the background rocket launches.                                                                                   |
+| `providerAllowlist` | no       | Non-empty array of unique provider IDs from `config/providers.json`. Omit to show all enabled providers. Disabled providers stay hidden. |
 
 Good to know:
 
@@ -53,6 +55,7 @@ Good to know:
 - Unknown `?app=` IDs fall back to `apps/default`, which can't redirect.
 - See [`apps/example-app`](apps/example-app/config.json) and [`apps/example-app-dark`](apps/example-app-dark/config.json) for Bluesky light and dark examples. Both redirect to `https://bsky.app/`; colours come from [Bluesky's ALF palette](https://www.npmjs.com/package/@bsky.app/alf) (`primary_500` in light mode, `primary_600` in dark mode, plus `bg_contrast_50`, `bg` and `text`). The dark example uses the black-background dark theme, not the separate dim theme.
 - The examples use official [Bluesky butterfly SVGs](https://bsky.social/about/support/icons): blue in light mode and white in dark mode, loaded via `logo_url`.
+- Both example apps allow every current provider except Bluesky. Allowlists are explicit: add new provider IDs to them when needed. Unknown IDs, duplicates and empty lists fail configuration validation.
 
 ## Run locally
 
@@ -95,6 +98,10 @@ PUBLIC_ORIGIN=https://your-launcher.example npm run build
 Serve `dist/` from the root of that origin. It must return `/oauth-client-metadata.json` as JSON (not an HTML fallback). The included [`Caddyfile`](Caddyfile) does this and also serves per-app link previews for `/?app=<id>`; other hosts need an equivalent rewrite using the generated `dist/embed-routes.caddy`.
 
 Rebuild whenever the origin or app branding changes.
+
+Production uses `https://www.launcher.at` on Railway's `website` service, with `PUBLIC_ORIGIN` set to that origin. The activity backend's `ALLOWED_ORIGINS` must match. Stop the backend before redeploying it so Jetstream consumers never overlap.
+
+Hover hosts DNS: `www` is a CNAME to Railway's assigned target, with Railway's ownership TXT record at `_railway-verify.www`. Keep both records for domain verification and HTTPS. Hover forwards `http://launcher.at` to `https://www.launcher.at`; its forwarding does not support `https://launcher.at`.
 
 ## Other configuration
 

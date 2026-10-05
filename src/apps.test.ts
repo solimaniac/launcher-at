@@ -1,8 +1,10 @@
 import { expect, test } from 'vitest'
 import generic from '../apps/default/config.json'
 import example from '../apps/example-app/config.json'
-import { lookupApp, parseApps } from './config'
-const apps = parseApps([generic, example])
+import source from '../config/providers.json'
+import { lookupApp, parseApps, parseProviders } from './config'
+const providers = parseProviders(source)
+const apps = parseApps([generic, example], providers)
 test('known app resolves branding and an allowlisted return URL', () => {
   expect(lookupApp(apps, 'example-app').app).toEqual(example)
 })
@@ -17,22 +19,25 @@ test('unknown, path-like and inherited property IDs cannot redirect', () => {
 })
 test('non-default apps may omit the return destination', () => {
   const { redirectUrl: _omitted, ...noReturn } = example
-  expect(lookupApp(parseApps([generic, noReturn]), 'example-app').app.redirectUrl).toBeUndefined()
+  expect(lookupApp(parseApps([generic, noReturn], providers), 'example-app').app.redirectUrl).toBeUndefined()
 })
 test('rejects unsafe return destinations and incomplete themes', () => {
   for (const redirectUrl of ['http://example.com', 'javascript:alert(1)', '//example.com'])
-    expect(() => parseApps([generic, { ...example, redirectUrl }])).toThrow()
-  expect(() => parseApps([generic, { ...example, theme: {} }])).toThrow()
-  expect(() => parseApps([generic, example, example])).toThrow()
-  expect(() => parseApps([generic, { ...example, appName: '' }])).toThrow()
-  expect(() => parseApps([generic, { ...example, launchAnimation: 'false' }])).toThrow()
+    expect(() => parseApps([generic, { ...example, redirectUrl }], providers)).toThrow()
+  expect(() => parseApps([generic, { ...example, theme: {} }], providers)).toThrow()
+  expect(() => parseApps([generic, example, example], providers)).toThrow()
+  expect(() => parseApps([generic, { ...example, appName: '' }], providers)).toThrow()
+  expect(() => parseApps([generic, { ...example, launchAnimation: 'false' }], providers)).toThrow()
   expect(
-    lookupApp(parseApps([generic, { ...example, launchAnimation: false }]), 'example-app').app.launchAnimation,
+    lookupApp(parseApps([generic, { ...example, launchAnimation: false }], providers), 'example-app').app
+      .launchAnimation,
   ).toBe(false)
 })
 test('app logos require absolute HTTPS URLs and reject local paths or unsafe destinations', () => {
   for (const logo_url of ['https://example.com/logo.svg', 'https://example.com/logo.png?v=2']) {
-    expect(lookupApp(parseApps([generic, { ...example, logo_url }]), 'example-app').app.logo_url).toBe(logo_url)
+    expect(lookupApp(parseApps([generic, { ...example, logo_url }], providers), 'example-app').app.logo_url).toBe(
+      logo_url,
+    )
   }
   for (const logo_url of [
     '',
@@ -47,6 +52,27 @@ test('app logos require absolute HTTPS URLs and reject local paths or unsafe des
     'data:image/png;base64,abc',
     'https://user:pass@example.com/logo.svg',
   ]) {
-    expect(() => parseApps([generic, { ...example, logo_url }])).toThrow()
+    expect(() => parseApps([generic, { ...example, logo_url }], providers)).toThrow()
   }
+})
+
+test('provider allowlists reject empty, malformed, duplicate and unknown provider IDs', () => {
+  for (const providerAllowlist of [
+    [],
+    null,
+    'bluesky',
+    [1],
+    [''],
+    ['unknown-provider'],
+    ['bluesky', 'bluesky'],
+    ['bluesky', 'unknown-provider'],
+  ]) {
+    expect(() => parseApps([generic, { ...example, providerAllowlist }], providers)).toThrow('providerAllowlist')
+  }
+})
+
+test('allowlisted disabled providers remain valid configuration', () => {
+  const disabledProviders = providers.map(provider => ({ ...provider, enabled: false }))
+  const configured = parseApps([generic, { ...example, providerAllowlist: ['bluesky'] }], disabledProviders)
+  expect(lookupApp(configured, 'example-app').app.providerAllowlist).toEqual(['bluesky'])
 })
