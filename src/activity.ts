@@ -5,14 +5,15 @@ export interface RecentJoin { handle: string; providerId: string; providerName: 
 
 // Polling budget against the server's default admission limits (server/src/env.ts):
 // RATE_LIMIT_PER_MINUTE=120 per client IP and GLOBAL_RATE_LIMIT_PER_MINUTE=1200 per process,
-// shared by both endpoints. Each visible tab spends one counts request per page load plus
+// shared by both endpoints. Each active tab spends one counts request per page load plus
 // 60_000 / POLL_MS recent requests per minute: ~60 tabs behind one shared IP, ~600 concurrent
-// visible visitors process-wide. Hidden tabs do not poll. The server returns its newest 50
-// joins regardless of age; entries already shown are skipped.
+// active visitors process-wide. Hidden, unfocused and idle tabs do not poll. The server
+// returns its newest 50 joins regardless of age; entries already shown are skipped.
 // Revisit POLL_MS if those server limits change.
 export const POLL_MS = 30_000
 export const REVEAL_MS = 3_000
 export const MAX_BACKOFF_MS = 300_000
+export const IDLE_MS = 300_000
 const REQUEST_TIMEOUT_MS = 10_000
 // Enough to keep revealing until the next poll; older surplus is dropped so the feed stays current.
 const QUEUE_MAX = POLL_MS / REVEAL_MS
@@ -73,10 +74,21 @@ export function startJoinFeed(load: () => Promise<RecentJoin[]>, show: (join: Re
   let inFlight = false
   let stopped = false
   let revealed = false
+  let focused = document.hasFocus()
+  let lastActivity = Date.now()
   let pollTimer: number | undefined
   let revealTimer: number | undefined
+  let idleTimer: number | undefined
+
+  function active() {
+    return !stopped && !document.hidden && focused && Date.now() - lastActivity < IDLE_MS
+  }
 
   function reveal() {
+    if (!active()) {
+      schedule()
+      return
+    }
     const join = queue.shift()
     if (!join) return
     revealed = true
@@ -84,10 +96,15 @@ export function startJoinFeed(load: () => Promise<RecentJoin[]>, show: (join: Re
   }
   async function poll() {
     pollTimer = undefined
+    if (!active()) {
+      schedule()
+      return
+    }
     inFlight = true
     let delay = POLL_MS
     try {
       const joins = await load()
+      if (stopped) return
       failures = 0
       const fresh = joins.filter(join => !seen.has(joinKey(join))).reverse()
       seen = new Set(joins.map(joinKey))
@@ -103,21 +120,53 @@ export function startJoinFeed(load: () => Promise<RecentJoin[]>, show: (join: Re
       inFlight = false
     }
     nextPoll = Date.now() + delay
-    if (!stopped && !document.hidden) pollTimer = window.setTimeout(poll, delay)
+    schedule()
   }
-  function resume() {
-    window.clearTimeout(pollTimer)
-    window.clearInterval(revealTimer)
-    pollTimer = revealTimer = undefined
-    if (stopped || document.hidden) return
-    revealTimer = window.setInterval(reveal, REVEAL_MS)
-    if (!inFlight) pollTimer = window.setTimeout(poll, Math.max(0, nextPoll - Date.now()))
+  function schedule() {
+    if (!active()) {
+      window.clearTimeout(pollTimer)
+      window.clearInterval(revealTimer)
+      window.clearTimeout(idleTimer)
+      pollTimer = revealTimer = idleTimer = undefined
+      return
+    }
+    if (revealTimer === undefined) revealTimer = window.setInterval(reveal, REVEAL_MS)
+    if (pollTimer === undefined && !inFlight) pollTimer = window.setTimeout(poll, Math.max(0, nextPoll - Date.now()))
+    // Recheck the deadline instead of resetting a timer on every pointer movement.
+    if (idleTimer === undefined) idleTimer = window.setTimeout(() => {
+      idleTimer = undefined
+      schedule()
+    }, Math.max(0, IDLE_MS - (Date.now() - lastActivity)))
   }
-  document.addEventListener('visibilitychange', resume)
-  resume()
+  function interact() {
+    if (stopped || document.hidden || !focused) return
+    lastActivity = Date.now()
+    schedule()
+  }
+  function visibilityChanged() {
+    if (document.hidden) schedule()
+    else interact()
+  }
+  function focus() {
+    focused = true
+    interact()
+  }
+  function blur() {
+    focused = false
+    schedule()
+  }
+  const interactionEvents = ['pointerdown', 'pointermove', 'keydown', 'scroll', 'wheel'] as const
+  document.addEventListener('visibilitychange', visibilityChanged)
+  window.addEventListener('focus', focus)
+  window.addEventListener('blur', blur)
+  for (const event of interactionEvents) document.addEventListener(event, interact, { passive: true, capture: true })
+  schedule()
   return () => {
     stopped = true
-    resume()
-    document.removeEventListener('visibilitychange', resume)
+    schedule()
+    document.removeEventListener('visibilitychange', visibilityChanged)
+    window.removeEventListener('focus', focus)
+    window.removeEventListener('blur', blur)
+    for (const event of interactionEvents) document.removeEventListener(event, interact, { capture: true })
   }
 }

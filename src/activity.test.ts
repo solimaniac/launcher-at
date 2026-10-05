@@ -1,12 +1,17 @@
 // @vitest-environment happy-dom
-import { afterEach, expect, test, vi } from 'vitest'
-import { ActivityError, MAX_BACKOFF_MS, POLL_MS, REVEAL_MS, fetchRecentJoins, formatJoinCount, startJoinFeed, type RecentJoin } from './activity'
+import { afterEach, beforeEach, expect, test, vi } from 'vitest'
+import { ActivityError, IDLE_MS, MAX_BACKOFF_MS, POLL_MS, REVEAL_MS, fetchRecentJoins, formatJoinCount, startJoinFeed, type RecentJoin } from './activity'
 
 let stop: (() => void) | undefined
+beforeEach(() => {
+  vi.spyOn(document, 'hasFocus').mockReturnValue(true)
+  vi.spyOn(document, 'hidden', 'get').mockReturnValue(false)
+})
 afterEach(() => {
   stop?.()
   stop = undefined
   vi.useRealTimers()
+  vi.restoreAllMocks()
 })
 const join = (n: number): RecentJoin => ({ handle: `user${n}.example`, providerId: 'bluesky', providerName: 'Bluesky', joinedAt: new Date(Date.UTC(2026, 9, 3, 12, 0, n)).toISOString() })
 // Server order: newest first.
@@ -41,7 +46,9 @@ test('feed waits for Retry-After and backs off on failure instead of retry-loopi
   const show = vi.fn()
   const load = vi.fn<() => Promise<RecentJoin[]>>().mockRejectedValueOnce(new ActivityError(MAX_BACKOFF_MS + 60_000)).mockRejectedValue(new Error('offline'))
   stop = startJoinFeed(load, show)
-  await vi.advanceTimersByTimeAsync(MAX_BACKOFF_MS + 59_999)
+  await vi.advanceTimersByTimeAsync(IDLE_MS - 1)
+  document.dispatchEvent(new Event('keydown'))
+  await vi.advanceTimersByTimeAsync(MAX_BACKOFF_MS + 60_000 - IDLE_MS)
   expect(load).toHaveBeenCalledTimes(1)
   await vi.advanceTimersByTimeAsync(1)
   expect(load).toHaveBeenCalledTimes(2)
@@ -49,6 +56,145 @@ test('feed waits for Retry-After and backs off on failure instead of retry-loopi
   expect(load).toHaveBeenCalledTimes(2)
   await vi.advanceTimersByTimeAsync(1)
   expect(load).toHaveBeenCalledTimes(3)
+  expect(show).not.toHaveBeenCalled()
+})
+
+test.each(['pointerdown', 'pointermove', 'keydown', 'scroll', 'wheel'])('feed pauses after five idle minutes and resumes on %s', async event => {
+  vi.useFakeTimers()
+  const shown: string[] = []
+  const load = vi.fn(async () => newest(1, 2))
+  stop = startJoinFeed(load, join => shown.push(joinText(join)))
+  await vi.advanceTimersByTimeAsync(IDLE_MS - 1)
+  const polls = load.mock.calls.length
+  await vi.advanceTimersByTimeAsync(IDLE_MS + POLL_MS)
+  expect(load).toHaveBeenCalledTimes(polls)
+  document.dispatchEvent(new Event(event))
+  await vi.advanceTimersByTimeAsync(0)
+  expect(load).toHaveBeenCalledTimes(polls + 1)
+  await vi.advanceTimersByTimeAsync(REVEAL_MS)
+  expect(shown).toEqual([1, 2].map(n => joinText(join(n))))
+})
+
+test('interactions extend the idle deadline without delaying polls or reveals', async () => {
+  vi.useFakeTimers()
+  const shown: string[] = []
+  const load = vi.fn(async () => newest(1, 2, 3))
+  stop = startJoinFeed(load, join => shown.push(joinText(join)))
+  await vi.advanceTimersByTimeAsync(0)
+  for (let elapsed = 0; elapsed < IDLE_MS; elapsed += 1000) {
+    document.dispatchEvent(new Event('pointermove'))
+    await vi.advanceTimersByTimeAsync(1000)
+  }
+  expect(load).toHaveBeenCalledTimes(IDLE_MS / POLL_MS + 1)
+  expect(shown).toEqual([1, 2, 3].map(n => joinText(join(n))))
+  await vi.advanceTimersByTimeAsync(IDLE_MS)
+  const polls = load.mock.calls.length
+  await vi.advanceTimersByTimeAsync(POLL_MS)
+  expect(load).toHaveBeenCalledTimes(polls)
+})
+
+test('hidden pages do not start polling; returning refreshes an expired idle deadline', async () => {
+  vi.useFakeTimers()
+  const hidden = vi.spyOn(document, 'hidden', 'get').mockReturnValue(true)
+  const show = vi.fn()
+  const load = vi.fn(async () => newest(1, 2, 3))
+  stop = startJoinFeed(load, show)
+  document.dispatchEvent(new Event('pointermove'))
+  await vi.advanceTimersByTimeAsync(IDLE_MS + POLL_MS)
+  expect(load).not.toHaveBeenCalled()
+  hidden.mockReturnValue(false)
+  document.dispatchEvent(new Event('visibilitychange'))
+  await vi.advanceTimersByTimeAsync(0)
+  expect(load).toHaveBeenCalledTimes(1)
+  expect(show.mock.calls.map(([join]) => join.handle)).toEqual(['user1.example'])
+  hidden.mockReturnValue(true)
+  document.dispatchEvent(new Event('visibilitychange'))
+  await vi.advanceTimersByTimeAsync(IDLE_MS + POLL_MS)
+  expect(load).toHaveBeenCalledTimes(1)
+  expect(show).toHaveBeenCalledTimes(1)
+  hidden.mockReturnValue(false)
+  document.dispatchEvent(new Event('visibilitychange'))
+  await vi.advanceTimersByTimeAsync(REVEAL_MS)
+  expect(load).toHaveBeenCalledTimes(2)
+  expect(show.mock.calls.map(([join]) => join.handle)).toEqual(['user1.example', 'user2.example'])
+})
+
+test('visible pages pause when focus leaves and resume when focus returns', async () => {
+  vi.useFakeTimers()
+  vi.spyOn(document, 'hasFocus').mockReturnValue(false)
+  const load = vi.fn(async () => [])
+  stop = startJoinFeed(load, vi.fn())
+  await vi.advanceTimersByTimeAsync(POLL_MS)
+  expect(load).not.toHaveBeenCalled()
+  window.dispatchEvent(new Event('focus'))
+  await vi.advanceTimersByTimeAsync(0)
+  expect(load).toHaveBeenCalledTimes(1)
+  window.dispatchEvent(new Event('blur'))
+  document.dispatchEvent(new Event('keydown'))
+  await vi.advanceTimersByTimeAsync(IDLE_MS + POLL_MS)
+  expect(load).toHaveBeenCalledTimes(1)
+  window.dispatchEvent(new Event('focus'))
+  await vi.advanceTimersByTimeAsync(0)
+  expect(load).toHaveBeenCalledTimes(2)
+})
+
+test('resuming early does not bypass the polling interval or Retry-After', async () => {
+  vi.useFakeTimers()
+  const load = vi.fn<() => Promise<RecentJoin[]>>()
+    .mockResolvedValueOnce([])
+    .mockRejectedValueOnce(new ActivityError(MAX_BACKOFF_MS + 60_000))
+    .mockResolvedValue([])
+  stop = startJoinFeed(load, vi.fn())
+  await vi.advanceTimersByTimeAsync(0)
+  window.dispatchEvent(new Event('blur'))
+  await vi.advanceTimersByTimeAsync(1000)
+  window.dispatchEvent(new Event('focus'))
+  document.dispatchEvent(new Event('keydown'))
+  await vi.advanceTimersByTimeAsync(POLL_MS - 1001)
+  expect(load).toHaveBeenCalledTimes(1)
+  await vi.advanceTimersByTimeAsync(1)
+  expect(load).toHaveBeenCalledTimes(2)
+  window.dispatchEvent(new Event('blur'))
+  await vi.advanceTimersByTimeAsync(MAX_BACKOFF_MS)
+  window.dispatchEvent(new Event('focus'))
+  await vi.advanceTimersByTimeAsync(59_999)
+  expect(load).toHaveBeenCalledTimes(2)
+  await vi.advanceTimersByTimeAsync(1)
+  expect(load).toHaveBeenCalledTimes(3)
+})
+
+test('an in-flight response while paused waits to reveal until activity returns', async () => {
+  vi.useFakeTimers()
+  let resolve!: (joins: RecentJoin[]) => void
+  const load = vi.fn(() => new Promise<RecentJoin[]>(done => { resolve = done }))
+  const show = vi.fn()
+  stop = startJoinFeed(load, show)
+  await vi.advanceTimersByTimeAsync(0)
+  await vi.advanceTimersByTimeAsync(IDLE_MS)
+  resolve(newest(1, 2))
+  await vi.advanceTimersByTimeAsync(POLL_MS)
+  expect(load).toHaveBeenCalledTimes(1)
+  expect(show).not.toHaveBeenCalled()
+  document.dispatchEvent(new Event('pointerdown'))
+  await vi.advanceTimersByTimeAsync(REVEAL_MS)
+  expect(load).toHaveBeenCalledTimes(2)
+  expect(show.mock.calls.map(([join]) => join.handle)).toEqual(['user1.example'])
+})
+
+test('stopping discards in-flight results and cannot be resumed by browser events', async () => {
+  vi.useFakeTimers()
+  let resolve!: (joins: RecentJoin[]) => void
+  const load = vi.fn(() => new Promise<RecentJoin[]>(done => { resolve = done }))
+  const show = vi.fn()
+  stop = startJoinFeed(load, show)
+  await vi.advanceTimersByTimeAsync(0)
+  stop()
+  resolve(newest(1, 2))
+  window.dispatchEvent(new Event('focus'))
+  document.dispatchEvent(new Event('visibilitychange'))
+  document.dispatchEvent(new Event('pointerdown'))
+  await vi.advanceTimersByTimeAsync(IDLE_MS + POLL_MS)
+  expect(load).toHaveBeenCalledTimes(1)
   expect(show).not.toHaveBeenCalled()
 })
 
