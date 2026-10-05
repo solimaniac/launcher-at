@@ -22,10 +22,23 @@ const sky = document.querySelector<HTMLElement>('#launches')
 // Disabled apps skip the recent-joins poll entirely; nothing else consumes it.
 if (activity && sky && selectApp(new URLSearchParams(location.search).get('app')).app.launchAnimation !== false) {
   const launches = createLaunchLayer(sky)
-  const logos: Record<string, string | undefined> = Object.fromEntries(parseProviders(providerSource).map(provider => [provider.id, provider.logo]))
-  startJoinFeed(() => fetchRecentJoins(activity), join => {
-    const handle = join.handle.split('.', 1)[0]
-    launches.launch({ text: t('activity.joined', { handle, provider: join.providerName }), logo: logos[join.providerId] })
-  })
+  const logos: Record<string, string | undefined> = Object.fromEntries(
+    parseProviders(providerSource).map(provider => [provider.id, provider.logo]),
+  )
+  startJoinFeed(
+    () => fetchRecentJoins(activity),
+    join => {
+      const handle = join.handle.split('.', 1)[0]
+      launches.launch({
+        text: t('activity.joined', { handle, provider: join.providerName }),
+        logo: logos[join.providerId],
+      })
+    },
+  )
 }
-await launch(document.querySelector<HTMLElement>('#app')!, oauth, callback, activity ? fetchJoinCounts(activity) : undefined)
+await launch(
+  document.querySelector<HTMLElement>('#app')!,
+  oauth,
+  callback,
+  activity ? fetchJoinCounts(activity) : undefined,
+)

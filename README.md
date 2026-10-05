@@ -16,7 +16,7 @@ Set **PUBLIC_ACTIVITY_API** (build time, like `PUBLIC_ORIGIN`) to the backend's 
 
 - On page load the launcher fetches `/api/v1/providers/counts` once and shows "N joined in the last 30 days" on each provider card. Values of 1,000 and above are truncated to compact form with `+` (`1K+`, `10K+`, `1M+`). The picker defaults to descending join counts and updates its ordering when counts arrive. Equal counts sort A–Z; providers without counts follow providers with counts, including zero. If activity is disabled or the request fails, counts remain hidden and the default sort falls back to A–Z.
 - `src/activity.ts` polls `/api/v1/joins/recent?limit=50` every 30 seconds while the tab is visible, the window is focused, and the user has interacted within the last five minutes (`IDLE_MS`). Hiding the tab, leaving the window, or reaching that idle deadline pauses both polling and new join reveals. Returning to the page or interacting through pointer, keyboard, or scrolling resumes the feed; an overdue poll runs immediately, but the normal interval and `Retry-After` deadlines still apply. An already-running request may finish while paused, but its joins wait until the page is active. The feed hands at most one new join to its caller every 3 seconds. Entries already shown are never repeated, and surplus older entries are dropped so the display stays current. Failures back off exponentially, up to five minutes, and respect `Retry-After`. The callback page does not poll.
-- Each join appears as a rocket launch in the background sky (`src/background/`): a thin trajectory line drawn behind a small rocket mark, with "*handle* joined on *Provider* *logo*" trailing behind it. The sentence follows the curved trajectory using SVG `textPath`. The provider's configured local logo occupies a 12×12-pixel box with preserved aspect ratio. Its position and rotation follow the final rendered glyph, with four pixels of clearance beyond that glyph's bounds projected onto its tangent, rather than a large fixed path gap. The logo stays hidden until the final glyph is on the path. Unknown providers or providers without a logo retain text-only labels. Flights rise from the bottom edge and pitch over to the right over 18 seconds, giving the label more reading time, then fade out over 1.2 seconds; at most seven are visible at once so flights finish at the three-second reveal cadence. With `prefers-reduced-motion`, a launch shows as a still, partly drawn trajectory that fades in and out. The layer has `aria-hidden` and ignores pointer events. `startJoinFeed(load, show)` does not render anything itself, and `createLaunchLayer(container)` only exposes `launch({ text, logo? })` and `dispose()`, so either side can be replaced on its own.
+- Each join appears as a rocket launch in the background sky (`src/background/`): a thin trajectory line drawn behind a small rocket mark, with "_handle_ joined on _Provider_ _logo_" trailing behind it. The sentence follows the curved trajectory using SVG `textPath`. The provider's configured local logo occupies a 12×12-pixel box with preserved aspect ratio. Its position and rotation follow the final rendered glyph, with four pixels of clearance beyond that glyph's bounds projected onto its tangent, rather than a large fixed path gap. The logo stays hidden until the final glyph is on the path. Unknown providers or providers without a logo retain text-only labels. Flights rise from the bottom edge and pitch over to the right over 18 seconds, giving the label more reading time, then fade out over 1.2 seconds; at most seven are visible at once so flights finish at the three-second reveal cadence. With `prefers-reduced-motion`, a launch shows as a still, partly drawn trajectory that fades in and out. The layer has `aria-hidden` and ignores pointer events. `startJoinFeed(load, show)` does not render anything itself, and `createLaunchLayer(container)` only exposes `launch({ text, logo? })` and `dispose()`, so either side can be replaced on its own.
 - Animation labels show only the first dot-separated part of each handle (`user.bsky.social` → `user`) for every provider, including custom-domain handles. The API data and feed deduplication retain the full handle.
 - Below 768px, the page reserves extra sky beneath the content and source footer: bottom padding is `30svh`, bounded between `10rem` and `18rem`. Scroll to the bottom to see the launch animation unobstructed; desktop spacing is unchanged.
 - Budget: the backend allows 120 requests per client IP and 1,200 per process per minute by default (`RATE_LIMIT_PER_MINUTE`, `GLOBAL_RATE_LIMIT_PER_MINUTE`). One active tab uses about 2 requests per minute, so roughly 60 tabs behind one shared IP, or 600 active visitors per process, fit within those limits. Hidden, unfocused, and idle tabs do not poll. If you change the server limits or the traffic you expect, revisit `POLL_MS` in `src/activity.ts`.
@@ -134,19 +134,19 @@ Provider cards use two columns from 768px and one column below; the dropdowns st
 
 All 11 configured providers have local assets in `public/providers/`. The picker uses a shared 48×48 CSS-pixel box (`3rem`) with `object-fit: contain`, preserving each mark's aspect ratio. Eight assets are SVGs; Eurosky and Witchcraft Systems use PNGs. selfhosted.social uses its original 48×48 favicon converted losslessly to PNG without upscaling. Wide or tall marks occupy less of the square box.
 
-| Provider | Source asset | Format / source size |
-| --- | --- | --- |
-| Bluesky | [Official media-kit butterfly](https://bsky.social/about/brand-assets/butterfly/bluesky_media_kit_logo_transparent_1.svg) | SVG, 568×501 |
-| Eurosky | [Official portal icon](https://portal.eurosky.tech/icons/android-icon-192x192.png) | PNG, 184×184 |
-| Blacksky | [Blacksky Algorithms mark](https://commons.wikimedia.org/wiki/File:Blacksky_Algorithms_Logo_(black).svg), attributed to blackskyweb.xyz | SVG, approximately 88×75 |
-| W Social | [Official homepage splash SVG](https://wsocial.eu/) | SVG, 73×73 viewBox |
-| Northsky | [Official color icon](https://northskysocial.ca/northsky-icon-color.svg) | SVG, 1024×1024 viewBox |
-| selfhosted.social | [Official favicon](https://selfhosted.social/_app/immutable/assets/favicon.D87KDQmG.ico) | PNG conversion, 48×48 |
-| Tangled | [Official Dolly mark](https://assets.tangled.network/tangled_dolly_face_only_black_on_trans.svg) | SVG, approximately 24×23 |
-| Spark | [Official icon](https://sprk.so/icon.svg) | SVG, 551×551 |
-| npmx | [Official cute logo](https://npmx.dev/extra/npmx-cute.svg) | SVG, 246×112 |
-| pckt | [Official favicon](https://pckt.blog/favicon.svg) | SVG, 93×107 |
-| Witchcraft Systems | [Official homepage base artwork](https://witchcraft.systems/img/WitchSysBase.png) | PNG, 256×512 |
+| Provider           | Source asset                                                                                                                              | Format / source size     |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------- | ------------------------ |
+| Bluesky            | [Official media-kit butterfly](https://bsky.social/about/brand-assets/butterfly/bluesky_media_kit_logo_transparent_1.svg)                 | SVG, 568×501             |
+| Eurosky            | [Official portal icon](https://portal.eurosky.tech/icons/android-icon-192x192.png)                                                        | PNG, 184×184             |
+| Blacksky           | [Blacksky Algorithms mark](<https://commons.wikimedia.org/wiki/File:Blacksky_Algorithms_Logo_(black).svg>), attributed to blackskyweb.xyz | SVG, approximately 88×75 |
+| W Social           | [Official homepage splash SVG](https://wsocial.eu/)                                                                                       | SVG, 73×73 viewBox       |
+| Northsky           | [Official color icon](https://northskysocial.ca/northsky-icon-color.svg)                                                                  | SVG, 1024×1024 viewBox   |
+| selfhosted.social  | [Official favicon](https://selfhosted.social/_app/immutable/assets/favicon.D87KDQmG.ico)                                                  | PNG conversion, 48×48    |
+| Tangled            | [Official Dolly mark](https://assets.tangled.network/tangled_dolly_face_only_black_on_trans.svg)                                          | SVG, approximately 24×23 |
+| Spark              | [Official icon](https://sprk.so/icon.svg)                                                                                                 | SVG, 551×551             |
+| npmx               | [Official cute logo](https://npmx.dev/extra/npmx-cute.svg)                                                                                | SVG, 246×112             |
+| pckt               | [Official favicon](https://pckt.blog/favicon.svg)                                                                                         | SVG, 93×107              |
+| Witchcraft Systems | [Official homepage base artwork](https://witchcraft.systems/img/WitchSysBase.png)                                                         | PNG, 256×512             |
 
 These assets identify their respective providers; the launcher's MIT license does not grant rights to provider trademarks. Follow [Bluesky's brand guidelines](https://bsky.social/about/support/branding). Commons lists the Blacksky mark as public domain; explicit redistribution licenses were not established for the other assets. Witchcraft Systems uses its homepage base artwork rather than the site's animated accent overlay.
 
@@ -201,15 +201,15 @@ Add `locales/fr.json` with the same keys, register it in `src/i18n.ts` under `re
 
 **GET `/v1/providers.json`** returns a JSON array generated from `config/providers.json`. The `v1` fields are:
 
-| Field | Type | Meaning |
-| --- | --- | --- |
-| `id` | string | Stable provider ID |
-| `name` | string | Provider display name |
-| `serviceUrl` | string | HTTPS PDS/entryway URL for OAuth |
-| `description` | string | English text resolved from the locale key |
-| `region` | string | Country/region where the provider hosts accounts |
-| `logo` | string, optional | Same-site path; resolve against the registry origin |
-| `enabled` | boolean | Whether the launcher offers this provider |
+| Field            | Type              | Meaning                                                                                |
+| ---------------- | ----------------- | -------------------------------------------------------------------------------------- |
+| `id`             | string            | Stable provider ID                                                                     |
+| `name`           | string            | Provider display name                                                                  |
+| `serviceUrl`     | string            | HTTPS PDS/entryway URL for OAuth                                                       |
+| `description`    | string            | English text resolved from the locale key                                              |
+| `region`         | string            | Country/region where the provider hosts accounts                                       |
+| `logo`           | string, optional  | Same-site path; resolve against the registry origin                                    |
+| `enabled`        | boolean           | Whether the launcher offers this provider                                              |
 | `requiresInvite` | boolean, optional | Whether signup requires an invite code beforehand; omitted means no invite requirement |
 
 Consumers should honor `enabled`. Changes incompatible with this schema require a new `/v2/` resource. The public file is generated; edit only the contributor source. For browser consumers on other origins, configure your static host to send `Access-Control-Allow-Origin: *` on this JSON resource. This is a static-host header, not an API server.

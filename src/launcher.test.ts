@@ -12,7 +12,9 @@ function root() {
 }
 function result(appId: string | null): SignupOAuth {
   return {
-    start: async () => { throw new Error('Not part of callback scenario') },
+    start: async () => {
+      throw new Error('Not part of callback scenario')
+    },
     finish: async () => ({ did: 'did:plc:example', appId, cleanupFailed: false }),
   }
 }
@@ -34,14 +36,23 @@ test('missing or unknown authenticated context cannot inherit a query-string red
     history.replaceState(null, '', '/callback.html?app=example-app&redirect=https://evil.example')
     const page = root()
     dispose = await launch(page, result(id), true)
-    expect([...page.querySelectorAll<HTMLAnchorElement>('a')].every(link => !link.href.includes('evil.example') && !link.href.includes('example.com'))).toBe(true)
+    expect(
+      [...page.querySelectorAll<HTMLAnchorElement>('a')].every(
+        link => !link.href.includes('evil.example') && !link.href.includes('example.com'),
+      ),
+    ).toBe(true)
     expect(page.querySelector('h1')?.textContent).toBe(t('complete.title'))
     dispose()
   }
 })
 test('cancelled signup preserves only validated app context for start-over', async () => {
   const page = root()
-  const cancelled: SignupOAuth = { ...result(null), finish: async () => { throw new SignupError('errors.cancelled', 'example-app') } }
+  const cancelled: SignupOAuth = {
+    ...result(null),
+    finish: async () => {
+      throw new SignupError('errors.cancelled', 'example-app')
+    },
+  }
   dispose = await launch(page, cancelled, true)
   expect(page.textContent).toContain(t('errors.cancelled'))
   page.querySelector<HTMLButtonElement>('button')!.click()
@@ -51,11 +62,17 @@ test('cancelled signup preserves only validated app context for start-over', asy
 })
 test('app state accepts IDs, never URLs or paths', () => {
   expect(recoverAppId('example-app')).toBe('example-app')
-  for (const state of [null, '', '../example-app', 'https://evil.example', { app: 'example-app' }]) expect(recoverAppId(state)).toBeNull()
+  for (const state of [null, '', '../example-app', 'https://evil.example', { app: 'example-app' }])
+    expect(recoverAppId(state)).toBeNull()
 })
 test('provider failure enables retry and never reveals library error details', async () => {
   const page = root()
-  const failure: SignupOAuth = { ...result(null), start: async () => { throw new Error('secret code and stack trace') } }
+  const failure: SignupOAuth = {
+    ...result(null),
+    start: async () => {
+      throw new Error('secret code and stack trace')
+    },
+  }
   dispose = await launch(page, failure)
   page.querySelector<HTMLButtonElement>('button')!.click()
   page.querySelector<HTMLButtonElement>('.provider')!.click()
@@ -71,7 +88,8 @@ function visibleProviders(page: HTMLElement) {
   return [...page.querySelectorAll<HTMLElement>('.provider:not([hidden])')].map(card => card.dataset.provider)
 }
 function openControls(page: HTMLElement) {
-  if (page.querySelector<HTMLElement>('.provider-controls')!.hidden) page.querySelector<HTMLButtonElement>('.provider-toggle')!.click()
+  if (page.querySelector<HTMLElement>('.provider-controls')!.hidden)
+    page.querySelector<HTMLButtonElement>('.provider-toggle')!.click()
 }
 function choose(page: HTMLElement, id: string, value: string) {
   openControls(page)
@@ -86,23 +104,75 @@ function region(page: HTMLElement, value: string) {
 
 test('join sorting handles late counts, ties, zero and unavailable counts without losing focus', async () => {
   let resolve!: (value: JoinCounts) => void
-  const counts = new Promise<JoinCounts>(done => { resolve = done })
+  const counts = new Promise<JoinCounts>(done => {
+    resolve = done
+  })
   const page = root()
   dispose = await launch(page, result(null), false, counts)
   page.querySelector<HTMLButtonElement>('button')!.click()
-  expect([...page.querySelectorAll<HTMLOptionElement>('#provider-sort option')].map(option => option.value)).toEqual(['az', 'za'])
+  expect([...page.querySelectorAll<HTMLOptionElement>('#provider-sort option')].map(option => option.value)).toEqual([
+    'az',
+    'za',
+  ])
   expect(page.querySelector<HTMLSelectElement>('#provider-sort')!.value).toBe('az')
-  expect(visibleProviders(page)).toEqual(['blacksky', 'bluesky', 'eurosky', 'northsky', 'npmx', 'pckt', 'selfhosted-social', 'spark', 'tangled', 'w-social', 'witchcraft-systems'])
+  expect(visibleProviders(page)).toEqual([
+    'blacksky',
+    'bluesky',
+    'eurosky',
+    'northsky',
+    'npmx',
+    'pckt',
+    'selfhosted-social',
+    'spark',
+    'tangled',
+    'w-social',
+    'witchcraft-systems',
+  ])
   const focused = page.querySelector<HTMLButtonElement>('[data-provider="bluesky"]')!
   focused.focus()
-  resolve({ windowDays: 30, providers: new Map([['spark', 24], ['eurosky', 24], ['bluesky', 0]]) })
+  resolve({
+    windowDays: 30,
+    providers: new Map([
+      ['spark', 24],
+      ['eurosky', 24],
+      ['bluesky', 0],
+    ]),
+  })
   await counts
-  expect([...page.querySelectorAll<HTMLOptionElement>('#provider-sort option')].map(option => option.value)).toEqual(['joins', 'az', 'za'])
+  expect([...page.querySelectorAll<HTMLOptionElement>('#provider-sort option')].map(option => option.value)).toEqual([
+    'joins',
+    'az',
+    'za',
+  ])
   expect(page.querySelector<HTMLSelectElement>('#provider-sort')!.value).toBe('joins')
-  expect(visibleProviders(page)).toEqual(['eurosky', 'spark', 'bluesky', 'blacksky', 'northsky', 'npmx', 'pckt', 'selfhosted-social', 'tangled', 'w-social', 'witchcraft-systems'])
+  expect(visibleProviders(page)).toEqual([
+    'eurosky',
+    'spark',
+    'bluesky',
+    'blacksky',
+    'northsky',
+    'npmx',
+    'pckt',
+    'selfhosted-social',
+    'tangled',
+    'w-social',
+    'witchcraft-systems',
+  ])
   expect(document.activeElement).toBe(focused)
   choose(page, 'provider-sort', 'za')
-  expect(visibleProviders(page)).toEqual(['witchcraft-systems', 'w-social', 'tangled', 'spark', 'selfhosted-social', 'pckt', 'npmx', 'northsky', 'eurosky', 'bluesky', 'blacksky'])
+  expect(visibleProviders(page)).toEqual([
+    'witchcraft-systems',
+    'w-social',
+    'tangled',
+    'spark',
+    'selfhosted-social',
+    'pckt',
+    'npmx',
+    'northsky',
+    'eurosky',
+    'bluesky',
+    'blacksky',
+  ])
   choose(page, 'provider-sort', 'az')
   expect(visibleProviders(page)[0]).toBe('blacksky')
 })
@@ -128,7 +198,19 @@ test('multiple regions combine with invite requirements and clear filters recove
   choose(page, 'provider-sort', 'za')
   page.querySelector<HTMLButtonElement>('.provider-toggle')!.click()
   page.querySelector<HTMLButtonElement>('.clear-filters')!.click()
-  expect(visibleProviders(page)).toEqual(['witchcraft-systems', 'w-social', 'tangled', 'spark', 'selfhosted-social', 'pckt', 'npmx', 'northsky', 'eurosky', 'bluesky', 'blacksky'])
+  expect(visibleProviders(page)).toEqual([
+    'witchcraft-systems',
+    'w-social',
+    'tangled',
+    'spark',
+    'selfhosted-social',
+    'pckt',
+    'npmx',
+    'northsky',
+    'eurosky',
+    'bluesky',
+    'blacksky',
+  ])
   expect(page.querySelector<HTMLElement>('.provider-empty')!.hidden).toBe(true)
   expect(page.querySelector<HTMLButtonElement>('.provider-toggle')!.getAttribute('aria-expanded')).toBe('false')
   expect(page.querySelector<HTMLElement>('[role="status"]')!.hidden).toBe(true)
@@ -137,9 +219,16 @@ test('multiple regions combine with invite requirements and clear filters recove
 
 test('late counts respect alphabetical selection and failed signup preserves filtered choices', async () => {
   let resolve!: (value: JoinCounts) => void
-  const counts = new Promise<JoinCounts>(done => { resolve = done })
+  const counts = new Promise<JoinCounts>(done => {
+    resolve = done
+  })
   const page = root()
-  const failure: SignupOAuth = { ...result(null), start: async () => { throw new Error('failed') } }
+  const failure: SignupOAuth = {
+    ...result(null),
+    start: async () => {
+      throw new Error('failed')
+    },
+  }
   dispose = await launch(page, failure, false, counts)
   page.querySelector<HTMLButtonElement>('button')!.click()
   choose(page, 'provider-sort', 'za')
@@ -149,7 +238,11 @@ test('late counts respect alphabetical selection and failed signup preserves fil
   await counts
   expect(visibleProviders(page)).toEqual(['tangled', 'npmx', 'eurosky'])
   page.querySelector<HTMLButtonElement>('.provider:not([hidden])')!.click()
-  expect([...page.querySelectorAll<HTMLInputElement | HTMLSelectElement>('input, select')].every(control => control.disabled)).toBe(true)
+  expect(
+    [...page.querySelectorAll<HTMLInputElement | HTMLSelectElement>('input, select')].every(
+      control => control.disabled,
+    ),
+  ).toBe(true)
   await vi.waitFor(() => expect(page.dataset.view).toBe('error'))
   page.querySelector<HTMLButtonElement>('button')!.click()
   expect(visibleProviders(page)).toEqual(['tangled', 'npmx', 'eurosky'])
@@ -157,17 +250,30 @@ test('late counts respect alphabetical selection and failed signup preserves fil
 })
 
 test('join-count sort is omitted for failed, empty, or unrelated counts but includes measured zero', async () => {
-  for (const counts of [undefined, Promise.reject(new Error('offline')), Promise.resolve({ windowDays: 30, providers: new Map<string, number>() }), Promise.resolve({ windowDays: 30, providers: new Map([['unknown-provider', 9]]) })]) {
+  for (const counts of [
+    undefined,
+    Promise.reject(new Error('offline')),
+    Promise.resolve({ windowDays: 30, providers: new Map<string, number>() }),
+    Promise.resolve({ windowDays: 30, providers: new Map([['unknown-provider', 9]]) }),
+  ]) {
     const page = root()
     dispose = await launch(page, result(null), false, counts)
     page.querySelector<HTMLButtonElement>('button')!.click()
     openControls(page)
-    expect([...page.querySelectorAll<HTMLOptionElement>('#provider-sort option')].map(option => option.value)).toEqual(['az', 'za'])
+    expect([...page.querySelectorAll<HTMLOptionElement>('#provider-sort option')].map(option => option.value)).toEqual([
+      'az',
+      'za',
+    ])
     expect(page.querySelector<HTMLSelectElement>('#provider-sort')!.value).toBe('az')
     dispose()
   }
   const page = root()
-  dispose = await launch(page, result(null), false, Promise.resolve({ windowDays: 30, providers: new Map([['spark', 0]]) }))
+  dispose = await launch(
+    page,
+    result(null),
+    false,
+    Promise.resolve({ windowDays: 30, providers: new Map([['spark', 0]]) }),
+  )
   page.querySelector<HTMLButtonElement>('button')!.click()
   expect(page.querySelector<HTMLSelectElement>('#provider-sort')!.value).toBe('joins')
   expect(visibleProviders(page)[0]).toBe('spark')

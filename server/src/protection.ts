@@ -25,7 +25,11 @@ class RequestBudget {
   private globalLimit: number
   take(client: string, now: number): boolean {
     const window = Math.floor(now / 60000)
-    if (window !== this.window) { this.window = window; this.total = 0; this.clients.clear() }
+    if (window !== this.window) {
+      this.window = window
+      this.total = 0
+      this.clients.clear()
+    }
     if (this.total >= this.globalLimit) return false
     this.total++
     const count = this.clients.get(client) ?? 0
@@ -56,7 +60,7 @@ export function clientKey(c: Context, trustRailwayProxy: boolean): string {
     return 'unknown-proxy-client'
   }
   const peer = c.env?.incoming ? getConnInfo(c).remote.address : undefined
-  return peer ? normalizeIp(peer) ?? 'unknown-peer' : 'unknown-peer'
+  return peer ? (normalizeIp(peer) ?? 'unknown-peer') : 'unknown-peer'
 }
 
 export function requestProtection(options: ProtectionOptions = {}, now = Date.now): MiddlewareHandler {
@@ -69,10 +73,13 @@ export function requestProtection(options: ProtectionOptions = {}, now = Date.no
   let active = 0
   return async (c, next) => {
     const timestamp = now()
-    const retryAfter = String(Math.max(1, Math.ceil((60000 - timestamp % 60000) / 1000)))
+    const retryAfter = String(Math.max(1, Math.ceil((60000 - (timestamp % 60000)) / 1000)))
     const reject = (error: string, status: 400 | 405 | 414 | 429 | 503) => {
       c.header('Cache-Control', 'no-store')
-      if (c.req.header('transfer-encoding') || (c.req.header('content-length') && c.req.header('content-length') !== '0')) {
+      if (
+        c.req.header('transfer-encoding') ||
+        (c.req.header('content-length') && c.req.header('content-length') !== '0')
+      ) {
         c.header('Connection', 'close')
         c.env?.outgoing?.once('finish', () => c.env.incoming.destroy())
       }
@@ -98,12 +105,17 @@ export function requestProtection(options: ProtectionOptions = {}, now = Date.no
       c.header('Allow', 'GET, HEAD, OPTIONS')
       return reject('Method not allowed', 405)
     }
-    if (c.req.header('transfer-encoding') || (c.req.header('content-length') && c.req.header('content-length') !== '0')) return reject('Request bodies are not accepted', 400)
+    if (c.req.header('transfer-encoding') || (c.req.header('content-length') && c.req.header('content-length') !== '0'))
+      return reject('Request bodies are not accepted', 400)
     if (active >= maxConcurrent) {
       c.header('Retry-After', '1')
       return reject('Server busy', 503)
     }
     active++
-    try { await next() } finally { active-- }
+    try {
+      await next()
+    } finally {
+      active--
+    }
   }
 }

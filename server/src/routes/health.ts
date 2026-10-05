@@ -11,8 +11,11 @@ export function healthRoute(app: Hono, redis: Pick<Redis, 'ping'>, now = Date.no
     try {
       await Promise.race([redis.ping(), timeout.promise])
       return true
-    } catch { return false }
-    finally { clearTimeout(timer) }
+    } catch {
+      return false
+    } finally {
+      clearTimeout(timer)
+    }
   }
   app.get('/health', async c => {
     c.header('Cache-Control', 'no-store')

@@ -9,5 +9,13 @@ test('public HTTPS metadata binds callback and minimal permissions to the config
   expect(metadata.grant_types).toEqual(['authorization_code'])
 })
 test('rejects origins incompatible with discoverable OAuth client IDs', () => {
-  for (const origin of ['https://launcher.example.org/path', 'https://launcher.example.org/', 'https://user:pass@launcher.example.org', 'http://launcher.example.org', 'https://launcher.example.org:8443', 'not a URL']) expect(() => metadataFor(origin)).toThrow()
+  for (const origin of [
+    'https://launcher.example.org/path',
+    'https://launcher.example.org/',
+    'https://user:pass@launcher.example.org',
+    'http://launcher.example.org',
+    'https://launcher.example.org:8443',
+    'not a URL',
+  ])
+    expect(() => metadataFor(origin)).toThrow()
 })

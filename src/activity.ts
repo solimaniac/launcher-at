@@ -1,7 +1,15 @@
 import { i18n } from './i18n'
 
-export interface JoinCounts { windowDays: number; providers: Map<string, number> }
-export interface RecentJoin { handle: string; providerId: string; providerName: string; joinedAt: string }
+export interface JoinCounts {
+  windowDays: number
+  providers: Map<string, number>
+}
+export interface RecentJoin {
+  handle: string
+  providerId: string
+  providerName: string
+  joinedAt: string
+}
 
 // Polling budget against the server's default admission limits (server/src/env.ts):
 // RATE_LIMIT_PER_MINUTE=120 per client IP and GLOBAL_RATE_LIMIT_PER_MINUTE=1200 per process,
@@ -39,10 +47,12 @@ async function getJson(url: string, fetcher: typeof fetch): Promise<Record<strin
 
 export async function fetchJoinCounts(origin: string, fetcher: typeof fetch = fetch): Promise<JoinCounts> {
   const body = await getJson(`${origin}/api/v1/providers/counts`, fetcher)
-  if (!Number.isSafeInteger(body.windowDays) || !Array.isArray(body.providers)) throw new Error('Unexpected counts response')
+  if (!Number.isSafeInteger(body.windowDays) || !Array.isArray(body.providers))
+    throw new Error('Unexpected counts response')
   const providers = new Map<string, number>()
   for (const entry of body.providers as Record<string, unknown>[]) {
-    if (entry && typeof entry.id === 'string' && Number.isSafeInteger(entry.joined) && (entry.joined as number) >= 0) providers.set(entry.id, entry.joined as number)
+    if (entry && typeof entry.id === 'string' && Number.isSafeInteger(entry.joined) && (entry.joined as number) >= 0)
+      providers.set(entry.id, entry.joined as number)
   }
   return { windowDays: body.windowDays as number, providers }
 }
@@ -50,14 +60,23 @@ export async function fetchJoinCounts(origin: string, fetcher: typeof fetch = fe
 export async function fetchRecentJoins(origin: string, fetcher: typeof fetch = fetch): Promise<RecentJoin[]> {
   const body = await getJson(`${origin}/api/v1/joins/recent?limit=50`, fetcher)
   if (!Array.isArray(body.joins)) throw new Error('Unexpected recent response')
-  return (body.joins as Record<string, unknown>[]).filter((j): j is Record<keyof RecentJoin, string> =>
-    !!j && ['handle', 'providerId', 'providerName', 'joinedAt'].every(key => typeof j[key] === 'string' && j[key])
-  ).map(({ handle, providerId, providerName, joinedAt }) => ({ handle, providerId, providerName, joinedAt }))
+  return (body.joins as Record<string, unknown>[])
+    .filter(
+      (j): j is Record<keyof RecentJoin, string> =>
+        !!j && ['handle', 'providerId', 'providerName', 'joinedAt'].every(key => typeof j[key] === 'string' && j[key]),
+    )
+    .map(({ handle, providerId, providerName, joinedAt }) => ({ handle, providerId, providerName, joinedAt }))
 }
 
 export function formatJoinCount(count: number): string {
   if (count < 1000) return new Intl.NumberFormat(i18n.language).format(count)
-  return new Intl.NumberFormat(i18n.language, { notation: 'compact', maximumFractionDigits: 0, roundingMode: 'trunc' }).format(count) + '+'
+  return (
+    new Intl.NumberFormat(i18n.language, {
+      notation: 'compact',
+      maximumFractionDigits: 0,
+      roundingMode: 'trunc',
+    }).format(count) + '+'
+  )
 }
 
 const joinKey = (join: RecentJoin) => `${join.joinedAt}|${join.providerId}|${join.handle}`
@@ -133,10 +152,14 @@ export function startJoinFeed(load: () => Promise<RecentJoin[]>, show: (join: Re
     if (revealTimer === undefined) revealTimer = window.setInterval(reveal, REVEAL_MS)
     if (pollTimer === undefined && !inFlight) pollTimer = window.setTimeout(poll, Math.max(0, nextPoll - Date.now()))
     // Recheck the deadline instead of resetting a timer on every pointer movement.
-    if (idleTimer === undefined) idleTimer = window.setTimeout(() => {
-      idleTimer = undefined
-      schedule()
-    }, Math.max(0, IDLE_MS - (Date.now() - lastActivity)))
+    if (idleTimer === undefined)
+      idleTimer = window.setTimeout(
+        () => {
+          idleTimer = undefined
+          schedule()
+        },
+        Math.max(0, IDLE_MS - (Date.now() - lastActivity)),
+      )
   }
   function interact() {
     if (stopped || document.hidden || !focused) return

@@ -23,7 +23,7 @@ let server: ServerType | undefined
 async function closeServer() {
   if (!server) return
   const closed = Promise.withResolvers<void>()
-  server.close(err => err ? closed.reject(err) : closed.resolve())
+  server.close(err => (err ? closed.reject(err) : closed.resolve()))
   await closed.promise
 }
 let stopping = false
@@ -40,7 +40,10 @@ async function shutdown(signal: string) {
   } catch (err) {
     log.error({ err }, 'Shutdown failed')
     process.exitCode = 1
-  } finally { redis.disconnect(); clearTimeout(deadline) }
+  } finally {
+    redis.disconnect()
+    clearTimeout(deadline)
+  }
 }
 process.once('SIGINT', () => void shutdown('SIGINT'))
 process.once('SIGTERM', () => void shutdown('SIGTERM'))
@@ -49,20 +52,36 @@ try {
   await storage.initialize()
   await storage.recent(providers.map(p => p.id))
   activityRoutes(app, storage, providers, config.allowedOrigins)
-  server = serve({ fetch: app.fetch, port: config.port, hostname: '0.0.0.0', serverOptions: {
-    maxHeaderSize: 8192, headersTimeout: 10000, requestTimeout: 10000,
-    keepAliveTimeout: 5000, connectionsCheckingInterval: 1000,
-  } })
+  server = serve({
+    fetch: app.fetch,
+    port: config.port,
+    hostname: '0.0.0.0',
+    serverOptions: {
+      maxHeaderSize: 8192,
+      headersTimeout: 10000,
+      requestTimeout: 10000,
+      keepAliveTimeout: 5000,
+      connectionsCheckingInterval: 1000,
+    },
+  })
   server.maxConnections = 256
   server.setTimeout(10000)
   server.on('timeout', (socket: Socket) => socket.destroy())
   if ('maxRequestsPerSocket' in server) server.maxRequestsPerSocket = 100
-  server.on('checkContinue', (_request, response) => { response.writeHead(417, { Connection: 'close' }); response.end() })
+  server.on('checkContinue', (_request, response) => {
+    response.writeHead(417, { Connection: 'close' })
+    response.end()
+  })
   await once(server, 'listening')
   log.info({ port: config.port }, 'HTTP server listening')
-  consumer = consumeAccounts({ url: config.jetstreamUrl, apiKey: config.jetstreamApiKey, cursor: new RedisCursorStore(redis, log),
+  consumer = consumeAccounts({
+    url: config.jetstreamUrl,
+    apiKey: config.jetstreamApiKey,
+    cursor: new RedisCursorStore(redis, log),
     handle: createAccountHandler(createIdentity(log), providers, join => storage.record(join), log),
-    concurrency: config.concurrency, log, signal: abort.signal,
+    concurrency: config.concurrency,
+    log,
+    signal: abort.signal,
   })
 } catch (err) {
   log.error({ err }, 'Startup failed')

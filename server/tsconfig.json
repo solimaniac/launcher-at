@@ -1,9 +1,7 @@
 {
   "compilerOptions": {
     "target": "es2024",
-    "lib": [
-      "ES2024"
-    ],
+    "lib": ["ES2024"],
     "module": "nodenext",
     "moduleResolution": "nodenext",
     "strict": true,
@@ -15,9 +13,5 @@
     "rewriteRelativeImportExtensions": true,
     "noEmit": true
   },
-  "include": [
-    "src",
-    "tests",
-    "vitest.config.ts"
-  ]
+  "include": ["src", "tests", "vitest.config.ts"]
 }

@@ -32,14 +32,25 @@ return 1
 
 export class Storage {
   readonly redis: Redis
-  constructor(redis: Redis) { this.redis = redis }
+  constructor(redis: Redis) {
+    this.redis = redis
+  }
   async initialize(now = Date.now()) {
     await this.redis.set(STARTED_KEY, new Date(now).toISOString(), 'NX')
   }
   async record(join: Join): Promise<void> {
     const member = join.handle ? JSON.stringify(join) : ''
-    await this.redis.eval(recordScript, 3, 'atmosphere:jetstream:counted:' + join.seq,
-      countKey(join.observedAt), RECENT_KEY, join.providerId, member, join.observedAt, RECENT_LIMIT)
+    await this.redis.eval(
+      recordScript,
+      3,
+      'atmosphere:jetstream:counted:' + join.seq,
+      countKey(join.observedAt),
+      RECENT_KEY,
+      join.providerId,
+      member,
+      join.observedAt,
+      RECENT_LIMIT,
+    )
   }
   async counts(ids: string[], now = Date.now()) {
     const pipe = this.redis.pipeline().get(STARTED_KEY)
@@ -62,7 +73,10 @@ export class Storage {
     const excluded: string[] = []
     for (const member of members) {
       const join = JSON.parse(member) as Join
-      if (!enabled.has(join.providerId)) { excluded.push(member); continue }
+      if (!enabled.has(join.providerId)) {
+        excluded.push(member)
+        continue
+      }
       if (join.handle && joins.length < Math.min(limit, RECENT_LIMIT)) joins.push(join)
     }
     if (excluded.length) await this.redis.zrem(RECENT_KEY, ...excluded)

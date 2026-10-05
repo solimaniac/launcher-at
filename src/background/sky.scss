@@ -2,7 +2,10 @@
 // settles into the background colour well above the horizon. Tracks app themes automatically.
 :root {
   min-height: 100%;
-  background:
-    linear-gradient(to bottom, color-mix(in srgb, var(--color-primary) 16%, var(--color-background)), var(--color-background) 75%)
+  background: linear-gradient(
+      to bottom,
+      color-mix(in srgb, var(--color-primary) 16%, var(--color-background)),
+      var(--color-background) 75%
+    )
     fixed var(--color-background);
 }

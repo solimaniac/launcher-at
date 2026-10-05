@@ -30,12 +30,20 @@ export async function launch(root: HTMLElement, oauth: SignupOAuth, callback = f
   let inviteFilter = 'all'
   const selectedRegions = new Set<string>()
   let refreshProviders: (() => void) | undefined
-  counts?.then(result => { joinCounts = result; showCounts(); refreshProviders?.() }, () => {})
+  counts?.then(
+    result => {
+      joinCounts = result
+      showCounts()
+      refreshProviders?.()
+    },
+    () => {},
+  )
   function showCounts() {
     if (!joinCounts) return
     for (const node of root.querySelectorAll<HTMLElement>('.provider .joins')) {
       const joined = joinCounts.providers.get(node.dataset.provider!)
-      if (joined !== undefined) node.textContent = t('providers.joined', { joined: formatJoinCount(joined), days: joinCounts.windowDays })
+      if (joined !== undefined)
+        node.textContent = t('providers.joined', { joined: formatJoinCount(joined), days: joinCounts.windowDays })
     }
   }
 
@@ -70,7 +78,10 @@ export async function launch(root: HTMLElement, oauth: SignupOAuth, callback = f
     root.append(notice)
   }
   function intro() {
-    screen(t('intro.title'), element('p', app.id === 'default' ? t('intro.generic') : t('intro.app', { appName: app.appName })))
+    screen(
+      t('intro.title'),
+      element('p', app.id === 'default' ? t('intro.generic') : t('intro.app', { appName: app.appName })),
+    )
     root.dataset.view = 'intro'
     unknownAppNotice()
     const list = element('ul')
@@ -85,8 +96,12 @@ export async function launch(root: HTMLElement, oauth: SignupOAuth, callback = f
     root.append(create, list)
   }
   function selector() {
-    try { providers ??= parseProviders(providerSource).filter(p => p.enabled) }
-    catch { showError('errors.providers', selector); return }
+    try {
+      providers ??= parseProviders(providerSource).filter(p => p.enabled)
+    } catch {
+      showError('errors.providers', selector)
+      return
+    }
     screen(t('providers.title'), element('p', t('providers.intro')))
     root.dataset.view = 'providers'
     const cards = element('div')
@@ -119,12 +134,25 @@ export async function launch(root: HTMLElement, oauth: SignupOAuth, callback = f
       controls.append(field)
       return select
     }
-    const invites = dropdown('provider-invites', t('providers.inviteFilter'), [
-      ['all', t('providers.inviteAny')], ['none', t('providers.inviteNone')], ['required', t('providers.inviteRequired')],
-    ], inviteFilter)
-    const sort = dropdown('provider-sort', t('providers.sortBy'), [
-      ['az', t('providers.sortAZ')], ['za', t('providers.sortZA')],
-    ], sortBy)
+    const invites = dropdown(
+      'provider-invites',
+      t('providers.inviteFilter'),
+      [
+        ['all', t('providers.inviteAny')],
+        ['none', t('providers.inviteNone')],
+        ['required', t('providers.inviteRequired')],
+      ],
+      inviteFilter,
+    )
+    const sort = dropdown(
+      'provider-sort',
+      t('providers.sortBy'),
+      [
+        ['az', t('providers.sortAZ')],
+        ['za', t('providers.sortZA')],
+      ],
+      sortBy,
+    )
     const joinSortOption = element('option', t('providers.sortJoins'))
     joinSortOption.value = 'joins'
     const regions = element('fieldset')
@@ -202,17 +230,26 @@ export async function launch(root: HTMLElement, oauth: SignupOAuth, callback = f
         const invite = element('span', t('providers.inviteRequired'))
         invite.className = 'invite-required'
         details.append(invite)
-        card.setAttribute('aria-label', `${t('providers.choose', { name: provider.name })}. ${t('providers.inviteRequired')}`)
+        card.setAttribute(
+          'aria-label',
+          `${t('providers.choose', { name: provider.name })}. ${t('providers.inviteRequired')}`,
+        )
       }
       card.onclick = async () => {
-        for (const control of root.querySelectorAll<HTMLButtonElement | HTMLSelectElement | HTMLInputElement>('button, select, input')) control.disabled = true
+        for (const control of root.querySelectorAll<HTMLButtonElement | HTMLSelectElement | HTMLInputElement>(
+          'button, select, input',
+        ))
+          control.disabled = true
         root.setAttribute('aria-busy', 'true')
         const status = element('p', t('oauth.opening'))
         status.className = 'notice'
         status.setAttribute('role', 'status')
         root.append(status)
-        try { await oauth.start(provider.serviceUrl, app.id) }
-        catch (error) { showError(error instanceof SignupError ? error.key : 'errors.authorization', selector) }
+        try {
+          await oauth.start(provider.serviceUrl, app.id)
+        } catch (error) {
+          showError(error instanceof SignupError ? error.key : 'errors.authorization', selector)
+        }
       }
       cards.append(card)
       providerCards.set(provider.id, card)
@@ -232,13 +269,17 @@ export async function launch(root: HTMLElement, oauth: SignupOAuth, callback = f
         // Missing counts rank below zero; ties and unavailable data use A-Z.
         return (joinCounts?.providers.get(b.id) ?? -1) - (joinCounts?.providers.get(a.id) ?? -1) || alphabetical
       })
-      const focused = document.activeElement instanceof HTMLButtonElement && cards.contains(document.activeElement) ? document.activeElement : null
+      const focused =
+        document.activeElement instanceof HTMLButtonElement && cards.contains(document.activeElement)
+          ? document.activeElement
+          : null
       let visible = 0
       for (const provider of ordered) {
         const card = providerCards.get(provider.id)!
-        card.hidden = (selectedRegions.size > 0 && !selectedRegions.has(provider.region))
-          || (inviteFilter === 'required' && !provider.requiresInvite)
-          || (inviteFilter === 'none' && !!provider.requiresInvite)
+        card.hidden =
+          (selectedRegions.size > 0 && !selectedRegions.has(provider.region)) ||
+          (inviteFilter === 'required' && !provider.requiresInvite) ||
+          (inviteFilter === 'none' && !!provider.requiresInvite)
         if (!card.hidden) visible++
         cards.append(card)
       }
@@ -247,12 +288,20 @@ export async function launch(root: HTMLElement, oauth: SignupOAuth, callback = f
       const activeFilters = selectedRegions.size + Number(inviteFilter !== 'all')
       resultCount.hidden = !activeFilters
       reset.hidden = !activeFilters
-      toggle.textContent = activeFilters ? t('providers.filterSortActive', { count: activeFilters }) : t('providers.filterSort')
+      toggle.textContent = activeFilters
+        ? t('providers.filterSortActive', { count: activeFilters })
+        : t('providers.filterSort')
       empty.hidden = visible > 0
       if (!providers!.length) empty.replaceChildren(element('p', t('providers.empty')))
     }
-    invites.onchange = () => { inviteFilter = invites.value; refreshProviders?.() }
-    sort.onchange = () => { sortBy = sort.value; refreshProviders?.() }
+    invites.onchange = () => {
+      inviteFilter = invites.value
+      refreshProviders?.()
+    }
+    sort.onchange = () => {
+      sortBy = sort.value
+      refreshProviders?.()
+    }
     const back = element('button', t('actions.back'))
     back.className = 'secondary'
     back.onclick = intro
@@ -301,10 +350,14 @@ export async function launch(root: HTMLElement, oauth: SignupOAuth, callback = f
     viewport.append(list)
     section.append(title, element('p', t('complete.exploreHint')), viewport)
     const motion = matchMedia('(prefers-reduced-motion: reduce)')
-    let paused = false, hovered = false, frame = 0, previous = 0, position = 0
+    let paused = false,
+      hovered = false,
+      frame = 0,
+      previous = 0,
+      position = 0
     function tick(now: number) {
       const end = viewport.scrollWidth - viewport.clientWidth
-      position += Math.min(now - previous, 50) * .018
+      position += Math.min(now - previous, 50) * 0.018
       previous = now
       if (position >= end) position = 0
       viewport.scrollLeft = position
@@ -317,9 +370,18 @@ export async function launch(root: HTMLElement, oauth: SignupOAuth, callback = f
       previous = performance.now()
       frame = requestAnimationFrame(tick)
     }
-    viewport.onpointerenter = () => { hovered = true; update() }
-    viewport.onpointerleave = () => { hovered = false; update() }
-    viewport.onpointerdown = viewport.onwheel = () => { paused = true; update() }
+    viewport.onpointerenter = () => {
+      hovered = true
+      update()
+    }
+    viewport.onpointerleave = () => {
+      hovered = false
+      update()
+    }
+    viewport.onpointerdown = viewport.onwheel = () => {
+      paused = true
+      update()
+    }
     section.addEventListener('focusin', update)
     section.addEventListener('focusout', () => queueMicrotask(update))
     motion.addEventListener('change', update)
@@ -333,15 +395,22 @@ export async function launch(root: HTMLElement, oauth: SignupOAuth, callback = f
     }
   }
   function complete(cleanupFailed: boolean) {
-    screen(t('complete.title'), element('p', app.id === 'default' ? t('complete.generic') : t('complete.app', { appName: app.appName })))
+    screen(
+      t('complete.title'),
+      element('p', app.id === 'default' ? t('complete.generic') : t('complete.app', { appName: app.appName })),
+    )
     root.dataset.view = 'complete'
     unknownAppNotice()
     if (cleanupFailed) root.append(element('p', t('errors.cleanup')))
     if (app.id === 'default') appCarousel()
     if (!app.redirectUrl) return
     let destination: string
-    try { destination = httpsUrl(app.redirectUrl) }
-    catch { root.append(element('p', t('errors.redirect'))); return }
+    try {
+      destination = httpsUrl(app.redirectUrl)
+    } catch {
+      root.append(element('p', t('errors.redirect')))
+      return
+    }
     const fallback = element('p', `${t('complete.redirectFallback')} `)
     fallback.className = 'redirect-fallback'
     const link = element('a', t('complete.redirectHere'))

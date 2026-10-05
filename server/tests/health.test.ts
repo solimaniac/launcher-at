@@ -6,7 +6,17 @@ import { pino } from 'pino'
 test('health distinguishes reachable Redis from an outage', async () => {
   let down = false
   let time = 1000
-  const app = buildServer({ ping: async () => { if (down) throw new Error('offline'); return 'PONG' } }, pino({ level: 'silent' }), {}, () => time)
+  const app = buildServer(
+    {
+      ping: async () => {
+        if (down) throw new Error('offline')
+        return 'PONG'
+      },
+    },
+    pino({ level: 'silent' }),
+    {},
+    () => time,
+  )
   expect(await (await app.request('/health')).json()).toEqual({ status: 'ok' })
   down = true
   time += 1000
@@ -56,5 +66,7 @@ test('hung health ping times out without tying up all HTTP work slots', async ()
     expect((await response).status).toBe(503)
     expect((await app.request('/health')).status).toBe(503)
     gate.resolve('PONG')
-  } finally { vi.useRealTimers() }
+  } finally {
+    vi.useRealTimers()
+  }
 })

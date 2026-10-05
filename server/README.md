@@ -40,20 +40,20 @@ Tests mock identity/network responses and Redis in-process; they never require t
 
 ### Environment
 
-| Variable | Default / purpose |
-|---|---|
-| `PORT` | `3000`; respects Railway's injected port; binds `0.0.0.0` |
-| `REDIS_URL` | `redis://127.0.0.1:6379` locally; required in production; `rediss://` supported by ioredis |
-| `JETSTREAM_URL` | `https://jetstream.us-east.bsky.network`, the public **v2** service origin |
-| `JETSTREAM_API_KEY` | Unset by default. Jetstream archive key; set it in production. With a key, every consumer (re)start reads the archive from the durable cursor before going live. Surrounding whitespace is trimmed. |
-| `ALLOWED_ORIGINS` | Comma-separated exact origins. Development defaults to `http://127.0.0.1:5173,http://localhost:5173`; production defaults to no cross-origin access. Explicit `*` is allowed; credentials are always disabled. |
-| `NODE_ENV` | Set to `production` when deployed |
-| `LOG_LEVEL` | `info`; use `debug` for untracked-provider and failed handle verification details |
-| `IDENTITY_CONCURRENCY` | `8`, bounded maximum `20`; SDK indexer preserves per-DID order |
-| `TRUST_RAILWAY_PROXY` | `false`; trust Railway's `X-Real-IP` only after verifying the edge overwrites it and there is no direct origin access. Never trusts `X-Forwarded-For`. |
-| `RATE_LIMIT_PER_MINUTE` | `120` requests per client per UTC minute, shared across all non-health paths and methods |
-| `GLOBAL_RATE_LIMIT_PER_MINUTE` | `1200` non-health requests per process per UTC minute, including requests rejected by the per-client quota |
-| `MAX_CONCURRENT_REQUESTS` | `32` admitted HTTP requests in flight; excess returns 503 with `Retry-After: 1` |
+| Variable                       | Default / purpose                                                                                                                                                                                              |
+| ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `PORT`                         | `3000`; respects Railway's injected port; binds `0.0.0.0`                                                                                                                                                      |
+| `REDIS_URL`                    | `redis://127.0.0.1:6379` locally; required in production; `rediss://` supported by ioredis                                                                                                                     |
+| `JETSTREAM_URL`                | `https://jetstream.us-east.bsky.network`, the public **v2** service origin                                                                                                                                     |
+| `JETSTREAM_API_KEY`            | Unset by default. Jetstream archive key; set it in production. With a key, every consumer (re)start reads the archive from the durable cursor before going live. Surrounding whitespace is trimmed.            |
+| `ALLOWED_ORIGINS`              | Comma-separated exact origins. Development defaults to `http://127.0.0.1:5173,http://localhost:5173`; production defaults to no cross-origin access. Explicit `*` is allowed; credentials are always disabled. |
+| `NODE_ENV`                     | Set to `production` when deployed                                                                                                                                                                              |
+| `LOG_LEVEL`                    | `info`; use `debug` for untracked-provider and failed handle verification details                                                                                                                              |
+| `IDENTITY_CONCURRENCY`         | `8`, bounded maximum `20`; SDK indexer preserves per-DID order                                                                                                                                                 |
+| `TRUST_RAILWAY_PROXY`          | `false`; trust Railway's `X-Real-IP` only after verifying the edge overwrites it and there is no direct origin access. Never trusts `X-Forwarded-For`.                                                         |
+| `RATE_LIMIT_PER_MINUTE`        | `120` requests per client per UTC minute, shared across all non-health paths and methods                                                                                                                       |
+| `GLOBAL_RATE_LIMIT_PER_MINUTE` | `1200` non-health requests per process per UTC minute, including requests rejected by the per-client quota                                                                                                     |
+| `MAX_CONCURRENT_REQUESTS`      | `32` admitted HTTP requests in flight; excess returns 503 with `Retry-After: 1`                                                                                                                                |
 
 Keep `.env`, credentials, and service URLs containing passwords out of Git. `.env.example` contains only local placeholders.
 
@@ -114,13 +114,13 @@ Do not blindly enable [Railway Under Attack Mode](https://docs.railway.com/netwo
 
 ## Redis retention and recovery
 
-| Key | Contents / retention |
-|---|---|
-| `atmosphere:joins:recent` | Sorted set of sequence, DID, verified handle, provider ID, observed timestamp; trimmed to the newest 50 by observed time on insert, so late archive replays never displace newer joins |
-| `atmosphere:joins:count:YYYY-MM-DD` | Hash of provider ID → aggregate count; expires 32 days after its last increment; no DIDs |
-| `atmosphere:jetstream:cursor` | Last contiguous successfully acknowledged v2 sequence (live timestamp boundary before first checkpoint); persistent operational metadata |
-| `atmosphere:tracking:startedAt` | Set once with `NX`; persistent operational timestamp |
-| `atmosphere:jetstream:counted:<seq>` | One-day replay marker containing only `1`; no DID/handle; atomic with count/feed write |
+| Key                                  | Contents / retention                                                                                                                                                                   |
+| ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `atmosphere:joins:recent`            | Sorted set of sequence, DID, verified handle, provider ID, observed timestamp; trimmed to the newest 50 by observed time on insert, so late archive replays never displace newer joins |
+| `atmosphere:joins:count:YYYY-MM-DD`  | Hash of provider ID → aggregate count; expires 32 days after its last increment; no DIDs                                                                                               |
+| `atmosphere:jetstream:cursor`        | Last contiguous successfully acknowledged v2 sequence (live timestamp boundary before first checkpoint); persistent operational metadata                                               |
+| `atmosphere:tracking:startedAt`      | Set once with `NX`; persistent operational timestamp                                                                                                                                   |
+| `atmosphere:jetstream:counted:<seq>` | One-day replay marker containing only `1`; no DID/handle; atomic with count/feed write                                                                                                 |
 
 Only aggregates and the latest 50 verified joins are kept, apart from non-user-identifying operational metadata. No permanent user histories or identity caches are stored. Redis needs persistence and a non-evicting policy; losing Redis data loses counts and the observation boundary. Redis persistence/backups should respect the same bounded identity retention policy.
 

@@ -47,16 +47,27 @@ let flightIds = 0
 function createFlight(trajectory: Trajectory, label: LaunchLabel, still: boolean): Flight {
   const id = `launch-trail-${++flightIds}`
   const group = node('g', { class: 'launch' })
-  const trail = node('path', { id, class: 'launch-trail', d: trajectory.path, 'stroke-dasharray': `${trajectory.length}` })
+  const trail = node('path', {
+    id,
+    class: 'launch-trail',
+    d: trajectory.path,
+    'stroke-dasharray': `${trajectory.length}`,
+  })
   const text = node('text', { class: 'launch-label', dy: '-7' })
   const textPath = node('textPath', { href: `#${id}`, 'text-anchor': 'end' })
   textPath.textContent = label.text
   text.append(textPath)
-  const logo = label.logo ? node('image', {
-    class: 'launch-logo', href: label.logo,
-    x: '0', y: `${-LOGO_SIZE}`,
-    width: `${LOGO_SIZE}`, height: `${LOGO_SIZE}`, preserveAspectRatio: 'xMidYMid meet',
-  }) : undefined
+  const logo = label.logo
+    ? node('image', {
+        class: 'launch-logo',
+        href: label.logo,
+        x: '0',
+        y: `${-LOGO_SIZE}`,
+        width: `${LOGO_SIZE}`,
+        height: `${LOGO_SIZE}`,
+        preserveAspectRatio: 'xMidYMid meet',
+      })
+    : undefined
   const rocket = node('path', { class: 'launch-rocket', d: ROCKET })
   group.append(trail, text, rocket)
   if (logo) group.append(logo)
@@ -84,11 +95,14 @@ function createFlight(trajectory: Trajectory, label: LaunchLabel, still: boolean
         const end = text.getEndPositionOfChar(lastCharacter)
         const bounds = text.getExtentOfChar(lastCharacter)
         const angle = text.getRotationOfChar(lastCharacter)
-        const radians = angle * Math.PI / 180
-        const cos = Math.cos(radians), sin = Math.sin(radians)
-        const edge = (cos >= 0 ? bounds.x + bounds.width : bounds.x) * cos
-          + (sin >= 0 ? bounds.y + bounds.height : bounds.y) * sin
-          - end.x * cos - end.y * sin
+        const radians = (angle * Math.PI) / 180
+        const cos = Math.cos(radians),
+          sin = Math.sin(radians)
+        const edge =
+          (cos >= 0 ? bounds.x + bounds.width : bounds.x) * cos +
+          (sin >= 0 ? bounds.y + bounds.height : bounds.y) * sin -
+          end.x * cos -
+          end.y * sin
         logo.setAttribute('x', `${edge + LOGO_GAP}`)
         logo.setAttribute('transform', `translate(${end.x} ${end.y}) rotate(${angle})`)
         logo.setAttribute('visibility', bounds.width > 0 && bounds.height > 0 ? 'visible' : 'hidden')

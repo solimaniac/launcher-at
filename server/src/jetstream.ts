@@ -6,16 +6,38 @@ import type { Identity } from './identity.ts'
 import { matchProvider } from './providers.ts'
 import type { TrackedProvider } from './providers.ts'
 
-export interface Join { seq: number; did: string; handle?: string; providerId: string; observedAt: number }
-export function createAccountHandler(identity: Identity, providers: TrackedProvider[], record: (join: Join) => Promise<void>, log: Logger, now = Date.now) {
+export interface Join {
+  seq: number
+  did: string
+  handle?: string
+  providerId: string
+  observedAt: number
+}
+export function createAccountHandler(
+  identity: Identity,
+  providers: TrackedProvider[],
+  record: (join: Join) => Promise<void>,
+  log: Logger,
+  now = Date.now,
+) {
   return async (event: AccountEvent) => {
     if (event.active !== true) return
     let resolved
-    try { resolved = await identity.resolveDid(event.did) }
-    catch (err) { log.warn({ err, seq: event.seq }, 'DID resolution failed'); return }
-    if (!resolved?.pds) { log.warn({ seq: event.seq }, 'DID has no valid PDS endpoint'); return }
+    try {
+      resolved = await identity.resolveDid(event.did)
+    } catch (err) {
+      log.warn({ err, seq: event.seq }, 'DID resolution failed')
+      return
+    }
+    if (!resolved?.pds) {
+      log.warn({ seq: event.seq }, 'DID has no valid PDS endpoint')
+      return
+    }
     const provider = matchProvider(resolved.pds, providers)
-    if (!provider) { log.debug({ seq: event.seq }, 'Untracked PDS account event'); return }
+    if (!provider) {
+      log.debug({ seq: event.seq }, 'Untracked PDS account event')
+      return
+    }
     const handle = await identity.verifyHandle(event.did, resolved.claimedHandle)
     const time = event.time ? Date.parse(event.time) : NaN
     const observedAt = Number.isFinite(time) ? Math.min(time, now()) : now()
@@ -29,27 +51,39 @@ export function createAccountHandler(identity: Identity, providers: TrackedProvi
 export const STALL_MS = 180_000
 
 export async function consumeAccounts(options: {
-  url: string; apiKey?: string; cursor: CursorStore; handle: (event: AccountEvent) => Promise<void>
-  log: Logger; signal: AbortSignal; concurrency?: number; transport?: LiveTransport; stallMs?: number
+  url: string
+  apiKey?: string
+  cursor: CursorStore
+  handle: (event: AccountEvent) => Promise<void>
+  log: Logger
+  signal: AbortSignal
+  concurrency?: number
+  transport?: LiveTransport
+  stallMs?: number
 }) {
   const { log, signal, stallMs = STALL_MS } = options
   const js = new Jetstream({ service: options.url, apiKey: options.apiKey })
   const indexer = new LexIndexer({ concurrency: options.concurrency ?? 8 }).account(options.handle)
-  const transport = options.transport ?? websocketTransport({
-    onConnect: () => log.info('Jetstream connected'),
-    onDisconnect: () => log.warn('Jetstream disconnected'),
-    onReconnect: (err, { attempt }) => log.warn({ err, attempt }, 'Jetstream reconnecting'),
-  })
+  const transport =
+    options.transport ??
+    websocketTransport({
+      onConnect: () => log.info('Jetstream connected'),
+      onDisconnect: () => log.warn('Jetstream disconnected'),
+      onReconnect: (err, { attempt }) => log.warn({ err, attempt }, 'Jetstream reconnecting'),
+    })
   while (!signal.aborted) {
     const run = new AbortController()
     const stop = () => run.abort()
     signal.addEventListener('abort', stop, { once: true })
     let lastEvent = Date.now()
-    const watchdog = setInterval(() => {
-      if (Date.now() - lastEvent < stallMs) return
-      log.error({ silentMs: Date.now() - lastEvent }, 'Jetstream stalled; restarting from durable cursor')
-      run.abort()
-    }, Math.min(stallMs, 10_000))
+    const watchdog = setInterval(
+      () => {
+        if (Date.now() - lastEvent < stallMs) return
+        log.error({ silentMs: Date.now() - lastEvent }, 'Jetstream stalled; restarting from durable cursor')
+        run.abort()
+      },
+      Math.min(stallMs, 10_000),
+    )
     const consumer: JetstreamConsumer = {
       kinds: ['account'],
       async run(stream, context) {
@@ -58,15 +92,23 @@ export async function consumeAccounts(options: {
         // throws. Normalize source shutdown so handlers settle BEFORE runner flush.
         async function* drainedStream() {
           try {
-            for await (const batch of stream) { lastEvent = Date.now(); yield batch }
-          } catch (err) { sourceError = err }
+            for await (const batch of stream) {
+              lastEvent = Date.now()
+              yield batch
+            }
+          } catch (err) {
+            sourceError = err
+          }
         }
         await indexer.run(drainedStream(), context)
         if (sourceError && !run.signal.aborted) throw sourceError
       },
     }
     const runner = js.runner(consumer)
-    const opts = { cursor: options.cursor, signal: run.signal, liveTransport: transport,
+    const opts = {
+      cursor: options.cursor,
+      signal: run.signal,
+      liveTransport: transport,
       onError: (err: Error) => log.warn({ err }, 'Jetstream event decoding failed'),
       onInfo: (info: { name: string; message?: string }) => log.warn({ info }, 'Jetstream advisory'),
     }

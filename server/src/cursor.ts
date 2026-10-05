@@ -7,7 +7,10 @@ export const CURSOR_KEY = 'atmosphere:jetstream:cursor'
 export class RedisCursorStore implements CursorStore {
   private redis: Pick<Redis, 'get' | 'set'>
   private log: Logger
-  constructor(redis: Pick<Redis, 'get' | 'set'>, log: Logger) { this.redis = redis; this.log = log }
+  constructor(redis: Pick<Redis, 'get' | 'set'>, log: Logger) {
+    this.redis = redis
+    this.log = log
+  }
   async load() {
     // Persist a live timestamp boundary before the first event. Without it,
     // a failed first write would restart at live and silently skip that event.
@@ -22,8 +25,13 @@ export class RedisCursorStore implements CursorStore {
     // SDK checkpoints are fire-and-forget. Retry here so failures neither
     // become unhandled rejections nor report a failed checkpoint as saved.
     for (;;) {
-      try { await this.redis.set(CURSOR_KEY, String(seq)); return }
-      catch (err) { this.log.error({ err }, 'Cursor checkpoint failed; retrying'); await delay(1000) }
+      try {
+        await this.redis.set(CURSOR_KEY, String(seq))
+        return
+      } catch (err) {
+        this.log.error({ err }, 'Cursor checkpoint failed; retrying')
+        await delay(1000)
+      }
     }
   }
 }

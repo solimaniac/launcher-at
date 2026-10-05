@@ -1,4 +1,8 @@
-export interface Pose { x: number; y: number; /** Heading in degrees, SVG convention (clockwise from +x). */ angle: number }
+export interface Pose {
+  x: number
+  y: number
+  /** Heading in degrees, SVG convention (clockwise from +x). */ angle: number
+}
 export interface Trajectory {
   /** SVG path data in viewport pixels. */
   readonly path: string
@@ -6,7 +10,10 @@ export interface Trajectory {
   /** Position and heading at `distance` pixels along the path, clamped to its ends. */
   poseAt(distance: number): Pose
 }
-interface Point { x: number; y: number }
+interface Point {
+  x: number
+  y: number
+}
 
 const SAMPLES = 64
 
@@ -30,10 +37,15 @@ function polyline(points: Point[]): Trajectory {
       const d = Math.min(Math.max(distance, 0), total)
       let i = 1
       while (i < points.length - 1 && lengths[i]! < d) i++
-      const from = points[i - 1]!, to = points[i]!
+      const from = points[i - 1]!,
+        to = points[i]!
       const span = lengths[i]! - lengths[i - 1]!
       const f = span ? (d - lengths[i - 1]!) / span : 0
-      return { x: from.x + (to.x - from.x) * f, y: from.y + (to.y - from.y) * f, angle: Math.atan2(to.y - from.y, to.x - from.x) * 180 / Math.PI }
+      return {
+        x: from.x + (to.x - from.x) * f,
+        y: from.y + (to.y - from.y) * f,
+        angle: (Math.atan2(to.y - from.y, to.x - from.x) * 180) / Math.PI,
+      }
     },
   }
 }
