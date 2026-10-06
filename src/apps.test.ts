@@ -76,3 +76,9 @@ test('allowlisted disabled providers remain valid configuration', () => {
   const configured = parseApps([generic, { ...example, providerAllowlist: ['bluesky'] }], disabledProviders)
   expect(lookupApp(configured, 'example-app').app.providerAllowlist).toEqual(['bluesky'])
 })
+
+test('join count visibility rejects non-boolean configuration', () => {
+  for (const joinCounts of ['false', 'true', 0, 1, null, {}]) {
+    expect(() => parseApps([generic, { ...example, joinCounts }], providers)).toThrow('joinCounts')
+  }
+})

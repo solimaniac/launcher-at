@@ -47,7 +47,7 @@ function matchesFilters(provider: Provider, filters: ProviderFilters) {
   return true
 }
 
-function providerCard(provider: Provider) {
+function providerCard(provider: Provider, showJoinCounts: boolean) {
   const card = element('button', '', 'provider')
   card.dataset.provider = provider.id
   const chooseLabel = t('providers.choose', { name: provider.name })
@@ -73,12 +73,14 @@ function providerCard(provider: Provider) {
   description.id = `provider-${provider.id}-description`
   card.setAttribute('aria-describedby', `${region.id} ${description.id}`)
 
-  // Filled in by `showCounts` once join counts arrive.
-  const joins = element('span', '', 'joins')
-  joins.dataset.provider = provider.id
-
   const details = element('span', '', 'provider-details')
-  details.append(element('strong', provider.name), region, description, joins)
+  details.append(element('strong', provider.name), region, description)
+  if (showJoinCounts) {
+    // Filled in by `showCounts` once join counts arrive.
+    const joins = element('span', '', 'joins')
+    joins.dataset.provider = provider.id
+    details.append(joins)
+  }
   if (provider.requiresInvite) details.append(element('span', t('providers.inviteRequired'), 'invite-required'))
   card.append(details)
   return card
@@ -114,7 +116,7 @@ export async function launch(root: HTMLElement, oauth: SignupOAuth, callback = f
   let providers: Provider[] | undefined
   let joinCounts: JoinCounts | undefined
   // Picker choices persist when the user leaves and returns to the provider screen.
-  let sortBy: SortOrder = 'joins'
+  let sortBy: SortOrder = app.joinCounts === false ? 'az' : 'joins'
   const filters: ProviderFilters = { regions: new Set(), invite: 'all' }
   /** Re-sorts and re-filters the provider picker; set only while it is on screen. */
   let refreshProviders: (() => void) | undefined
@@ -133,7 +135,7 @@ export async function launch(root: HTMLElement, oauth: SignupOAuth, callback = f
   const isDefaultApp = () => app.id === DEFAULT_APP_ID
 
   function showCounts() {
-    if (!joinCounts) return
+    if (app.joinCounts === false || !joinCounts) return
     for (const node of root.querySelectorAll<HTMLElement>('.provider .joins')) {
       const joined = joinCounts.providers.get(node.dataset.provider!)
       if (joined !== undefined) {
@@ -311,7 +313,7 @@ export async function launch(root: HTMLElement, oauth: SignupOAuth, callback = f
     const cards = element('div', '', 'providers')
     const cardsById = new Map<string, HTMLButtonElement>()
     for (const provider of enabledProviders) {
-      const card = providerCard(provider)
+      const card = providerCard(provider, app.joinCounts !== false)
       card.onclick = () => chooseProvider(provider)
       cards.append(card)
       cardsById.set(provider.id, card)
@@ -324,7 +326,8 @@ export async function launch(root: HTMLElement, oauth: SignupOAuth, callback = f
       // A provider was chosen and the redirect is under way; leave the page as it is.
       if (root.hasAttribute('aria-busy')) return
 
-      const hasCounts = enabledProviders.some(provider => joinCounts?.providers.has(provider.id))
+      const hasCounts =
+        app.joinCounts !== false && enabledProviders.some(provider => joinCounts?.providers.has(provider.id))
       if (hasCounts && !joinSortOption.parentNode) sort.select.prepend(joinSortOption)
       sort.select.value = sortBy === 'joins' && !hasCounts ? 'az' : sortBy
 
@@ -334,7 +337,7 @@ export async function launch(root: HTMLElement, oauth: SignupOAuth, callback = f
           ? document.activeElement
           : null
       let visible = 0
-      for (const provider of sortProviders(enabledProviders, sortBy, joinCounts)) {
+      for (const provider of sortProviders(enabledProviders, sort.select.value as SortOrder, joinCounts)) {
         const card = cardsById.get(provider.id)!
         card.hidden = !matchesFilters(provider, filters)
         if (!card.hidden) visible++

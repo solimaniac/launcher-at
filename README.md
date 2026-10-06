@@ -47,6 +47,7 @@ Each app gets its own branded launcher at `/?app=<id>`.
 | `redirectUrl`       | no       | HTTPS URL to send people back to after signup (8-second countdown). Omit to stay on the page.                                            |
 | `logo_url`          | no       | HTTPS image URL for the header. Defaults to the launcher logo.                                                                           |
 | `launchAnimation`   | no       | Set to `false` to hide the background rocket launches.                                                                                   |
+| `joinCounts`        | no       | Set to `false` to hide provider join counts and join-count sorting. Defaults to visible; hidden counts use A–Z sorting initially.        |
 | `providerAllowlist` | no       | Non-empty array of unique provider IDs from `config/providers.json`. Omit to show all enabled providers. Disabled providers stay hidden. |
 
 Good to know:

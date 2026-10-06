@@ -308,6 +308,60 @@ test('late counts respect alphabetical selection and failed signup preserves fil
   expect(page.querySelector<HTMLSelectElement>('#provider-sort')!.disabled).toBe(false)
 })
 
+test.each([undefined, true, false])(
+  'joinCounts=%s controls counts and sorting before and after arrival',
+  async joinCounts => {
+    const app = apps.find(app => app.id === 'example-app')!
+    const original = Object.getOwnPropertyDescriptor(app, 'joinCounts')
+    Object.assign(app, { joinCounts })
+    try {
+      history.replaceState(null, '', '/?app=example-app')
+      const page = root()
+      let resolve!: (value: JoinCounts) => void
+      const counts = new Promise<JoinCounts>(done => {
+        resolve = done
+      })
+      const failure: SignupOAuth = {
+        ...result(null),
+        start: async () => {
+          throw new SignupError('errors.authorization')
+        },
+      }
+      dispose = await launch(page, failure, false, counts)
+      page.querySelector<HTMLButtonElement>('button')!.click()
+      const alphabetical = visibleProviders(page)
+      resolve({ windowDays: 30, providers: new Map([['spark', 42]]) })
+      await counts
+      const assertVisibility = () => {
+        const sort = page.querySelector<HTMLSelectElement>('#provider-sort')!
+        const countText = t('providers.joined', { joined: '42', days: 30 })
+        if (joinCounts === false) {
+          expect(page.textContent).not.toContain(countText)
+          expect([...sort.options].map(option => option.value)).toEqual(['az', 'za'])
+          expect(sort.value).toBe('az')
+          expect(visibleProviders(page)).toEqual(alphabetical)
+        } else {
+          expect(page.textContent).toContain(countText)
+          expect(sort.value).toBe('joins')
+          expect(visibleProviders(page)[0]).toBe('spark')
+        }
+      }
+      assertVisibility()
+      page.querySelector<HTMLButtonElement>('.provider')!.click()
+      await vi.waitFor(() => expect(page.dataset.view).toBe('error'))
+      page.querySelector<HTMLButtonElement>('button')!.click()
+      assertVisibility()
+      dispose()
+      dispose = await launch(page, failure, false, counts)
+      page.querySelector<HTMLButtonElement>('button')!.click()
+      assertVisibility()
+    } finally {
+      if (original) Object.defineProperty(app, 'joinCounts', original)
+      else Reflect.deleteProperty(app, 'joinCounts')
+    }
+  },
+)
+
 test('join-count sort is omitted for failed, empty, or unrelated counts but includes measured zero', async () => {
   for (const counts of [
     undefined,
