@@ -78,6 +78,15 @@ test('distributed requests and client churn are bounded without evicting live qu
   expect((await capped.request('/', request('10.0.0.0'))).status).toBe(429)
 })
 
+test('requests rejected by the per-client limit do not consume the global allowance', async () => {
+  const app = new Hono()
+  app.use('*', requestProtection({ trustRailwayProxy: true, requestsPerMinute: 1, globalRequestsPerMinute: 2 }))
+  app.get('*', c => c.text('ok'))
+  expect((await app.request('/', request('192.0.2.1'))).status).toBe(200)
+  for (let i = 0; i < 5; i++) expect((await app.request('/', request('192.0.2.1'))).status).toBe(429)
+  expect((await app.request('/', request('192.0.2.2'))).status).toBe(200)
+})
+
 test('in-flight work is capped and a completed or failed request frees its slot', async () => {
   const entered = Promise.withResolvers<void>()
   const release = Promise.withResolvers<void>()

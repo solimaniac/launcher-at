@@ -36,11 +36,12 @@ class RequestBudget {
       this.total = 0
       this.clients.clear()
     }
-    // Every request counts toward the global limit, including ones the per-client limit rejects.
+    // Only admitted requests consume global allowance; otherwise one client
+    // spending past its own limit could lock every other client out.
     if (this.total >= this.globalLimit) return false
-    this.total++
     const count = this.clients.get(client) ?? 0
     if (count >= this.perClientLimit || (!count && this.clients.size >= MAX_TRACKED_CLIENTS)) return false
+    this.total++
     this.clients.set(client, count + 1)
     return true
   }
