@@ -17,7 +17,7 @@ function result(appId: string | null): SignupOAuth {
     start: async () => {
       throw new Error('Not part of callback scenario')
     },
-    finish: async () => ({ did: 'did:plc:example', appId, cleanupFailed: false }),
+    finish: async () => ({ handle: 'alice.bsky.social', appId, cleanupFailed: false }),
   }
 }
 afterEach(() => {
@@ -33,6 +33,56 @@ test('authenticated app state controls the return destination, not callback quer
   dispose = await launch(page, result('example-app'), true)
   expect(page.querySelector<HTMLAnchorElement>('a')?.href).toBe('https://bsky.app/')
 })
+test.each(['default', 'example-app', 'example-app-dark'])(
+  'shows the signup handle for %s without sending it to another app',
+  async appId => {
+    vi.useFakeTimers()
+    const page = root()
+    dispose = await launch(page, result(appId), true)
+    const identity = page.querySelector('section[aria-labelledby="completion-handle"]')!
+    expect(identity.textContent).toContain('alice.bsky.social')
+    expect(identity.querySelector('a')).toBeNull()
+    expect(
+      [...page.querySelectorAll<HTMLAnchorElement>('a')].every(link => !link.href.includes('alice.bsky.social')),
+    ).toBe(true)
+    expect(document.activeElement).toBe(page.querySelector('h1'))
+    if (appId !== 'default')
+      expect(page.querySelector<HTMLAnchorElement>('.redirect-fallback a')?.href).toBe('https://bsky.app/')
+  },
+)
+
+test('unavailable handle still completes signup and keeps the return destination', async () => {
+  vi.useFakeTimers()
+  const page = root()
+  dispose = await launch(
+    page,
+    {
+      ...result('example-app'),
+      finish: async () => ({ handle: null, appId: 'example-app', cleanupFailed: false }),
+    },
+    true,
+  )
+  expect(page.dataset.view).toBe('complete')
+  expect(page.querySelector('section[aria-labelledby="completion-handle"]')).toBeNull()
+  expect(page.querySelector<HTMLAnchorElement>('.redirect-fallback a')?.href).toBe('https://bsky.app/')
+})
+
+test('handle display treats markup as text', async () => {
+  const page = root()
+  const handle = '<img src=x onerror=alert(1)>'
+  dispose = await launch(
+    page,
+    {
+      ...result('default'),
+      finish: async () => ({ handle, appId: 'default', cleanupFailed: false }),
+    },
+    true,
+  )
+  const identity = page.querySelector('section[aria-labelledby="completion-handle"]')!
+  expect(identity.textContent).toContain(handle)
+  expect(identity.querySelector('img')).toBeNull()
+})
+
 test('missing or unknown authenticated context cannot inherit a query-string redirect', async () => {
   for (const id of [null, 'unregistered', '../../example-app', 'constructor']) {
     history.replaceState(null, '', '/callback.html?app=example-app&redirect=https://evil.example')

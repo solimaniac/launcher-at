@@ -1,7 +1,7 @@
 import { validId } from './config'
 
 export interface SignupResult {
-  did: string
+  handle: string | null
   appId: string | null
   cleanupFailed: boolean
 }

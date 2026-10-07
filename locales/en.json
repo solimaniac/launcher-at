@@ -70,7 +70,8 @@
   "activity": { "joined": "{{handle}} joined on {{provider}}" },
   "complete": {
     "title": "Your Atmosphere account is ready.",
-    "generic": "You can now use your account with compatible Atmosphere applications.",
+    "handleHint": "This is your handle across the Atmosphere. Use it to sign in to compatible apps with the same account.",
+    "handleUnavailable": "Your account is ready, but we couldn’t verify your handle right now. You can find it in your provider’s account settings.",
     "explore": "Find your next app",
     "exploreHint": "One account, a whole host of applications.",
     "app": "You’re ready to return to {{appName}}. You will be asked to sign in separately.",

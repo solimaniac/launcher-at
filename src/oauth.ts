@@ -7,6 +7,7 @@ import {
 import { SignupError, recoverAppId, type SignupOAuth } from './signup'
 
 let client: BrowserOAuthClient | undefined
+const HANDLE_LOOKUP_TIMEOUT_MS = 3000
 
 /** Lazily creates the OAuth client from the metadata generated at build time. */
 async function getClient() {
@@ -59,7 +60,18 @@ export const oauth: SignupOAuth = {
       } catch {
         cleanupFailed = true
       }
-      return { did, appId: recoverAppId(result.state), cleanupFailed }
+      // Public identity resolution needs no session; never delay credential cleanup for it.
+      let handle: string | null = null
+      try {
+        const identity = await client.identityResolver.resolve(did, {
+          signal: AbortSignal.timeout(HANDLE_LOOKUP_TIMEOUT_MS),
+          noCache: true,
+        })
+        if (identity.did === did && identity.handle !== 'handle.invalid') handle = identity.handle
+      } catch {
+        // A missing or temporarily unavailable handle does not undo a successful signup.
+      }
+      return { handle, appId: recoverAppId(result.state), cleanupFailed }
     } catch (error) {
       const appId = error instanceof OAuthCallbackError ? recoverAppId(error.state) : null
       throw new SignupError(callbackErrorKey(error), appId)

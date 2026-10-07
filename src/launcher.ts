@@ -378,10 +378,20 @@ export async function launch(root: HTMLElement, oauth: SignupOAuth, callback = f
     root.append(retryButton, startOver)
   }
 
-  function complete(cleanupFailed: boolean) {
-    const lead = isDefaultApp() ? t('complete.generic') : t('complete.app', { appName: app.appName })
-    screen(t('complete.title'), element('p', lead))
+  function complete(handle: string | null, cleanupFailed: boolean) {
+    screen(t('complete.title'))
     root.dataset.view = 'complete'
+    if (handle) {
+      const identity = element('section', undefined, 'completion-identity')
+      identity.setAttribute('aria-labelledby', 'completion-handle')
+      const accountHandle = element('p', `@${handle}`, 'completion-handle')
+      accountHandle.id = 'completion-handle'
+      identity.append(accountHandle, element('p', t('complete.handleHint'), 'completion-handle-hint'))
+      root.append(identity)
+    } else {
+      root.append(element('p', t('complete.handleUnavailable'), 'completion-handle-unavailable'))
+    }
+    if (!isDefaultApp()) root.append(element('p', t('complete.app', { appName: app.appName })))
     unknownAppNotice()
     if (cleanupFailed) root.append(element('p', t('errors.cleanup')))
     if (isDefaultApp()) stopCarousel = renderAppCarousel(root)
@@ -432,7 +442,7 @@ export async function launch(root: HTMLElement, oauth: SignupOAuth, callback = f
     try {
       const result = await oauth.finish()
       useApp(result.appId)
-      complete(result.cleanupFailed)
+      complete(result.handle, result.cleanupFailed)
     } catch (error) {
       useApp(error instanceof SignupError ? error.appId : null)
       showError(error instanceof SignupError ? error.key : 'errors.callback', restart)

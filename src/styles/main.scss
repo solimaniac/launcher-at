@@ -53,6 +53,27 @@ main {
 .source-footer a:hover {
   color: var(--color-text);
 }
+.completion-identity {
+  margin: 2rem 0;
+}
+.completion-handle {
+  margin: 0 0 0.75rem;
+  font-size: clamp(1.5rem, 4vw, 2.5rem);
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  line-height: 1.2;
+  user-select: all;
+}
+.completion-handle-hint {
+  margin: 0;
+  max-width: 52ch;
+  font-size: 0.9375rem;
+}
+.completion-handle-unavailable {
+  padding: 1rem 0;
+  border-block: 1px solid var(--color-border);
+}
+
 .redirect-fallback {
   font-size: 0.875rem;
 }
