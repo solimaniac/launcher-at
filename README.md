@@ -90,22 +90,6 @@ Set these at build time, in the environment or in `.env.local` (see [`.env.examp
 | `PUBLIC_ORIGIN`       | Public HTTPS origin of the site, e.g. `https://launcher.at`. **Required in production** for OAuth. |
 | `PUBLIC_ACTIVITY_API` | Origin of the activity backend. Leave unset to disable activity features.                          |
 
-## Deploy
-
-```sh
-PUBLIC_ORIGIN=https://your-launcher.example npm run build
-```
-
-Serve `dist/` from the root of that origin. It must return `/oauth-client-metadata.json` as JSON (not an HTML fallback). The included [`Caddyfile`](Caddyfile) does this and also serves per-app link previews for `/?app=<id>`; other hosts need an equivalent rewrite using the generated `dist/embed-routes.caddy`.
-
-Rebuild whenever the origin or app branding changes.
-
-Link previews use purpose-designed 1200×630 banners, not screenshots of the signup wizard. The default banner introduces the Atmosphere; app-specific banners show signup copy with the app's logo and theme. Banner copy lives in `locales/en.json` under `embed`, and the layout is rendered by `build/embeds.ts` using bundled fonts. Generated images are in `dist/embeds/`.
-
-Production uses `https://www.launcher.at` on Railway's `website` service, with `PUBLIC_ORIGIN` set to that origin. The activity backend's `ALLOWED_ORIGINS` must match. Stop the backend before redeploying it so Jetstream consumers never overlap.
-
-Hover hosts DNS: `www` is a CNAME to Railway's assigned target, with Railway's ownership TXT record at `_railway-verify.www`. Keep both records for domain verification and HTTPS. Hover forwards `http://launcher.at` to `https://www.launcher.at`; its forwarding does not support `https://launcher.at`.
-
 ## Other configuration
 
 - **Providers**: [`config/providers.json`](config/providers.json). Each entry needs an `id`, `name`, `serviceUrl` (the PDS or entryway used for OAuth), `description` (a key in `locales/en.json`), `region` and `enabled`. `logo` (a path under `public/providers/`) and `requiresInvite` are optional. The list is also published as `/v1/providers.json`.
