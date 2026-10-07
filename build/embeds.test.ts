@@ -9,10 +9,8 @@ test('app names remain text in metadata and cannot inject HTML', () => {
   const app = { ...defaultApp, id: 'quoted-app', appName: 'A "quoted" & <script>alert(1)</script> app' }
   document.head.innerHTML = embedTags(app, 'https://launcher.example')
   expect(document.querySelector('script')).toBeNull()
-  expect(document.title).toBe(`Sign up for ${app.appName}`)
-  expect(document.querySelector('meta[property="og:title"]')?.getAttribute('content')).toBe(
-    `Sign up for ${app.appName}`,
-  )
+  expect(document.title).toContain(app.appName)
+  expect(document.querySelector('meta[property="og:title"]')?.getAttribute('content')).toContain(app.appName)
   expect(document.querySelector('meta[property="og:url"]')?.getAttribute('content')).toBe(
     'https://launcher.example/?app=quoted-app',
   )

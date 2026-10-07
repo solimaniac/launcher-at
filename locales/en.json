@@ -4,7 +4,11 @@
     "source": "view source code on"
   },
   "embed": {
-    "appTitle": "Sign up for {{appName}}"
+    "brand": "launcher.at",
+    "appTitle": "Sign up for {{appName}}",
+    "genericHeading": "Join the Atmosphere.",
+    "genericDescription": "Sign up for an Atmosphere account. Choose your provider and use your account across compatible apps.",
+    "appDescription": "Start with an Atmosphere account. Choose your provider and use your account across compatible apps."
   },
   "intro": {
     "title": "One account. Wherever you go. Your data.",

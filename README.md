@@ -100,6 +100,8 @@ Serve `dist/` from the root of that origin. It must return `/oauth-client-metada
 
 Rebuild whenever the origin or app branding changes.
 
+Link previews use purpose-designed 1200×630 banners, not screenshots of the signup wizard. The default banner introduces the Atmosphere; app-specific banners show signup copy with the app's logo and theme. Banner copy lives in `locales/en.json` under `embed`, and the layout is rendered by `build/embeds.ts` using bundled fonts. Generated images are in `dist/embeds/`.
+
 Production uses `https://www.launcher.at` on Railway's `website` service, with `PUBLIC_ORIGIN` set to that origin. The activity backend's `ALLOWED_ORIGINS` must match. Stop the backend before redeploying it so Jetstream consumers never overlap.
 
 Hover hosts DNS: `www` is a CNAME to Railway's assigned target, with Railway's ownership TXT record at `_railway-verify.www`. Keep both records for domain verification and HTTPS. Hover forwards `http://launcher.at` to `https://www.launcher.at`; its forwarding does not support `https://launcher.at`.

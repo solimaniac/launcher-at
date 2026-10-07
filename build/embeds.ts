@@ -12,7 +12,7 @@ import en from '../locales/en.json' with { type: 'json' }
 const IMAGE_WIDTH = 1200
 const IMAGE_HEIGHT = 630
 /** Maximum width of wrapped heading and description lines. */
-const TEXT_WIDTH = 880
+const TEXT_WIDTH = 700
 const LINE_HEIGHT = 1.35
 const LOGO_TIMEOUT_MS = 15_000
 
@@ -35,10 +35,10 @@ function escape(value: string) {
 
 export function embedCopy(app: AppConfig) {
   if (app.id === DEFAULT_APP_ID) {
-    return { title: en.site.title, heading: en.intro.title, description: en.intro.generic }
+    return { title: en.site.title, heading: en.embed.genericHeading, description: en.embed.genericDescription }
   }
   const appTitle = en.embed.appTitle.replace('{{appName}}', app.appName)
-  return { title: appTitle, heading: appTitle, description: en.intro.app.replace('{{appName}}', app.appName) }
+  return { title: appTitle, heading: appTitle, description: en.embed.appDescription }
 }
 
 export function embedTags(app: AppConfig, origin: string) {
@@ -143,7 +143,7 @@ function textLines(lines: string[], y: number, fontSize: number, weight: number)
   return lines
     .map(
       (line, index) =>
-        `<text x="160" y="${y + index * fontSize * LINE_HEIGHT}" font-size="${fontSize}" font-weight="${weight}">${escape(line)}</text>`,
+        `<text x="72" y="${y + index * fontSize * LINE_HEIGHT}" font-size="${fontSize}" font-weight="${weight}">${escape(line)}</text>`,
     )
     .join('')
 }
@@ -153,30 +153,26 @@ export async function embedImage(app: AppConfig) {
   const theme = app.theme
   const family = `${theme.fontFamily.replace(/system-ui/g, 'Noto Sans')}, Noto Sans`
 
-  // Heading: at most two lines. Description: at most ~130px tall.
-  const heading = fitText(copy.heading, { family, weight: 700 }, 60, 24, 2, lines => lines.length <= 2)
+  // Reserve the right-hand column for the brand artwork, even with long app names.
+  const heading = fitText(copy.heading, { family, weight: 700 }, 78, 24, 2, lines => lines.length <= 2)
   const description = fitText(
     copy.description,
     { family, weight: 400 },
-    25,
-    12,
+    27,
+    18,
     1,
-    (lines, size) => lines.length * size * LINE_HEIGHT <= 130,
+    (lines, size) => lines.length * size * LINE_HEIGHT <= 100,
   )
-  // Long app names shrink so the brand line stays within 770px.
-  const brandSize = Math.min(25, (25 * 770) / Math.max(770, measure(app.appName, 25, { family, weight: 650 })))
   const { logo, type: logoType } = await loadLogo(app)
 
-  const headingY = 260
-  const descriptionY = headingY + heading.lines.length * heading.size * 1.18 + 28
+  const headingY = 245
+  const descriptionY = headingY + (heading.lines.length - 1) * heading.size * LINE_HEIGHT + 64
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${IMAGE_WIDTH}" height="${IMAGE_HEIGHT}">
-    <defs><linearGradient id="sky" x2="0" y2="1"><stop stop-color="${theme.primaryColor}" stop-opacity=".16"/><stop offset=".75" stop-color="${theme.backgroundColor}" stop-opacity="0"/></linearGradient></defs>
     <rect width="${IMAGE_WIDTH}" height="${IMAGE_HEIGHT}" fill="${theme.backgroundColor}"/>
-    <rect width="${IMAGE_WIDTH}" height="${IMAGE_HEIGHT}" fill="url(#sky)"/>
-    <rect x="88" y="64" width="1024" height="502" rx="24" fill="${theme.backgroundColor}" stroke="${theme.textColor}" stroke-opacity=".22"/>
+    <circle cx="1010" cy="315" r="240" fill="${theme.primaryColor}" fill-opacity=".08"/>
+    <image x="830" y="135" width="360" height="360" preserveAspectRatio="xMidYMid meet" xlink:href="data:${logoType};base64,${logo.toString('base64')}"/>
     <g fill="${theme.textColor}" font-family="${escape(family)}">
-      <image x="160" y="121" width="48" height="48" preserveAspectRatio="xMidYMid meet" xlink:href="data:${logoType};base64,${logo.toString('base64')}"/>
-      <text x="224" y="154" font-size="${brandSize}" font-weight="650">${escape(app.appName)}</text>
+      ${app.id === DEFAULT_APP_ID ? `<text x="72" y="104" font-size="28" font-weight="700">${escape(en.embed.brand)}</text>` : ''}
       ${textLines(heading.lines, headingY, heading.size, 700)}
       ${textLines(description.lines, descriptionY, description.size, 400)}
     </g>
