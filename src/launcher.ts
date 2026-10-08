@@ -149,9 +149,16 @@ export async function launch(root: HTMLElement, oauth: SignupOAuth, callback = f
     countdown = undefined
   }
 
-  /** Replaces the page with a new screen: brand header, focused heading, then `content`. */
+  /** Replaces the page with a focused heading and content; custom apps also get a brand header. */
   function screen(title: string, ...content: HTMLElement[]) {
     document.title = isDefaultApp() ? t('site.title') : t('embed.appTitle', { appName: app.appName })
+    document.querySelector('link[rel="icon"]')?.remove()
+    if (!isDefaultApp()) {
+      const icon = element('link')
+      icon.rel = 'icon'
+      icon.href = app.logo_url ?? '/favicon.png?v=transparent'
+      document.head.append(icon)
+    }
     refreshProviders = undefined
     stopCountdown()
     stopCarousel?.()
@@ -160,14 +167,16 @@ export async function launch(root: HTMLElement, oauth: SignupOAuth, callback = f
 
     const heading = element('h1', title)
     heading.tabIndex = -1
-    const brand = element('div', app.appName, 'brand')
-    const logo = element('img', '', 'app-logo')
-    logo.src = app.logo_url ?? '/logo.png'
-    logo.alt = ''
-    logo.referrerPolicy = 'no-referrer'
-    brand.prepend(logo)
-
-    root.replaceChildren(brand, heading, ...content)
+    root.replaceChildren(heading, ...content)
+    if (!isDefaultApp()) {
+      const brand = element('div', app.appName, 'brand')
+      const logo = element('img', '', 'app-logo')
+      logo.src = app.logo_url ?? '/logo.png'
+      logo.alt = ''
+      logo.referrerPolicy = 'no-referrer'
+      brand.prepend(logo)
+      root.prepend(brand)
+    }
     heading.focus({ preventScroll: true })
   }
 

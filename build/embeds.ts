@@ -45,13 +45,14 @@ export function embedTags(app: AppConfig, origin: string) {
   const copy = embedCopy(app)
   const url = `${origin}/${app.id === DEFAULT_APP_ID ? '' : `?app=${app.id}`}`
   const image = `${origin}/embeds/${app.id}.png`
-  const imageAlt = `${app.appName}: ${copy.heading}`
+  const isCustomApp = app.id !== DEFAULT_APP_ID
+  const imageAlt = isCustomApp ? `${app.appName}: ${copy.heading}` : copy.heading
   const property = (key: string, value: string) => `<meta property="${key}" content="${escape(value)}">`
   const name = (key: string, value: string) => `<meta name="${key}" content="${escape(value)}">`
   const tags = [
     name('description', copy.description),
     property('og:type', 'website'),
-    property('og:site_name', app.appName),
+    ...(isCustomApp ? [property('og:site_name', app.appName)] : []),
     property('og:title', copy.title),
     property('og:description', copy.description),
     property('og:url', url),
@@ -153,7 +154,7 @@ export async function embedImage(app: AppConfig) {
   const theme = app.theme
   const family = `${theme.fontFamily.replace(/system-ui/g, 'Noto Sans')}, Noto Sans`
 
-  // Reserve the right-hand column for the brand artwork, even with long app names.
+  // Keep heading wrapping consistent across generic and custom-app previews.
   const heading = fitText(copy.heading, { family, weight: 700 }, 78, 24, 2, lines => lines.length <= 2)
   const description = fitText(
     copy.description,
@@ -164,15 +165,16 @@ export async function embedImage(app: AppConfig) {
     (lines, size) => lines.length * size * LINE_HEIGHT <= 100,
   )
   const { logo, type: logoType } = await loadLogo(app)
+  const artwork = `<image x="830" y="135" width="360" height="360" preserveAspectRatio="xMidYMid meet" xlink:href="data:${logoType};base64,${logo.toString('base64')}"/>`
 
   const headingY = 245
   const descriptionY = headingY + (heading.lines.length - 1) * heading.size * LINE_HEIGHT + 64
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${IMAGE_WIDTH}" height="${IMAGE_HEIGHT}">
     <rect width="${IMAGE_WIDTH}" height="${IMAGE_HEIGHT}" fill="${theme.backgroundColor}"/>
     <circle cx="1010" cy="315" r="240" fill="${theme.primaryColor}" fill-opacity=".08"/>
-    <image x="830" y="135" width="360" height="360" preserveAspectRatio="xMidYMid meet" xlink:href="data:${logoType};base64,${logo.toString('base64')}"/>
+    ${artwork}
     <g fill="${theme.textColor}" font-family="${escape(family)}">
-      ${app.id === DEFAULT_APP_ID ? `<text x="72" y="104" font-size="28" font-weight="700">${escape(en.embed.brand)}</text>` : ''}
+      ${app.id !== DEFAULT_APP_ID ? `<text x="72" y="104" font-size="28" font-weight="700">${escape(en.embed.brand)}</text>` : ''}
       ${textLines(heading.lines, headingY, heading.size, 700)}
       ${textLines(description.lines, descriptionY, description.size, 400)}
     </g>

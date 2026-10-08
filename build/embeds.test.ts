@@ -16,3 +16,19 @@ test('app names remain text in metadata and cannot inject HTML', () => {
   )
   window.close()
 })
+
+test('generic metadata omits app identity while custom metadata retains it', () => {
+  const window = new Window()
+  const document = window.document
+  document.head.innerHTML = embedTags(defaultApp, 'https://signup.example')
+  expect(document.querySelector('meta[property="og:site_name"]')).toBeNull()
+  for (const selector of ['title', 'meta[property="og:title"]', 'meta[property="og:image:alt"]']) {
+    const tag = document.querySelector(selector)!
+    expect(tag.getAttribute('content') ?? tag.textContent).not.toContain(defaultApp.appName)
+  }
+  const app = { ...defaultApp, id: 'custom', appName: 'Custom App' }
+  document.head.innerHTML = embedTags(app, 'https://signup.example')
+  expect(document.querySelector('meta[property="og:site_name"]')?.getAttribute('content')).toBe(app.appName)
+  expect(document.querySelector('meta[property="og:image:alt"]')?.getAttribute('content')).toContain(app.appName)
+  window.close()
+})

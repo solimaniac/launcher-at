@@ -26,6 +26,26 @@ afterEach(() => {
   vi.useRealTimers()
   history.replaceState(null, '', '/')
 })
+
+test.each([null, 'default', 'unregistered'])('generic signup omits app branding for %s', async appId => {
+  history.replaceState(null, '', appId ? `/?app=${appId}` : '/')
+  const page = root()
+  dispose = await launch(page, result(null))
+  expect(page.textContent).not.toContain(apps.find(app => app.id === 'default')!.appName)
+  expect(page.querySelector('img')).toBeNull()
+  page.querySelector<HTMLButtonElement>('button')!.click()
+  expect(page.textContent).not.toContain(apps.find(app => app.id === 'default')!.appName)
+  expect(document.activeElement).toBe(page.querySelector('h1'))
+})
+
+test.each(['example-app', 'example-app-dark'])('custom signup retains configured branding for %s', async appId => {
+  history.replaceState(null, '', `/?app=${appId}`)
+  const page = root()
+  dispose = await launch(page, result(null))
+  const app = apps.find(app => app.id === appId)!
+  expect(page.textContent).toContain(app.appName)
+  expect(page.querySelector<HTMLImageElement>('img')?.src).toBe(app.logo_url)
+})
 test('authenticated app state controls the return destination, not callback query parameters', async () => {
   vi.useFakeTimers()
   history.replaceState(null, '', '/callback.html?app=missing&redirect=https://evil.example')
