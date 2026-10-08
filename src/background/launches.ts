@@ -9,7 +9,6 @@ export interface LaunchLabel {
 /** Draws labelled rocket launches across the sky. Knows nothing about where labels come from. */
 export interface LaunchLayer {
   launch(label: LaunchLabel): void
-  dispose(): void
 }
 
 const SVG = 'http://www.w3.org/2000/svg'
@@ -149,13 +148,6 @@ export function createLaunchLayer(container: HTMLElement, plan: typeof planTraje
       flights.add(flight)
       canvas.append(flight.group)
       frame ??= requestAnimationFrame(tick)
-    },
-    dispose() {
-      if (frame !== undefined) cancelAnimationFrame(frame)
-      frame = undefined
-      flights.clear()
-      container.replaceChildren()
-      container.hidden = true
     },
   }
 }

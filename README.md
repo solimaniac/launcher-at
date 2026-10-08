@@ -13,6 +13,7 @@
 launcher.at is a static site (Vite + TypeScript, no framework). It explains the Atmosphere, lets people choose an account provider, and sends them through that provider's own OAuth signup. When they're done, it can send them back to your app.
 
 It stores no accounts or tokens. An optional [activity backend](server/README.md) adds join counts and a live "recent signups" animation.
+The animation layer lives for the page lifetime; each rocket removes itself after its flight finishes.
 
 ## Add your app
 
