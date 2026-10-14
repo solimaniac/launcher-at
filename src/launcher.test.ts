@@ -186,6 +186,11 @@ test.each(['default', 'example-app', 'example-app-dark'])(
       .filter(provider => provider.enabled && (appId === 'default' || provider.id !== 'bluesky'))
       .map(provider => provider.id)
       .sort()
+    expect(visibleProviders(page).sort()).toEqual(
+      expected.filter(id => !providerSource.find(provider => provider.id === id)!.requiresInvite),
+    )
+    page.querySelector<HTMLButtonElement>('.provider-toggle')!.click()
+    choose(page, 'provider-invites', 'all')
     expect(visibleProviders(page).sort()).toEqual(expected)
     choose(page, 'provider-invites', 'required')
     page.querySelector<HTMLButtonElement>('.clear-filters')!.click()
@@ -232,6 +237,7 @@ test('join sorting handles late counts, ties, zero and unavailable counts withou
   const page = root()
   dispose = await launch(page, result(null), false, counts)
   page.querySelector<HTMLButtonElement>('button')!.click()
+  choose(page, 'provider-invites', 'all')
   expect([...page.querySelectorAll<HTMLOptionElement>('#provider-sort option')].map(option => option.value)).toEqual([
     'az',
     'za',
@@ -310,6 +316,13 @@ test('multiple regions combine with invite requirements and clear filters recove
   dispose = await launch(page, result(null))
   page.querySelector<HTMLButtonElement>('button')!.click()
   expect(page.querySelector<HTMLElement>('.provider-controls')!.hidden).toBe(true)
+  expect(visibleProviders(page)).toEqual(
+    providerSource
+      .filter(provider => provider.enabled && !provider.requiresInvite)
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .map(provider => provider.id),
+  )
+  choose(page, 'provider-invites', 'all')
   region(page, 'European Union')
   region(page, 'Canada')
   expect(visibleProviders(page)).toEqual(['eurosky', 'margin-cafe', 'northsky', 'npmx', 'tangled', 'w-social'])

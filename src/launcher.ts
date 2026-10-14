@@ -117,7 +117,7 @@ export async function launch(root: HTMLElement, oauth: SignupOAuth, callback = f
   let joinCounts: JoinCounts | undefined
   // Picker choices persist when the user leaves and returns to the provider screen.
   let sortBy: SortOrder = app.joinCounts === false ? 'az' : 'joins'
-  const filters: ProviderFilters = { regions: new Set(), invite: 'all' }
+  const filters: ProviderFilters = { regions: new Set(), invite: 'none' }
   /** Re-sorts and re-filters the provider picker; set only while it is on screen. */
   let refreshProviders: (() => void) | undefined
   let countdown: number | undefined
