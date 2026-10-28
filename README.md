@@ -12,8 +12,7 @@
 
 launcher.at is a static site (Vite + TypeScript, no framework). It explains the Atmosphere, lets people choose an account provider, and sends them through that provider's own OAuth signup. When they're done, it can send them back to your app.
 
-It stores no accounts or tokens. An optional [activity backend](server/README.md) adds join counts and a live "recent signups" animation.
-The animation layer lives for the page lifetime; each rocket removes itself after its flight finishes.
+It stores no accounts or tokens and needs no runtime backend.
 
 ## Add your app
 
@@ -47,8 +46,6 @@ Each app gets its own branded launcher at `/?app=<id>`.
 | `theme.*`           | yes      | All five fields. Colors are six-digit hex; button text color is picked for contrast.                                                     |
 | `redirectUrl`       | no       | HTTPS URL to send people back to after signup (8-second countdown). Omit to stay on the page.                                            |
 | `logo_url`          | no       | HTTPS image URL for the header. Defaults to the launcher logo.                                                                           |
-| `launchAnimation`   | no       | Set to `false` to hide the background rocket launches.                                                                                   |
-| `joinCounts`        | no       | Set to `false` to hide provider join counts and join-count sorting. Defaults to visible; hidden counts use A–Z sorting initially.        |
 | `providerAllowlist` | no       | Non-empty array of unique provider IDs from `config/providers.json`. Omit to show all enabled providers. Disabled providers stay hidden. |
 
 Good to know:
@@ -70,26 +67,23 @@ npm run dev
 
 Open **http://127.0.0.1:5173/** (use the IP, not `localhost`, so OAuth returns to the same origin). Try an app with http://127.0.0.1:5173/?app=example-app.
 
-| Command             | What it does                                  |
-| ------------------- | --------------------------------------------- |
-| `npm run dev`       | Dev server with hot reload                    |
-| `npm test`          | Unit tests (Vitest)                           |
-| `npm run lint`      | ESLint + Prettier check (frontend and server) |
-| `npm run format`    | Auto-fix lint and formatting                  |
-| `npm run typecheck` | TypeScript checks                             |
-| `npm run build`     | Production build into `dist/`                 |
-| `npm run preview`   | Serve the built `dist/`                       |
-
-To show join counts and launches locally, run the [backend](server/README.md) and set `PUBLIC_ACTIVITY_API=http://127.0.0.1:3000` in `.env.local`.
+| Command             | What it does                  |
+| ------------------- | ----------------------------- |
+| `npm run dev`       | Dev server with hot reload    |
+| `npm test`          | Unit tests (Vitest)           |
+| `npm run lint`      | ESLint + Prettier check       |
+| `npm run format`    | Auto-fix lint and formatting  |
+| `npm run typecheck` | TypeScript checks             |
+| `npm run build`     | Production build into `dist/` |
+| `npm run preview`   | Serve the built `dist/`       |
 
 ## Configuration
 
 Set these at build time, in the environment or in `.env.local` (see [`.env.example`](.env.example)):
 
-| Variable              | Description                                                                                        |
-| --------------------- | -------------------------------------------------------------------------------------------------- |
-| `PUBLIC_ORIGIN`       | Public HTTPS origin of the site, e.g. `https://launcher.at`. **Required in production** for OAuth. |
-| `PUBLIC_ACTIVITY_API` | Origin of the activity backend. Leave unset to disable activity features.                          |
+| Variable        | Description                                                                                        |
+| --------------- | -------------------------------------------------------------------------------------------------- |
+| `PUBLIC_ORIGIN` | Public HTTPS origin of the site, e.g. `https://launcher.at`. **Required in production** for OAuth. |
 
 ## Other configuration
 
@@ -107,9 +101,8 @@ Provider and app logos belong to their owners. The MIT license doesn't cover the
 apps/       Per-app branding (one config.json each)
 config/     Providers and the app directory
 locales/    UI strings
-src/        Browser code: launcher screens, OAuth, activity feed, background animation
+src/        Browser code: launcher screens, OAuth, app discovery
 build/      Build-time plugins: OAuth metadata and link-preview images
-server/     Optional activity backend
 ```
 
 ## License

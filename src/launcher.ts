@@ -3,7 +3,6 @@ import providerSource from '../config/providers.json'
 import { DEFAULT_APP_ID, parseProviders, httpsUrl, type Provider } from './config'
 import { selectApp, applyTheme } from './apps'
 import { SignupError, type SignupOAuth } from './signup'
-import { formatJoinCount, type JoinCounts } from './activity'
 import { element } from './dom'
 import { renderAppCarousel } from './carousel'
 
@@ -19,7 +18,7 @@ const REGION_FLAGS: Record<string, string> = {
 }
 const DEFAULT_FLAG = '🌐'
 
-type SortOrder = 'joins' | 'az' | 'za'
+type SortOrder = 'az' | 'za'
 type InviteFilter = 'all' | 'none' | 'required'
 
 interface ProviderFilters {
@@ -27,15 +26,10 @@ interface ProviderFilters {
   invite: InviteFilter
 }
 
-/** Join-count order puts missing counts below zero; ties and missing data fall back to A–Z. */
-function sortProviders(providers: Provider[], order: SortOrder, counts?: JoinCounts) {
+function sortProviders(providers: Provider[], order: SortOrder) {
   return [...providers].sort((a, b) => {
     const alphabetical = a.name.localeCompare(b.name)
-    if (order === 'az') return alphabetical
-    if (order === 'za') return -alphabetical
-    const joinsA = counts?.providers.get(a.id) ?? -1
-    const joinsB = counts?.providers.get(b.id) ?? -1
-    return joinsB - joinsA || alphabetical
+    return order === 'za' ? -alphabetical : alphabetical
   })
 }
 
@@ -47,7 +41,7 @@ function matchesFilters(provider: Provider, filters: ProviderFilters) {
   return true
 }
 
-function providerCard(provider: Provider, showJoinCounts: boolean) {
+function providerCard(provider: Provider) {
   const card = element('button', '', 'provider')
   card.dataset.provider = provider.id
   const chooseLabel = t('providers.choose', { name: provider.name })
@@ -75,12 +69,6 @@ function providerCard(provider: Provider, showJoinCounts: boolean) {
 
   const details = element('span', '', 'provider-details')
   details.append(element('strong', provider.name), region, description)
-  if (showJoinCounts) {
-    // Filled in by `showCounts` once join counts arrive.
-    const joins = element('span', '', 'joins')
-    joins.dataset.provider = provider.id
-    details.append(joins)
-  }
   if (provider.requiresInvite) details.append(element('span', t('providers.inviteRequired'), 'invite-required'))
   card.append(details)
   return card
@@ -107,42 +95,22 @@ function dropdown(id: string, label: string, options: [value: string, label: str
  * With `callback`, finishes the OAuth response instead and shows completion or an error.
  * Returns a cleanup function that stops any running timers.
  */
-export async function launch(root: HTMLElement, oauth: SignupOAuth, callback = false, counts?: Promise<JoinCounts>) {
+export async function launch(root: HTMLElement, oauth: SignupOAuth, callback = false) {
   // The callback page ignores its query string; the app is recovered from the OAuth state instead.
   let selection = selectApp(callback ? null : new URLSearchParams(location.search).get('app'))
   let app = selection.app
   applyTheme(app)
 
   let providers: Provider[] | undefined
-  let joinCounts: JoinCounts | undefined
   // Picker choices persist when the user leaves and returns to the provider screen.
-  let sortBy: SortOrder = app.joinCounts === false ? 'az' : 'joins'
+  let sortBy: SortOrder = 'az'
   const filters: ProviderFilters = { regions: new Set(), invite: 'none' }
   /** Re-sorts and re-filters the provider picker; set only while it is on screen. */
   let refreshProviders: (() => void) | undefined
   let countdown: number | undefined
   let stopCarousel: (() => void) | undefined
 
-  counts?.then(
-    result => {
-      joinCounts = result
-      showCounts()
-      refreshProviders?.()
-    },
-    () => {},
-  )
-
   const isDefaultApp = () => app.id === DEFAULT_APP_ID
-
-  function showCounts() {
-    if (app.joinCounts === false || !joinCounts) return
-    for (const node of root.querySelectorAll<HTMLElement>('.provider .joins')) {
-      const joined = joinCounts.providers.get(node.dataset.provider!)
-      if (joined !== undefined) {
-        node.textContent = t('providers.joined', { joined: formatJoinCount(joined), days: joinCounts.windowDays })
-      }
-    }
-  }
 
   function stopCountdown() {
     window.clearInterval(countdown)
@@ -271,10 +239,6 @@ export async function launch(root: HTMLElement, oauth: SignupOAuth, callback = f
       sortBy = sort.select.value as SortOrder
       refreshProviders?.()
     }
-    // Offered only once join counts are known for at least one provider.
-    const joinSortOption = element('option', t('providers.sortJoins'))
-    joinSortOption.value = 'joins'
-
     const regions = element('fieldset', '', 'provider-regions')
     regions.append(element('legend', t('providers.regions')))
     const regionChoices = element('div', '', 'region-choices')
@@ -322,7 +286,7 @@ export async function launch(root: HTMLElement, oauth: SignupOAuth, callback = f
     const cards = element('div', '', 'providers')
     const cardsById = new Map<string, HTMLButtonElement>()
     for (const provider of enabledProviders) {
-      const card = providerCard(provider, app.joinCounts !== false)
+      const card = providerCard(provider)
       card.onclick = () => chooseProvider(provider)
       cards.append(card)
       cardsById.set(provider.id, card)
@@ -335,18 +299,13 @@ export async function launch(root: HTMLElement, oauth: SignupOAuth, callback = f
       // A provider was chosen and the redirect is under way; leave the page as it is.
       if (root.hasAttribute('aria-busy')) return
 
-      const hasCounts =
-        app.joinCounts !== false && enabledProviders.some(provider => joinCounts?.providers.has(provider.id))
-      if (hasCounts && !joinSortOption.parentNode) sort.select.prepend(joinSortOption)
-      sort.select.value = sortBy === 'joins' && !hasCounts ? 'az' : sortBy
-
       // Re-appending cards reorders them; keep keyboard focus on the card that had it.
       const focused =
         document.activeElement instanceof HTMLButtonElement && cards.contains(document.activeElement)
           ? document.activeElement
           : null
       let visible = 0
-      for (const provider of sortProviders(enabledProviders, sort.select.value as SortOrder, joinCounts)) {
+      for (const provider of sortProviders(enabledProviders, sortBy)) {
         const card = cardsById.get(provider.id)!
         card.hidden = !matchesFilters(provider, filters)
         if (!card.hidden) visible++
@@ -368,7 +327,6 @@ export async function launch(root: HTMLElement, oauth: SignupOAuth, callback = f
     const back = element('button', t('actions.back'), 'secondary')
     back.onclick = intro
     root.append(summary, controls, cards, empty, back)
-    showCounts()
     refreshProviders()
   }
 

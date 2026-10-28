@@ -27,11 +27,6 @@ test('rejects unsafe return destinations and incomplete themes', () => {
   expect(() => parseApps([generic, { ...example, theme: {} }], providers)).toThrow()
   expect(() => parseApps([generic, example, example], providers)).toThrow()
   expect(() => parseApps([generic, { ...example, appName: '' }], providers)).toThrow()
-  expect(() => parseApps([generic, { ...example, launchAnimation: 'false' }], providers)).toThrow()
-  expect(
-    lookupApp(parseApps([generic, { ...example, launchAnimation: false }], providers), 'example-app').app
-      .launchAnimation,
-  ).toBe(false)
 })
 test('app logos require absolute HTTPS URLs and reject local paths or unsafe destinations', () => {
   for (const logo_url of ['https://example.com/logo.svg', 'https://example.com/logo.png?v=2']) {
@@ -75,10 +70,4 @@ test('allowlisted disabled providers remain valid configuration', () => {
   const disabledProviders = providers.map(provider => ({ ...provider, enabled: false }))
   const configured = parseApps([generic, { ...example, providerAllowlist: ['bluesky'] }], disabledProviders)
   expect(lookupApp(configured, 'example-app').app.providerAllowlist).toEqual(['bluesky'])
-})
-
-test('join count visibility rejects non-boolean configuration', () => {
-  for (const joinCounts of ['false', 'true', 0, 1, null, {}]) {
-    expect(() => parseApps([generic, { ...example, joinCounts }], providers)).toThrow('joinCounts')
-  }
 })

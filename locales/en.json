@@ -35,11 +35,9 @@
     "choose": "Continue with {{name}}",
     "inviteRequired": "Invite code required",
     "empty": "No account providers are currently available.",
-    "joined": "{{joined}} joined recently",
     "filterSort": "Filter & sort",
     "filterSortActive": "Filter & sort ({{count}})",
     "sortBy": "Sort by",
-    "sortJoins": "Join count: high to low",
     "sortAZ": "Name: A–Z",
     "sortZA": "Name: Z–A",
     "inviteFilter": "Invite codes",
@@ -67,7 +65,6 @@
     "margin-cafe": "A social platform for collecting, annotating, and sharing content from around the web."
   },
   "oauth": { "opening": "Opening your provider’s secure signup…", "finishing": "Finishing your account setup…" },
-  "activity": { "joined": "{{handle}} joined on {{provider}}" },
   "complete": {
     "title": "Your Atmosphere account is ready.",
     "handleHint": "This is your handle across the Atmosphere. Use it to sign in to compatible apps with the same account.",

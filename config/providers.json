@@ -6,11 +6,7 @@
     "description": "providers.bluesky",
     "region": "United States",
     "logo": "/providers/bluesky.svg",
-    "enabled": true,
-    "tracking": {
-      "enabled": true,
-      "pdsHostMatchers": [{ "type": "suffix", "value": ".host.bsky.network" }]
-    }
+    "enabled": true
   },
   {
     "id": "eurosky",
@@ -19,11 +15,7 @@
     "description": "providers.eurosky",
     "region": "European Union",
     "logo": "/providers/eurosky.png",
-    "enabled": true,
-    "tracking": {
-      "enabled": true,
-      "pdsHostMatchers": [{ "type": "exact", "value": "eurosky.social" }]
-    }
+    "enabled": true
   },
   {
     "id": "blacksky",
@@ -32,11 +24,7 @@
     "description": "providers.blacksky",
     "region": "United States",
     "logo": "/providers/blacksky.svg",
-    "enabled": true,
-    "tracking": {
-      "enabled": true,
-      "pdsHostMatchers": [{ "type": "exact", "value": "blacksky.app" }]
-    }
+    "enabled": true
   },
   {
     "id": "w-social",
@@ -46,11 +34,7 @@
     "region": "European Union",
     "logo": "/providers/w-social.svg",
     "enabled": true,
-    "requiresInvite": true,
-    "tracking": {
-      "enabled": true,
-      "pdsHostMatchers": [{ "type": "exact", "value": "pds.wsocial.network" }]
-    }
+    "requiresInvite": true
   },
   {
     "id": "northsky",
@@ -60,11 +44,7 @@
     "region": "Canada",
     "logo": "/providers/northsky.svg",
     "enabled": true,
-    "requiresInvite": true,
-    "tracking": {
-      "enabled": true,
-      "pdsHostMatchers": [{ "type": "exact", "value": "northsky.social" }]
-    }
+    "requiresInvite": true
   },
   {
     "id": "selfhosted-social",
@@ -73,11 +53,7 @@
     "description": "providers.selfhosted-social",
     "region": "United States",
     "logo": "/providers/selfhosted-social.png",
-    "enabled": true,
-    "tracking": {
-      "enabled": true,
-      "pdsHostMatchers": [{ "type": "exact", "value": "selfhosted.social" }]
-    }
+    "enabled": true
   },
   {
     "id": "tangled",
@@ -86,11 +62,7 @@
     "description": "providers.tangled",
     "region": "European Union",
     "logo": "/providers/tangled.svg",
-    "enabled": true,
-    "tracking": {
-      "enabled": true,
-      "pdsHostMatchers": [{ "type": "exact", "value": "tngl.sh" }]
-    }
+    "enabled": true
   },
   {
     "id": "spark",
@@ -99,11 +71,7 @@
     "description": "providers.spark",
     "region": "United States",
     "logo": "/providers/spark.svg",
-    "enabled": true,
-    "tracking": {
-      "enabled": true,
-      "pdsHostMatchers": [{ "type": "exact", "value": "pds.sprk.so" }]
-    }
+    "enabled": true
   },
   {
     "id": "npmx",
@@ -112,11 +80,7 @@
     "description": "providers.npmx",
     "region": "European Union",
     "logo": "/providers/npmx.svg",
-    "enabled": true,
-    "tracking": {
-      "enabled": true,
-      "pdsHostMatchers": [{ "type": "exact", "value": "npmx.social" }]
-    }
+    "enabled": true
   },
   {
     "id": "pckt",
@@ -125,11 +89,7 @@
     "description": "providers.pckt",
     "region": "United States",
     "logo": "/providers/pckt.svg",
-    "enabled": true,
-    "tracking": {
-      "enabled": true,
-      "pdsHostMatchers": [{ "type": "exact", "value": "pds.pckt.cafe" }]
-    }
+    "enabled": true
   },
   {
     "id": "witchcraft-systems",
@@ -139,11 +99,7 @@
     "region": "Japan",
     "logo": "/providers/witchcraft-systems.png",
     "enabled": true,
-    "requiresInvite": true,
-    "tracking": {
-      "enabled": true,
-      "pdsHostMatchers": [{ "type": "exact", "value": "pds.witchcraft.systems" }]
-    }
+    "requiresInvite": true
   },
   {
     "id": "tophhie-social",
@@ -152,11 +108,7 @@
     "description": "providers.tophhie-social",
     "region": "United Kingdom",
     "logo": "/providers/tophhie-social.svg",
-    "enabled": true,
-    "tracking": {
-      "enabled": true,
-      "pdsHostMatchers": [{ "type": "exact", "value": "pds.tophhie.cloud" }]
-    }
+    "enabled": true
   },
   {
     "id": "margin-cafe",
@@ -165,10 +117,6 @@
     "description": "providers.margin-cafe",
     "region": "European Union",
     "logo": "/providers/margin.svg",
-    "enabled": true,
-    "tracking": {
-      "enabled": true,
-      "pdsHostMatchers": [{ "type": "exact", "value": "margin.cafe" }]
-    }
+    "enabled": true
   }
 ]

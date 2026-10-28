@@ -27,10 +27,6 @@ export interface AppConfig {
   appName: string
   redirectUrl?: string
   logo_url?: string
-  /** Rocket launches for recent signups in the background sky; on unless `false`. */
-  launchAnimation?: boolean
-  /** Provider join counts and join-count sorting; on unless `false`. */
-  joinCounts?: boolean
   /** Provider IDs offered for signup; omitted means all enabled providers. */
   providerAllowlist?: string[]
   theme: {
@@ -145,8 +141,6 @@ export function parseApps(value: unknown[], providers: Provider[]): AppConfig[] 
     }
     if (app.redirectUrl !== undefined) httpsUrl(app.redirectUrl)
     if (app.logo_url !== undefined) httpsUrl(app.logo_url)
-    if (!optionalBoolean(app.launchAnimation)) throw new Error('launchAnimation must be a boolean')
-    if (!optionalBoolean(app.joinCounts)) throw new Error('joinCounts must be a boolean')
     if (app.providerAllowlist !== undefined) {
       if (
         !Array.isArray(app.providerAllowlist) ||

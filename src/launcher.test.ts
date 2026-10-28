@@ -3,7 +3,6 @@ import { afterEach, expect, test, vi } from 'vitest'
 import { launch } from './launcher'
 import { SignupError, recoverAppId, type SignupOAuth } from './signup'
 import { t } from './i18n'
-import type { JoinCounts } from './activity'
 import providerSource from '../config/providers.json'
 import { apps } from './apps'
 
@@ -229,13 +228,9 @@ test('allowlists constrain region choices and cannot enable a disabled provider'
   }
 })
 
-test('join sorting handles late counts, ties, zero and unavailable counts without losing focus', async () => {
-  let resolve!: (value: JoinCounts) => void
-  const counts = new Promise<JoinCounts>(done => {
-    resolve = done
-  })
+test('provider sorting defaults to A–Z and offers only alphabetical orders', async () => {
   const page = root()
-  dispose = await launch(page, result(null), false, counts)
+  dispose = await launch(page, result(null))
   page.querySelector<HTMLButtonElement>('button')!.click()
   choose(page, 'provider-invites', 'all')
   expect([...page.querySelectorAll<HTMLOptionElement>('#provider-sort option')].map(option => option.value)).toEqual([
@@ -243,72 +238,15 @@ test('join sorting handles late counts, ties, zero and unavailable counts withou
     'za',
   ])
   expect(page.querySelector<HTMLSelectElement>('#provider-sort')!.value).toBe('az')
-  expect(visibleProviders(page)).toEqual([
-    'blacksky',
-    'bluesky',
-    'eurosky',
-    'margin-cafe',
-    'northsky',
-    'npmx',
-    'pckt',
-    'selfhosted-social',
-    'spark',
-    'tangled',
-    'tophhie-social',
-    'w-social',
-    'witchcraft-systems',
-  ])
-  const focused = page.querySelector<HTMLButtonElement>('[data-provider="bluesky"]')!
-  focused.focus()
-  resolve({
-    windowDays: 30,
-    providers: new Map([
-      ['spark', 24],
-      ['eurosky', 24],
-      ['bluesky', 0],
-    ]),
-  })
-  await counts
-  expect([...page.querySelectorAll<HTMLOptionElement>('#provider-sort option')].map(option => option.value)).toEqual([
-    'joins',
-    'az',
-    'za',
-  ])
-  expect(page.querySelector<HTMLSelectElement>('#provider-sort')!.value).toBe('joins')
-  expect(visibleProviders(page)).toEqual([
-    'eurosky',
-    'spark',
-    'bluesky',
-    'blacksky',
-    'margin-cafe',
-    'northsky',
-    'npmx',
-    'pckt',
-    'selfhosted-social',
-    'tangled',
-    'tophhie-social',
-    'w-social',
-    'witchcraft-systems',
-  ])
-  expect(document.activeElement).toBe(focused)
+  const alphabetical = providerSource
+    .filter(provider => provider.enabled)
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .map(provider => provider.id)
+  expect(visibleProviders(page)).toEqual(alphabetical)
   choose(page, 'provider-sort', 'za')
-  expect(visibleProviders(page)).toEqual([
-    'witchcraft-systems',
-    'w-social',
-    'tophhie-social',
-    'tangled',
-    'spark',
-    'selfhosted-social',
-    'pckt',
-    'npmx',
-    'northsky',
-    'margin-cafe',
-    'eurosky',
-    'bluesky',
-    'blacksky',
-  ])
+  expect(visibleProviders(page)).toEqual([...alphabetical].reverse())
   choose(page, 'provider-sort', 'az')
-  expect(visibleProviders(page)[0]).toBe('blacksky')
+  expect(visibleProviders(page)).toEqual(alphabetical)
 })
 
 test('multiple regions combine with invite requirements and clear filters recovers empty results', async () => {
@@ -359,11 +297,7 @@ test('multiple regions combine with invite requirements and clear filters recove
   expect(document.activeElement).toBe(page.querySelector('.provider-toggle'))
 })
 
-test('late counts respect alphabetical selection and failed signup preserves filtered choices', async () => {
-  let resolve!: (value: JoinCounts) => void
-  const counts = new Promise<JoinCounts>(done => {
-    resolve = done
-  })
+test('failed signup preserves alphabetical sorting and filtered choices', async () => {
   const page = root()
   const failure: SignupOAuth = {
     ...result(null),
@@ -371,13 +305,11 @@ test('late counts respect alphabetical selection and failed signup preserves fil
       throw new Error('failed')
     },
   }
-  dispose = await launch(page, failure, false, counts)
+  dispose = await launch(page, failure)
   page.querySelector<HTMLButtonElement>('button')!.click()
   choose(page, 'provider-sort', 'za')
   region(page, 'European Union')
   choose(page, 'provider-invites', 'none')
-  resolve({ windowDays: 30, providers: new Map([['eurosky', 42]]) })
-  await counts
   expect(visibleProviders(page)).toEqual(['tangled', 'npmx', 'margin-cafe', 'eurosky'])
   page.querySelector<HTMLButtonElement>('.provider:not([hidden])')!.click()
   expect(
@@ -388,91 +320,8 @@ test('late counts respect alphabetical selection and failed signup preserves fil
   await vi.waitFor(() => expect(page.dataset.view).toBe('error'))
   page.querySelector<HTMLButtonElement>('button')!.click()
   expect(visibleProviders(page)).toEqual(['tangled', 'npmx', 'margin-cafe', 'eurosky'])
+  expect(page.querySelector<HTMLSelectElement>('#provider-sort')!.value).toBe('za')
   expect(page.querySelector<HTMLSelectElement>('#provider-sort')!.disabled).toBe(false)
-})
-
-test.each([undefined, true, false])(
-  'joinCounts=%s controls counts and sorting before and after arrival',
-  async joinCounts => {
-    const app = apps.find(app => app.id === 'example-app')!
-    const original = Object.getOwnPropertyDescriptor(app, 'joinCounts')
-    Object.assign(app, { joinCounts })
-    try {
-      history.replaceState(null, '', '/?app=example-app')
-      const page = root()
-      let resolve!: (value: JoinCounts) => void
-      const counts = new Promise<JoinCounts>(done => {
-        resolve = done
-      })
-      const failure: SignupOAuth = {
-        ...result(null),
-        start: async () => {
-          throw new SignupError('errors.authorization')
-        },
-      }
-      dispose = await launch(page, failure, false, counts)
-      page.querySelector<HTMLButtonElement>('button')!.click()
-      const alphabetical = visibleProviders(page)
-      resolve({ windowDays: 30, providers: new Map([['spark', 42]]) })
-      await counts
-      const assertVisibility = () => {
-        const sort = page.querySelector<HTMLSelectElement>('#provider-sort')!
-        const countText = t('providers.joined', { joined: '42', days: 30 })
-        if (joinCounts === false) {
-          expect(page.textContent).not.toContain(countText)
-          expect([...sort.options].map(option => option.value)).toEqual(['az', 'za'])
-          expect(sort.value).toBe('az')
-          expect(visibleProviders(page)).toEqual(alphabetical)
-        } else {
-          expect(page.textContent).toContain(countText)
-          expect(sort.value).toBe('joins')
-          expect(visibleProviders(page)[0]).toBe('spark')
-        }
-      }
-      assertVisibility()
-      page.querySelector<HTMLButtonElement>('.provider')!.click()
-      await vi.waitFor(() => expect(page.dataset.view).toBe('error'))
-      page.querySelector<HTMLButtonElement>('button')!.click()
-      assertVisibility()
-      dispose()
-      dispose = await launch(page, failure, false, counts)
-      page.querySelector<HTMLButtonElement>('button')!.click()
-      assertVisibility()
-    } finally {
-      if (original) Object.defineProperty(app, 'joinCounts', original)
-      else Reflect.deleteProperty(app, 'joinCounts')
-    }
-  },
-)
-
-test('join-count sort is omitted for failed, empty, or unrelated counts but includes measured zero', async () => {
-  for (const counts of [
-    undefined,
-    Promise.reject(new Error('offline')),
-    Promise.resolve({ windowDays: 30, providers: new Map<string, number>() }),
-    Promise.resolve({ windowDays: 30, providers: new Map([['unknown-provider', 9]]) }),
-  ]) {
-    const page = root()
-    dispose = await launch(page, result(null), false, counts)
-    page.querySelector<HTMLButtonElement>('button')!.click()
-    openControls(page)
-    expect([...page.querySelectorAll<HTMLOptionElement>('#provider-sort option')].map(option => option.value)).toEqual([
-      'az',
-      'za',
-    ])
-    expect(page.querySelector<HTMLSelectElement>('#provider-sort')!.value).toBe('az')
-    dispose()
-  }
-  const page = root()
-  dispose = await launch(
-    page,
-    result(null),
-    false,
-    Promise.resolve({ windowDays: 30, providers: new Map([['spark', 0]]) }),
-  )
-  page.querySelector<HTMLButtonElement>('button')!.click()
-  expect(page.querySelector<HTMLSelectElement>('#provider-sort')!.value).toBe('joins')
-  expect(visibleProviders(page)[0]).toBe('spark')
 })
 
 test('discovery is available only after generic signup, never for custom app callbacks', async () => {
