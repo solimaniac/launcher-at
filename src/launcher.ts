@@ -1,124 +1,34 @@
+import { createLoginFlow, LauncherError } from 'launcher-components'
+import { mountLogin } from 'launcher-components/dom'
 import { t } from './i18n'
-import providerSource from '../config/providers.json'
-import { DEFAULT_APP_ID, parseProviders, httpsUrl, type Provider } from './config'
+import { providers as providerSource } from './providers'
+import { DEFAULT_APP_ID, parseProviders, httpsUrl } from './config'
 import { selectApp, applyTheme } from './apps'
 import { SignupError, type SignupOAuth } from './signup'
 import { element } from './dom'
 import { renderAppCarousel } from './carousel'
 
-/** Seconds before the completion screen sends the user back to the app's `redirectUrl`. */
 const REDIRECT_SECONDS = 8
 
-const REGION_FLAGS: Record<string, string> = {
-  'United States': '🇺🇸',
-  'United Kingdom': '🇬🇧',
-  'European Union': '🇪🇺',
-  Canada: '🇨🇦',
-  Japan: '🇯🇵',
-}
-const DEFAULT_FLAG = '🌐'
-
-type SortOrder = 'az' | 'za'
-type InviteFilter = 'all' | 'none' | 'required'
-
-interface ProviderFilters {
-  regions: Set<string>
-  invite: InviteFilter
-}
-
-function sortProviders(providers: Provider[], order: SortOrder) {
-  return [...providers].sort((a, b) => {
-    const alphabetical = a.name.localeCompare(b.name)
-    return order === 'za' ? -alphabetical : alphabetical
-  })
-}
-
-/** No selected regions means every region matches. */
-function matchesFilters(provider: Provider, filters: ProviderFilters) {
-  if (filters.regions.size > 0 && !filters.regions.has(provider.region)) return false
-  if (filters.invite === 'required' && !provider.requiresInvite) return false
-  if (filters.invite === 'none' && provider.requiresInvite) return false
-  return true
-}
-
-function providerCard(provider: Provider) {
-  const card = element('button', '', 'provider')
-  card.dataset.provider = provider.id
-  const chooseLabel = t('providers.choose', { name: provider.name })
-  card.setAttribute(
-    'aria-label',
-    provider.requiresInvite ? `${chooseLabel}. ${t('providers.inviteRequired')}` : chooseLabel,
-  )
-
-  if (provider.logo) {
-    const logo = element('img')
-    logo.src = provider.logo
-    logo.alt = ''
-    card.append(logo)
-  }
-
-  const region = element('span', '', 'region')
-  region.id = `provider-${provider.id}-region`
-  const flag = element('span', REGION_FLAGS[provider.region] ?? DEFAULT_FLAG)
-  flag.setAttribute('aria-hidden', 'true')
-  region.append(flag, document.createTextNode(` ${provider.region}`))
-
-  const description = element('span', t(provider.description), 'provider-description')
-  description.id = `provider-${provider.id}-description`
-  card.setAttribute('aria-describedby', `${region.id} ${description.id}`)
-
-  const details = element('span', '', 'provider-details')
-  details.append(element('strong', provider.name), region, description)
-  if (provider.requiresInvite) details.append(element('span', t('providers.inviteRequired'), 'invite-required'))
-  card.append(details)
-  return card
-}
-
-function dropdown(id: string, label: string, options: [value: string, label: string][], value: string) {
-  const field = element('div', '', 'provider-field')
-  const labelElement = element('label', label)
-  labelElement.htmlFor = id
-  const select = element('select')
-  select.id = id
-  for (const [optionValue, optionLabel] of options) {
-    const option = element('option', optionLabel)
-    option.value = optionValue
-    select.append(option)
-  }
-  select.value = value
-  field.append(labelElement, select)
-  return { field, select }
-}
-
-/**
- * Renders the signup wizard into `root`: intro → provider picker → OAuth redirect.
- * With `callback`, finishes the OAuth response instead and shows completion or an error.
- * Returns a cleanup function that stops any running timers.
- */
+/** App branding, configured return destinations, and discovery stay in the launcher. */
 export async function launch(root: HTMLElement, oauth: SignupOAuth, callback = false) {
-  // The callback page ignores its query string; the app is recovered from the OAuth state instead.
   let selection = selectApp(callback ? null : new URLSearchParams(location.search).get('app'))
   let app = selection.app
   applyTheme(app)
-
-  let providers: Provider[] | undefined
-  // Picker choices persist when the user leaves and returns to the provider screen.
-  let sortBy: SortOrder = 'az'
-  const filters: ProviderFilters = { regions: new Set(), invite: 'none' }
-  /** Re-sorts and re-filters the provider picker; set only while it is on screen. */
-  let refreshProviders: (() => void) | undefined
   let countdown: number | undefined
   let stopCarousel: (() => void) | undefined
-
+  let stopFlow: (() => void) | undefined
   const isDefaultApp = () => app.id === DEFAULT_APP_ID
 
   function stopCountdown() {
     window.clearInterval(countdown)
     countdown = undefined
   }
-
-  /** Replaces the page with a focused heading and content; custom apps also get a brand header. */
-  function screen(title: string, ...content: HTMLElement[]) {
+  function clearFlow() {
+    stopFlow?.()
+    stopFlow = undefined
+  }
+  function decorate() {
     document.title = isDefaultApp() ? t('site.title') : t('embed.appTitle', { appName: app.appName })
     document.querySelector('link[rel="icon"]')?.remove()
     if (!isDefaultApp()) {
@@ -126,17 +36,6 @@ export async function launch(root: HTMLElement, oauth: SignupOAuth, callback = f
       icon.rel = 'icon'
       icon.href = app.logo_url ?? '/favicon.png?v=transparent'
       document.head.append(icon)
-    }
-    refreshProviders = undefined
-    stopCountdown()
-    stopCarousel?.()
-    stopCarousel = undefined
-    root.removeAttribute('aria-busy')
-
-    const heading = element('h1', title)
-    heading.tabIndex = -1
-    root.replaceChildren(heading, ...content)
-    if (!isDefaultApp()) {
       const brand = element('div', app.appName, 'brand')
       const logo = element('img', '', 'app-logo')
       logo.src = app.logo_url ?? '/logo.png'
@@ -145,196 +44,63 @@ export async function launch(root: HTMLElement, oauth: SignupOAuth, callback = f
       brand.prepend(logo)
       root.prepend(brand)
     }
+  }
+  function screen(title: string, ...content: HTMLElement[]) {
+    clearFlow()
+    stopCountdown()
+    stopCarousel?.()
+    stopCarousel = undefined
+    root.removeAttribute('aria-busy')
+    const heading = element('h1', title)
+    heading.tabIndex = -1
+    root.replaceChildren(heading, ...content)
+    decorate()
     heading.focus({ preventScroll: true })
   }
-
   function unknownAppNotice() {
     if (selection.unknown) root.append(element('p', t('errors.unknownApp'), 'notice'))
   }
-
   function intro() {
-    const lead = isDefaultApp() ? t('intro.generic') : t('intro.app', { appName: app.appName })
-    screen(t('intro.title'), element('p', lead))
-    root.dataset.view = 'intro'
-    unknownAppNotice()
-
-    const benefits = element('ul', '', 'benefits')
-    for (const key of ['network', 'hosting', 'reuse', 'ownership']) {
-      const item = element('li')
-      item.append(element('strong', t(`intro.${key}Title`)), element('p', t(`intro.${key}`)))
-      benefits.append(item)
-    }
-    const create = element('button', t('intro.create'))
-    create.onclick = selector
-    root.append(create, benefits)
-  }
-
-  async function chooseProvider(provider: Provider) {
-    for (const control of root.querySelectorAll<HTMLButtonElement | HTMLSelectElement | HTMLInputElement>(
-      'button, select, input',
-    )) {
-      control.disabled = true
-    }
-    root.setAttribute('aria-busy', 'true')
-    const status = element('p', t('oauth.opening'), 'notice')
-    status.setAttribute('role', 'status')
-    root.append(status)
+    clearFlow()
     try {
-      await oauth.start(provider.serviceUrl, app.id)
-    } catch (error) {
-      showError(error instanceof SignupError ? error.key : 'errors.authorization', selector)
-    }
-  }
-
-  function selector() {
-    try {
-      providers ??= parseProviders(providerSource).filter(
-        provider => provider.enabled && (!app.providerAllowlist || app.providerAllowlist.includes(provider.id)),
-      )
+      const flow = createLoginFlow({
+        providers: parseProviders(providerSource),
+        providerAllowlist: app.providerAllowlist,
+        mode: 'signup',
+        auth: {
+          async start(request) {
+            try {
+              await oauth.start(request.input, app.id)
+            } catch (error) {
+              if (error instanceof SignupError) throw new LauncherError(error.key)
+              throw error
+            }
+          },
+        },
+      })
+      const unmount = mountLogin(root, flow, {
+        ...(isDefaultApp() ? {} : { appName: app.appName }),
+        headingLevel: 1,
+        idPrefix: 'provider',
+        t: (key, values) => t(key, values ?? {}),
+        logoUrl: provider => (provider.logo ? `/providers/${provider.logo}` : undefined),
+        onScreen(_root, view) {
+          decorate()
+          if (view === 'intro') unknownAppNotice()
+        },
+      })
+      stopFlow = () => {
+        unmount()
+        flow.destroy()
+      }
     } catch {
-      showError('errors.providers', selector)
-      return
+      showError('errors.providers', intro)
     }
-    const enabledProviders = providers
-    screen(t('providers.title'), element('p', t('providers.intro')))
-    root.dataset.view = 'providers'
-
-    // Collapsible "Filter & sort" panel.
-    const controls = element('div', '', 'provider-controls')
-    controls.id = 'provider-controls'
-    controls.hidden = true
-    const toggle = element('button', t('providers.filterSort'), 'provider-toggle')
-    toggle.setAttribute('aria-expanded', 'false')
-    toggle.setAttribute('aria-controls', controls.id)
-    toggle.onclick = () => {
-      controls.hidden = !controls.hidden
-      toggle.setAttribute('aria-expanded', String(!controls.hidden))
-    }
-
-    const invites = dropdown(
-      'provider-invites',
-      t('providers.inviteFilter'),
-      [
-        ['all', t('providers.inviteAny')],
-        ['none', t('providers.inviteNone')],
-        ['required', t('providers.inviteRequired')],
-      ],
-      filters.invite,
-    )
-    invites.select.onchange = () => {
-      filters.invite = invites.select.value as InviteFilter
-      refreshProviders?.()
-    }
-
-    const sort = dropdown(
-      'provider-sort',
-      t('providers.sortBy'),
-      [
-        ['az', t('providers.sortAZ')],
-        ['za', t('providers.sortZA')],
-      ],
-      sortBy,
-    )
-    sort.select.onchange = () => {
-      sortBy = sort.select.value as SortOrder
-      refreshProviders?.()
-    }
-    const regions = element('fieldset', '', 'provider-regions')
-    regions.append(element('legend', t('providers.regions')))
-    const regionChoices = element('div', '', 'region-choices')
-    const regionNames = [...new Set(enabledProviders.map(provider => provider.region))].sort((a, b) =>
-      a.localeCompare(b),
-    )
-    for (const region of regionNames) {
-      const label = element('label', '', 'region-choice')
-      const checkbox = element('input')
-      checkbox.type = 'checkbox'
-      checkbox.value = region
-      checkbox.checked = filters.regions.has(region)
-      checkbox.onchange = () => {
-        if (checkbox.checked) filters.regions.add(region)
-        else filters.regions.delete(region)
-        refreshProviders?.()
-      }
-      label.append(checkbox, element('span', region))
-      regionChoices.append(label)
-    }
-    const regionHint = element('p', t('providers.regionHint'))
-    regionHint.id = 'provider-region-hint'
-    regions.setAttribute('aria-describedby', regionHint.id)
-    regions.append(regionChoices, regionHint)
-    controls.append(invites.field, sort.field, regions)
-
-    // Summary row: result count and "Clear filters", shown only while filters are active.
-    const summary = element('div', '', 'provider-summary')
-    const resultCount = element('p')
-    resultCount.setAttribute('role', 'status')
-    resultCount.setAttribute('aria-atomic', 'true')
-    const clearFilters = element('button', t('providers.clearFilters'), 'secondary clear-filters')
-    clearFilters.onclick = () => {
-      filters.regions.clear()
-      filters.invite = 'all'
-      invites.select.value = 'all'
-      for (const checkbox of regionChoices.querySelectorAll('input')) checkbox.checked = false
-      // The clicked button hides itself, so move focus to a control that stays visible.
-      if (controls.hidden) toggle.focus()
-      else invites.select.focus()
-      refreshProviders?.()
-    }
-    summary.append(resultCount, clearFilters, toggle)
-
-    const cards = element('div', '', 'providers')
-    const cardsById = new Map<string, HTMLButtonElement>()
-    for (const provider of enabledProviders) {
-      const card = providerCard(provider)
-      card.onclick = () => chooseProvider(provider)
-      cards.append(card)
-      cardsById.set(provider.id, card)
-    }
-
-    const empty = element('div', '', 'provider-empty')
-    empty.append(element('strong', t('providers.noMatches')), element('p', t('providers.noMatchesHint')))
-
-    refreshProviders = () => {
-      // A provider was chosen and the redirect is under way; leave the page as it is.
-      if (root.hasAttribute('aria-busy')) return
-
-      // Re-appending cards reorders them; keep keyboard focus on the card that had it.
-      const focused =
-        document.activeElement instanceof HTMLButtonElement && cards.contains(document.activeElement)
-          ? document.activeElement
-          : null
-      let visible = 0
-      for (const provider of sortProviders(enabledProviders, sortBy)) {
-        const card = cardsById.get(provider.id)!
-        card.hidden = !matchesFilters(provider, filters)
-        if (!card.hidden) visible++
-        cards.append(card)
-      }
-      if (focused && !focused.hidden) focused.focus({ preventScroll: true })
-
-      const activeFilters = filters.regions.size + Number(filters.invite !== 'all')
-      resultCount.textContent = t('providers.results', { count: visible, total: enabledProviders.length })
-      resultCount.hidden = !activeFilters
-      clearFilters.hidden = !activeFilters
-      toggle.textContent = activeFilters
-        ? t('providers.filterSortActive', { count: activeFilters })
-        : t('providers.filterSort')
-      empty.hidden = visible > 0
-      if (!enabledProviders.length) empty.replaceChildren(element('p', t('providers.empty')))
-    }
-
-    const back = element('button', t('actions.back'), 'secondary')
-    back.onclick = intro
-    root.append(summary, controls, cards, empty, back)
-    refreshProviders()
   }
-
   function restart() {
     history.replaceState(null, '', isDefaultApp() ? '/' : `/?app=${encodeURIComponent(app.id)}`)
     intro()
   }
-
   function showError(key: string, retry: () => void) {
     screen(t('errors.title'), element('p', t(key)))
     root.dataset.view = 'error'
@@ -421,6 +187,7 @@ export async function launch(root: HTMLElement, oauth: SignupOAuth, callback = f
   else intro()
 
   return () => {
+    clearFlow()
     stopCountdown()
     stopCarousel?.()
     window.removeEventListener('pagehide', stopCountdown)

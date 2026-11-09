@@ -3,7 +3,7 @@ import { afterEach, expect, test, vi } from 'vitest'
 import { launch } from './launcher'
 import { SignupError, recoverAppId, type SignupOAuth } from './signup'
 import { t } from './i18n'
-import providerSource from '../config/providers.json'
+import { providers as providerSource } from './providers'
 import { apps } from './apps'
 
 let dispose: (() => void) | undefined

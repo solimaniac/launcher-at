@@ -1,41 +1,39 @@
 import { defineConfig } from 'vitest/config'
 import { loadEnv, type Plugin } from 'vite'
 import { readFileSync, readdirSync } from 'node:fs'
+import { createRequire } from 'node:module'
+import { dirname, join } from 'node:path'
+import { providers as providerDirectory } from 'launcher-pds-dir'
 import { parseProviders, parseApps } from './src/config.ts'
 import { metadataFor } from './build/metadata.ts'
 import { embedsPlugin } from './build/embeds.ts'
-import en from './locales/en.json' with { type: 'json' }
 
 const DEV_ORIGIN = 'http://127.0.0.1:5173'
 
 const readJson = (path: string): unknown => JSON.parse(readFileSync(path, 'utf8'))
 
 // Configuration is validated here, so invalid providers or apps fail `npm run dev` and `npm run build`.
-const providers = parseProviders(readJson('config/providers.json'))
+const providers = parseProviders(providerDirectory)
 const apps = parseApps(
   readdirSync('apps').map(id => readJson(`apps/${id}/config.json`)),
   providers,
 )
 
-/** Resolves a dotted locale key such as `providers.bluesky` in the English strings. */
-function englishText(key: string) {
-  let value: unknown = en
-  for (const part of key.split('.')) {
-    value = value && typeof value === 'object' ? (value as Record<string, unknown>)[part] : undefined
-  }
-  if (typeof value !== 'string') throw new Error(`Missing English provider description: ${key}`)
-  return value
-}
-
-/** Public `/v1/providers.json`: the provider config with descriptions resolved to English text. */
+/** Keep the existing public API and asset paths, backed by the extracted package. */
 const providerRegistry = JSON.stringify(
-  providers.map(provider => ({ ...provider, description: englishText(provider.description) })),
+  providers.map(provider => ({ ...provider, ...(provider.logo ? { logo: `/providers/${provider.logo}` } : {}) })),
   null,
   2,
 )
+const directoryRoot = dirname(createRequire(import.meta.url).resolve('launcher-pds-dir/package.json'))
+const providerLogos = Object.fromEntries(
+  providers
+    .filter(provider => provider.logo)
+    .map(provider => [`providers/${provider.logo}`, readFileSync(join(directoryRoot, 'logos', provider.logo!))]),
+)
 
 /** Serves generated JSON files in development and emits them into `dist/` on build. */
-function staticDataPlugin(files: Record<string, string>): Plugin {
+function staticDataPlugin(files: Record<string, string | Uint8Array>): Plugin {
   return {
     name: 'launcher-static-data',
     generateBundle() {
@@ -44,7 +42,15 @@ function staticDataPlugin(files: Record<string, string>): Plugin {
     configureServer(server) {
       for (const [fileName, source] of Object.entries(files)) {
         server.middlewares.use(`/${fileName}`, (_req, res) => {
-          res.setHeader('Content-Type', 'application/json')
+          const types: Record<string, string> = {
+            json: 'application/json',
+            svg: 'image/svg+xml',
+            png: 'image/png',
+            jpg: 'image/jpeg',
+            jpeg: 'image/jpeg',
+            webp: 'image/webp',
+          }
+          res.setHeader('Content-Type', types[fileName.split('.').at(-1)!] ?? 'application/octet-stream')
           res.end(source)
         })
       }
@@ -63,7 +69,11 @@ export default defineConfig(({ mode }) => {
     build: { rolldownOptions: { input: ['index.html', 'callback.html'] } },
     plugins: [
       embedsPlugin(apps, origin),
-      staticDataPlugin({ 'v1/providers.json': providerRegistry, 'oauth-client-metadata.json': oauthMetadata }),
+      staticDataPlugin({
+        'v1/providers.json': providerRegistry,
+        'oauth-client-metadata.json': oauthMetadata,
+        ...providerLogos,
+      }),
     ],
   }
 })

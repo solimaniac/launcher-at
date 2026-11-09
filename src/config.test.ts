@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest'
-import source from '../config/providers.json'
+import { providers as source } from './providers'
 import { parseProviders } from './config'
 test('rejects duplicate ids, duplicate URLs and unsafe URLs', () => {
   expect(() => parseProviders([source[0], source[0]])).toThrow()
