@@ -35,7 +35,7 @@ On the callback page, create the flow and call `await flow.finish()`. The adapte
 
 For signup brokers, explicitly set `session: 'discard'`. Cleanup runs before public handle lookup, and the result contains no session or DID. Check `cleanupFailed` and tell users if access revocation could not be confirmed. A broker signup does not sign the user into the app they return to.
 
-For OAuth in a separate browser window, use `transport: 'popup'`. The official SDK manages that window and callback communication; do not build a token-passing `postMessage` bridge. A blocked or dismissed popup is a recoverable error. Use redirect transport where popup support is unsuitable. Your callback page must initialize the official SDK as described in its popup documentation. Dialog presentation and OAuth popup transport are independent choices.
+For OAuth in a separate browser window, use `transport: 'popup'`. The official SDK manages that window and callback communication; do not build a token-passing `postMessage` bridge. A blocked or dismissed popup is a recoverable error. Use redirect transport where popup support is unsuitable. Your callback page can call `flow.finish()` with the adapter; when the SDK hands control to the opener and closes that window, the callback remains pending without displaying a failure. Initialize the client before the click where possible to preserve browser popup activation. Dialog presentation and OAuth popup transport are independent choices.
 
 If you use a backend OAuth client, provide an `AuthAdapter` with `start(request)` and, if needed, `finish(params)`. Validate issuer, state, permissions, redirect targets, and server-side destinations in that backend; client-side validation is only a UI boundary. Do not expose backend session secrets in a frontend result.
 
@@ -59,7 +59,7 @@ const modal = openLoginDialog(flow, { appName: 'Your app' })
 
 No global reset, font, colors, branding, title change, or stylesheet is injected. Set any design system on the containing app. `styles.css` is an optional zero-specificity structural sheet; it inherits typography and foreground color. It adds layout, visible focus, and 44px controls. Keep those accessibility properties when replacing it.
 
-Stable hooks include `[data-launcher]`, `[data-view]`, and `[data-part="heading|identifier|submit|button|auth-status|provider-picker|provider|provider-details|region|provider-description|dialog"]`. Existing launcher class names remain available for migrating its styles. Use `onScreen(root, view)` to add app branding and `renderComplete(root, result)` to render app-specific success actions. The default completion screen does not serialize any auth result.
+Stable hooks include `[data-launcher]`, `[data-view]`, and selectors such as `[data-part="provider"]`. Available parts are `heading`, `identifier`, `submit`, `button`, `auth-status`, `provider-picker`, `provider`, `provider-details`, `region`, `provider-description`, and `dialog`. Existing launcher class names remain available for migrating its styles. Use `onScreen(root, view)` to add app branding and `renderComplete(root, result)` to render app-specific success actions. The default completion screen does not serialize any auth result.
 
 Pass `t(key, values)` for your translation system, or use `translate({ ...english, 'signin.submit': 'Continue' })`. All strings use text nodes, including provider descriptions and supplied app names. Provider descriptions from the directory are English plain text; apps may map them by stable provider ID for other languages. Text is never interpreted as HTML.
 
@@ -79,7 +79,7 @@ An omitted allowlist means all enabled hosts; an empty list means no signup host
 
 Custom signup hosts require `allowCustomService: true`, and cannot be combined with an allowlist. A custom host must support AT Protocol OAuth and account creation; the UI cannot guarantee those capabilities. Hosted account creation, email verification, invite codes, and acceptance of a host's terms stay on the host's own page.
 
-Copy `node_modules/launcher-pds-dir/logos/` to your app's public assets if you want logos, then provide `logoUrl: provider => '/your-assets/' + provider.logo` to the renderer. Nothing fetches a remote directory or contacts every host when the component mounts. Keep directory updates explicit through your dependency lockfile.
+Copy `node_modules/launcher-pds-dir/logos/` to your app's public assets if you want logos, then provide `logoUrl: provider => provider.logo ? '/your-assets/' + provider.logo : undefined` to the renderer. Nothing fetches a remote directory or contacts every host when the component mounts. Keep directory updates explicit through your dependency lockfile.
 
 ## Framework lifecycle
 

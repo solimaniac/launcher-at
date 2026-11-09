@@ -124,6 +124,7 @@ export function renderProviderPicker(doc: Document, options: ProviderPickerOptio
   const byId = new Map<AccountProvider, HTMLButtonElement>()
   providers.forEach((provider, index) => {
     const card = button(doc, '', () => options.onSelect(provider), 'provider')
+    card.dataset.part = 'provider'
     card.dataset.provider = provider.id
     const choose = t('providers.choose', { name: provider.name })
     card.setAttribute('aria-label', provider.requiresInvite ? `${choose}. ${t('providers.inviteRequired')}` : choose)

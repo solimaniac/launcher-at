@@ -14,7 +14,7 @@
 | `back()` / `retry()`                                | Navigate back or recover the prior screen after failure.                          |
 | `destroy()`                                         | Abort the pending request and detach subscribers. Late results are ignored.       |
 
-An `AuthAdapter<Result>` implements `start({ intent, input, provider?, signal })` and optionally `finish(params?)`. `start()` may return no result for a redirect, in which case the flow stays busy until navigation. Only a returned result produces a success screen. `Result` must not be `undefined`.
+An `AuthAdapter<Result>` implements `start({ intent, input, provider?, signal })` and optionally `finish(params?)`. `start()` may return no result for a redirect, in which case the flow stays busy until navigation. A popup callback may also return no result after the SDK hands control to its opener. Only a returned result produces a success screen. `Result` must not be `undefined`.
 
 `mountLogin(root, flow, options?)` returns `unmount()`. Options: `appName`, `t`, `headingLevel`, `presentation`, `idPrefix`, `logoUrl`, `onScreen`, and `renderComplete`. Unmounting removes the rendered children and subscriptions; it does not destroy a flow owned by the caller.
 
