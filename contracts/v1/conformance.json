@@ -1,0 +1,615 @@
+{
+  "version": 1,
+  "providers": [
+    {
+      "id": "alpha",
+      "name": "Alpha",
+      "serviceUrl": "https://alpha.test",
+      "description": "A community host.",
+      "region": "Canada",
+      "enabled": true,
+      "requiresInvite": false
+    },
+    {
+      "id": "beta",
+      "name": "Beta",
+      "serviceUrl": "https://beta.test",
+      "description": "Another host.",
+      "region": "European Union",
+      "enabled": true,
+      "requiresInvite": true
+    },
+    {
+      "id": "gamma",
+      "name": "Gamma",
+      "serviceUrl": "https://gamma.test",
+      "description": "A third host.",
+      "region": "Canada",
+      "enabled": true
+    },
+    {
+      "id": "disabled",
+      "name": "Disabled",
+      "serviceUrl": "https://disabled.test",
+      "description": "Unavailable.",
+      "region": "Japan",
+      "enabled": false
+    }
+  ],
+  "cases": [
+    {
+      "id": "existing-account-normalization-and-success",
+      "steps": [
+        {
+          "action": "expect",
+          "state": {
+            "view": "signin",
+            "busy": false,
+            "identifier": "",
+            "error": null,
+            "hasResult": false
+          },
+          "providerIds": [
+            "alpha",
+            "beta",
+            "gamma"
+          ],
+          "requestCount": 0
+        },
+        {
+          "action": "signIn",
+          "input": " @Alice.Personal.Domain "
+        },
+        {
+          "action": "expect",
+          "state": {
+            "view": "complete",
+            "busy": false,
+            "identifier": "alice.personal.domain",
+            "hasResult": true
+          },
+          "requests": [
+            {
+              "intent": "signin",
+              "input": "alice.personal.domain",
+              "providerId": null
+            }
+          ],
+          "successCount": 1
+        }
+      ]
+    },
+    {
+      "id": "invalid-handle-stays-at-field",
+      "steps": [
+        {
+          "action": "signIn",
+          "input": "alice"
+        },
+        {
+          "action": "expect",
+          "state": {
+            "view": "signin",
+            "busy": false,
+            "identifier": "alice",
+            "error": "errors.identifier"
+          },
+          "requestCount": 0,
+          "successCount": 0
+        }
+      ]
+    },
+    {
+      "id": "signup-explanation-and-hosted-signup",
+      "options": {
+        "mode": "signup"
+      },
+      "steps": [
+        {
+          "action": "expect",
+          "state": {
+            "view": "intro"
+          }
+        },
+        {
+          "action": "showProviders"
+        },
+        {
+          "action": "expect",
+          "state": {
+            "view": "providers"
+          }
+        },
+        {
+          "action": "signUp",
+          "input": "alpha"
+        },
+        {
+          "action": "expect",
+          "state": {
+            "view": "complete",
+            "busy": false
+          },
+          "requests": [
+            {
+              "intent": "signup",
+              "input": "https://alpha.test",
+              "providerId": "alpha"
+            }
+          ],
+          "successCount": 1
+        }
+      ]
+    },
+    {
+      "id": "signin-only-gates-signup",
+      "options": {
+        "mode": "signin"
+      },
+      "steps": [
+        {
+          "action": "showSignup"
+        },
+        {
+          "action": "showProviders"
+        },
+        {
+          "action": "signUp",
+          "input": "alpha"
+        },
+        {
+          "action": "expect",
+          "state": {
+            "view": "signin",
+            "busy": false
+          },
+          "requestCount": 0
+        }
+      ]
+    },
+    {
+      "id": "signup-only-gates-signin",
+      "options": {
+        "mode": "signup"
+      },
+      "steps": [
+        {
+          "action": "showSignIn"
+        },
+        {
+          "action": "signIn",
+          "input": "alice.example"
+        },
+        {
+          "action": "expect",
+          "state": {
+            "view": "intro",
+            "busy": false
+          },
+          "requestCount": 0
+        }
+      ]
+    },
+    {
+      "id": "provider-policy-cannot-enable-disabled-hosts",
+      "options": {
+        "providerAllowlist": [
+          "alpha",
+          "disabled"
+        ]
+      },
+      "steps": [
+        {
+          "action": "expect",
+          "providerIds": [
+            "alpha"
+          ]
+        },
+        {
+          "action": "signUp",
+          "input": "disabled"
+        },
+        {
+          "action": "expect",
+          "state": {
+            "view": "error",
+            "error": "errors.provider"
+          },
+          "requestCount": 0
+        },
+        {
+          "action": "signUp",
+          "input": "beta"
+        },
+        {
+          "action": "expect",
+          "requestCount": 0
+        }
+      ]
+    },
+    {
+      "id": "empty-allowlist-still-allows-existing-account-discovery",
+      "options": {
+        "providerAllowlist": []
+      },
+      "steps": [
+        {
+          "action": "expect",
+          "providerIds": []
+        },
+        {
+          "action": "signIn",
+          "input": "alice.example"
+        },
+        {
+          "action": "expect",
+          "state": {
+            "view": "complete"
+          },
+          "requests": [
+            {
+              "intent": "signin",
+              "input": "alice.example",
+              "providerId": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "raw-authorization-failure-and-retry",
+      "auth": {
+        "start": "error"
+      },
+      "steps": [
+        {
+          "action": "signIn",
+          "input": "@alice.example"
+        },
+        {
+          "action": "expect",
+          "state": {
+            "view": "error",
+            "busy": false,
+            "error": "errors.authorization",
+            "identifier": "alice.example"
+          },
+          "successCount": 0
+        },
+        {
+          "action": "retry"
+        },
+        {
+          "action": "expect",
+          "state": {
+            "view": "signin",
+            "identifier": "alice.example",
+            "error": null
+          }
+        }
+      ]
+    },
+    {
+      "id": "public-cancellation-error",
+      "auth": {
+        "start": "error",
+        "errorKey": "errors.cancelled"
+      },
+      "steps": [
+        {
+          "action": "signIn",
+          "input": "alice.example"
+        },
+        {
+          "action": "expect",
+          "state": {
+            "view": "error",
+            "busy": false,
+            "error": "errors.cancelled"
+          },
+          "successCount": 0
+        }
+      ]
+    },
+    {
+      "id": "redirect-does-not-claim-success",
+      "auth": {
+        "start": "redirect"
+      },
+      "steps": [
+        {
+          "action": "signIn",
+          "input": "alice.example"
+        },
+        {
+          "action": "showSignup"
+        },
+        {
+          "action": "signIn",
+          "input": "someone.example"
+        },
+        {
+          "action": "expect",
+          "state": {
+            "view": "signin",
+            "busy": true,
+            "hasResult": false
+          },
+          "requestCount": 1,
+          "successCount": 0
+        }
+      ]
+    },
+    {
+      "id": "pending-operation-blocks-navigation-and-duplicates",
+      "auth": {
+        "start": "deferred"
+      },
+      "steps": [
+        {
+          "action": "signIn",
+          "input": "alice.example",
+          "defer": true
+        },
+        {
+          "action": "showSignup"
+        },
+        {
+          "action": "signIn",
+          "input": "someone.example"
+        },
+        {
+          "action": "expect",
+          "state": {
+            "view": "signin",
+            "busy": true
+          },
+          "requestCount": 1
+        },
+        {
+          "action": "resolve"
+        },
+        {
+          "action": "expect",
+          "state": {
+            "view": "complete",
+            "busy": false
+          },
+          "successCount": 1
+        }
+      ]
+    },
+    {
+      "id": "destroy-cancels-and-ignores-late-success",
+      "auth": {
+        "start": "deferred"
+      },
+      "steps": [
+        {
+          "action": "signIn",
+          "input": "alice.example",
+          "defer": true
+        },
+        {
+          "action": "destroy"
+        },
+        {
+          "action": "resolve"
+        },
+        {
+          "action": "expect",
+          "state": {
+            "hasResult": false
+          },
+          "signalAborted": true,
+          "successCount": 0
+        }
+      ]
+    },
+    {
+      "id": "custom-host-is-opt-in",
+      "steps": [
+        {
+          "action": "signUpCustom",
+          "input": "https://custom.example"
+        },
+        {
+          "action": "expect",
+          "requestCount": 0
+        }
+      ]
+    },
+    {
+      "id": "custom-host-validation-and-normalization",
+      "options": {
+        "allowCustomService": true
+      },
+      "steps": [
+        {
+          "action": "signUpCustom",
+          "input": "http://custom.example"
+        },
+        {
+          "action": "expect",
+          "state": {
+            "view": "providers",
+            "error": "errors.service"
+          },
+          "requestCount": 0
+        },
+        {
+          "action": "signUpCustom",
+          "input": "custom.example/"
+        },
+        {
+          "action": "expect",
+          "state": {
+            "view": "complete",
+            "error": null
+          },
+          "requests": [
+            {
+              "intent": "signup",
+              "input": "https://custom.example",
+              "providerId": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "callback-success",
+      "steps": [
+        {
+          "action": "finish"
+        },
+        {
+          "action": "expect",
+          "state": {
+            "view": "complete",
+            "busy": false,
+            "hasResult": true
+          },
+          "successCount": 1
+        }
+      ]
+    },
+    {
+      "id": "callback-failure-is-recoverable",
+      "auth": {
+        "finish": "error"
+      },
+      "steps": [
+        {
+          "action": "finish"
+        },
+        {
+          "action": "expect",
+          "state": {
+            "view": "error",
+            "busy": false,
+            "error": "errors.callback"
+          }
+        },
+        {
+          "action": "retry"
+        },
+        {
+          "action": "expect",
+          "state": {
+            "view": "signin",
+            "error": null
+          }
+        }
+      ]
+    },
+    {
+      "id": "popup-callback-handoff-is-not-failure",
+      "auth": {
+        "finish": "handoff"
+      },
+      "steps": [
+        {
+          "action": "finish"
+        },
+        {
+          "action": "expect",
+          "state": {
+            "view": "pending",
+            "busy": true,
+            "error": null,
+            "hasResult": false
+          },
+          "successCount": 0
+        }
+      ]
+    },
+    {
+      "id": "unknown-provider-in-allowlist-fails-configuration",
+      "options": {
+        "providerAllowlist": [
+          "unknown"
+        ]
+      },
+      "configurationError": true
+    },
+    {
+      "id": "custom-host-cannot-bypass-an-allowlist",
+      "options": {
+        "providerAllowlist": [
+          "alpha"
+        ],
+        "allowCustomService": true
+      },
+      "configurationError": true
+    },
+    {
+      "id": "navigation-back-keeps-account-path",
+      "steps": [
+        {
+          "action": "showSignup"
+        },
+        {
+          "action": "expect",
+          "state": {
+            "view": "intro"
+          }
+        },
+        {
+          "action": "showProviders"
+        },
+        {
+          "action": "expect",
+          "state": {
+            "view": "providers"
+          }
+        },
+        {
+          "action": "back"
+        },
+        {
+          "action": "expect",
+          "state": {
+            "view": "intro"
+          }
+        },
+        {
+          "action": "showSignIn"
+        },
+        {
+          "action": "expect",
+          "state": {
+            "view": "signin"
+          },
+          "requestCount": 0
+        }
+      ]
+    },
+    {
+      "id": "did-identity-does-not-require-a-listed-signup-host",
+      "options": {
+        "providerAllowlist": []
+      },
+      "steps": [
+        {
+          "action": "signIn",
+          "input": "did:plc:ewvi7nxzyoun6zhxrhs64oiz"
+        },
+        {
+          "action": "expect",
+          "state": {
+            "view": "complete"
+          },
+          "requests": [
+            {
+              "intent": "signin",
+              "input": "did:plc:ewvi7nxzyoun6zhxrhs64oiz",
+              "providerId": null
+            }
+          ],
+          "successCount": 1
+        }
+      ]
+    }
+  ]
+}

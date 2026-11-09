@@ -39,11 +39,16 @@
       }
     },
     "./styles.css": "./implementations/typescript/styles.css",
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./contracts/v1/flow.json": "./contracts/v1/flow.json",
+    "./contracts/v1/conformance.json": "./contracts/v1/conformance.json",
+    "./copy/en.json": "./copy/en.json"
   },
   "files": [
     "dist",
     "implementations/typescript/styles.css",
+    "contracts",
+    "copy",
     "docs",
     "LICENSE"
   ],
@@ -72,14 +77,16 @@
     "access": "public"
   },
   "scripts": {
-    "build": "tsup implementations/typescript/src/index.ts implementations/typescript/src/dom.ts implementations/typescript/src/oauth.ts --tsconfig implementations/typescript/tsconfig.json --format esm,cjs --splitting --dts --clean",
+    "build": "npm run generate:contracts && tsup implementations/typescript/src/index.ts implementations/typescript/src/dom.ts implementations/typescript/src/oauth.ts --tsconfig implementations/typescript/tsconfig.json --format esm,cjs --splitting --dts --clean",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "check": "npm run typecheck && npm test && npm run build",
+    "check": "npm run check:contracts && npm run typecheck && npm test && npm run build",
     "prepare": "npm run build",
     "prepublishOnly": "npm run check",
     "dev": "vite implementations/typescript/examples --host 127.0.0.1",
-    "build:examples": "vite build implementations/typescript/examples --base ./ --outDir ../../../example-dist --emptyOutDir"
+    "build:examples": "vite build implementations/typescript/examples --base ./ --outDir ../../../example-dist --emptyOutDir",
+    "generate:contracts": "node scripts/generate-contract-types.mjs",
+    "check:contracts": "node scripts/generate-contract-types.mjs --check"
   },
   "peerDependencies": {
     "@atproto/oauth-client-browser": "^0.5.9"

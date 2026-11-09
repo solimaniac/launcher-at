@@ -5,6 +5,7 @@ import {
   type AuthAdapter,
   type AuthRequest,
   type LoginState,
+  type LoginMode,
   type View,
 } from './types'
 
@@ -12,7 +13,7 @@ export interface LoginFlowOptions<Result> {
   providers: readonly AccountProvider[]
   /** Restricts listed signup hosts. Existing handles are discovered by OAuth. */
   providerAllowlist?: readonly string[]
-  mode?: 'signin' | 'signup' | 'both'
+  mode?: LoginMode
   /** Explicit opt-in. Cannot be combined with a provider allowlist. */
   allowCustomService?: boolean
   auth: AuthAdapter<Result>
@@ -21,7 +22,7 @@ export interface LoginFlowOptions<Result> {
 
 export interface LoginFlow<Result> {
   readonly providers: readonly AccountProvider[]
-  readonly mode: 'signin' | 'signup' | 'both'
+  readonly mode: LoginMode
   readonly allowCustomService: boolean
   getState(): LoginState<Result>
   subscribe(listener: () => void): () => void

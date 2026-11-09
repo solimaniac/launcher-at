@@ -1,3 +1,6 @@
+import type { ErrorKey, Intent, View } from './contract-types'
+export type { ErrorKey, Intent, LoginMode, View } from './contract-types'
+
 /** Structural contract: launcher-pds-dir providers can be passed directly. */
 export interface AccountProvider {
   readonly id: string
@@ -9,18 +12,6 @@ export interface AccountProvider {
   readonly requiresInvite?: boolean
   readonly logo?: string
 }
-
-export type Intent = 'signin' | 'signup'
-export type View = 'intro' | 'signin' | 'providers' | 'error' | 'complete' | 'pending'
-export type ErrorKey =
-  | 'errors.identifier'
-  | 'errors.service'
-  | 'errors.provider'
-  | 'errors.initialization'
-  | 'errors.unsupportedProvider'
-  | 'errors.authorization'
-  | 'errors.cancelled'
-  | 'errors.callback'
 
 /** Public failures contain a message key, never a library error or OAuth response. */
 export class LauncherError extends Error {

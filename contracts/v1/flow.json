@@ -1,0 +1,67 @@
+{
+  "version": 1,
+  "defaultMode": "both",
+  "copy": {
+    "directory": "copy",
+    "defaultLocale": "en",
+    "interpolation": "{{name}}",
+    "placeholders": ["appName", "name", "count", "total"]
+  },
+  "modes": {
+    "signin": { "initialView": "signin", "intents": ["signin"] },
+    "signup": { "initialView": "intro", "intents": ["signup"] },
+    "both": { "initialView": "signin", "intents": ["signin", "signup"] }
+  },
+  "views": {
+    "intro": { "purpose": "Explain shared accounts and the account host's role" },
+    "signin": { "purpose": "Collect a full handle or DID for an existing account" },
+    "providers": { "purpose": "Choose an enabled, allowed signup host" },
+    "pending": { "purpose": "Complete authorization in a callback" },
+    "error": { "purpose": "Offer recovery using a public error key" },
+    "complete": { "purpose": "Confirm a verified adapter result" }
+  },
+  "intents": {
+    "signin": { "input": "A normalized full handle or AT Protocol DID" },
+    "signup": { "input": "An HTTPS PDS or entryway address" }
+  },
+  "errors": {
+    "errors.identifier": { "view": "signin", "field": "identifier" },
+    "errors.service": { "view": "providers", "field": "service" },
+    "errors.provider": { "view": "error" },
+    "errors.initialization": { "view": "error" },
+    "errors.unsupportedProvider": { "view": "error" },
+    "errors.authorization": { "view": "error" },
+    "errors.cancelled": { "view": "error" },
+    "errors.callback": { "view": "error" }
+  },
+  "state": {
+    "view": "A key from views",
+    "busy": "Whether an authorization operation is in progress",
+    "identifier": "Last submitted identifier, preserved for validation and retry",
+    "error": "A public error key or no error",
+    "result": "An opaque platform-local adapter result; never part of a wire format"
+  },
+  "actions": {
+    "showSignIn": { "modes": ["signin", "both"], "target": "signin" },
+    "showSignup": { "modes": ["signup", "both"], "target": "intro" },
+    "showProviders": { "modes": ["signup", "both"], "target": "providers" },
+    "signIn": { "modes": ["signin", "both"], "intent": "signin" },
+    "signUp": { "modes": ["signup", "both"], "intent": "signup" },
+    "signUpCustom": { "modes": ["signup", "both"], "intent": "signup", "requiresCustomOptIn": true },
+    "finish": { "targetWhileBusy": "pending" },
+    "back": { "fromProviders": "intro", "signupMode": "intro", "otherwise": "signin" },
+    "retry": { "target": "previousView", "pendingFallback": "initialView" },
+    "destroy": { "cancelPending": true, "ignoreLateResults": true }
+  },
+  "requirements": {
+    "busy": "Block navigation and duplicate authorization attempts until the current operation completes",
+    "success": "Only a verified adapter result completes the flow; redirects and popup handoffs remain pending",
+    "providerAllowlist": "Omitted means all enabled signup hosts; empty means none; unknown IDs fail configuration",
+    "disabledProviders": "An allowlist cannot enable a disabled host",
+    "customService": "Require explicit opt-in and reject combining custom signup with a provider allowlist",
+    "existingAccounts": "Discover the current host from the account handle or DID; signup choices do not constrain existing-account login",
+    "errors": "Preserve user input, expose public error keys, and keep SDK errors and OAuth responses out of the UI",
+    "credentials": "Keep passwords at the account host and authorization/session handling in a platform-specific adapter",
+    "navigation": "The consuming app owns configured destinations; do not navigate using a query-string or state-supplied return URL"
+  }
+}
