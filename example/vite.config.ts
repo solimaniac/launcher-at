@@ -3,19 +3,22 @@ import { loadEnv, type Plugin } from 'vite'
 import { readFileSync, readdirSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { providers as providerDirectory } from 'launcher-pds-dir'
 import { parseProviders, parseApps } from './src/config.ts'
 import { metadataFor } from './build/metadata.ts'
 import { embedsPlugin } from './build/embeds.ts'
 
 const DEV_ORIGIN = 'http://127.0.0.1:5173'
+const EXAMPLE_ROOT = fileURLToPath(new URL('.', import.meta.url))
+const REPOSITORY_ROOT = fileURLToPath(new URL('../', import.meta.url))
 
-const readJson = (path: string): unknown => JSON.parse(readFileSync(path, 'utf8'))
+const readJson = (path: string): unknown => JSON.parse(readFileSync(join(EXAMPLE_ROOT, path), 'utf8'))
 
 // Configuration is validated here, so invalid providers or apps fail `npm run dev` and `npm run build`.
 const providers = parseProviders(providerDirectory)
 const apps = parseApps(
-  readdirSync('apps').map(id => readJson(`apps/${id}/config.json`)),
+  readdirSync(join(EXAMPLE_ROOT, 'apps')).map(id => readJson(`apps/${id}/config.json`)),
   providers,
 )
 
@@ -59,14 +62,23 @@ function staticDataPlugin(files: Record<string, string | Uint8Array>): Plugin {
 }
 
 export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, process.cwd(), 'PUBLIC_')
+  const env = {
+    ...loadEnv(mode, REPOSITORY_ROOT, 'PUBLIC_'),
+    ...loadEnv(mode, EXAMPLE_ROOT, 'PUBLIC_'),
+  }
   const origin = process.env.PUBLIC_ORIGIN || env.PUBLIC_ORIGIN || DEV_ORIGIN
   const oauthMetadata = JSON.stringify(metadataFor(origin), null, 2)
 
   return {
+    root: EXAMPLE_ROOT,
+    envDir: EXAMPLE_ROOT,
     test: { include: ['src/**/*.test.ts', 'build/**/*.test.ts'] },
     server: { host: '127.0.0.1', port: 5173, strictPort: true },
-    build: { rolldownOptions: { input: ['index.html', 'callback.html'] } },
+    build: {
+      outDir: join(REPOSITORY_ROOT, 'dist'),
+      emptyOutDir: true,
+      rolldownOptions: { input: [join(EXAMPLE_ROOT, 'index.html'), join(EXAMPLE_ROOT, 'callback.html')] },
+    },
     plugins: [
       embedsPlugin(apps, origin),
       staticDataPlugin({

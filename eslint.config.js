@@ -4,7 +4,7 @@ import globals from 'globals'
 import tseslint from 'typescript-eslint'
 
 export default tseslint.config(
-  { ignores: ['**/dist', '**/node_modules', 'public'] },
+  { ignores: ['**/dist', '**/node_modules', 'example/public'] },
   js.configs.recommended,
   tseslint.configs.recommended,
   tseslint.configs.stylistic,
@@ -20,7 +20,7 @@ export default tseslint.config(
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
     },
   },
-  { files: ['src/**'], languageOptions: { globals: globals.browser } },
-  { files: ['build/**', '*.config.{js,ts}'], languageOptions: { globals: globals.node } },
+  { files: ['example/src/**'], languageOptions: { globals: globals.browser } },
+  { files: ['example/build/**', '**/*.config.{js,ts}'], languageOptions: { globals: globals.node } },
   prettier,
 )
