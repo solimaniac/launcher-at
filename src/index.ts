@@ -41,28 +41,37 @@ export function parseProviders(value: unknown): readonly PdsProvider[] {
   if (!Array.isArray(value)) throw new TypeError('Expected a provider array')
   const ids = new Set<string>()
   const urls = new Set<string>()
-  return Object.freeze(value.map((entry: unknown) => {
-    if (!entry || typeof entry !== 'object' || Array.isArray(entry)) throw new TypeError('Invalid provider')
-    const p = entry as Record<string, unknown>
-    const text = (key: string): string => {
-      if (typeof p[key] !== 'string' || !(p[key] as string).trim()) throw new TypeError(`Invalid ${key}`)
-      return (p[key] as string).trim()
-    }
-    const id = text('id')
-    if (!ID.test(id) || ids.has(id)) throw new TypeError('Invalid or duplicate provider ID')
-    const serviceUrl = normalizeServiceUrl(p.serviceUrl)
-    if (urls.has(serviceUrl)) throw new TypeError('Duplicate provider URL')
-    if (typeof p.enabled !== 'boolean') throw new TypeError('enabled must be a boolean')
-    if (p.requiresInvite !== undefined && typeof p.requiresInvite !== 'boolean') throw new TypeError('requiresInvite must be a boolean')
-    if (p.logo !== undefined && (typeof p.logo !== 'string' || !LOGO.test(p.logo) || p.logo.includes('..'))) throw new TypeError('Invalid logo filename')
-    ids.add(id)
-    urls.add(serviceUrl)
-    return Object.freeze({
-      id, name: text('name'), serviceUrl, description: text('description'), region: text('region'), enabled: p.enabled,
-      ...(p.logo !== undefined ? { logo: p.logo as string } : {}),
-      ...(p.requiresInvite !== undefined ? { requiresInvite: p.requiresInvite as boolean } : {}),
-    })
-  }))
+  return Object.freeze(
+    value.map((entry: unknown) => {
+      if (!entry || typeof entry !== 'object' || Array.isArray(entry)) throw new TypeError('Invalid provider')
+      const p = entry as Record<string, unknown>
+      const text = (key: string): string => {
+        if (typeof p[key] !== 'string' || !(p[key] as string).trim()) throw new TypeError(`Invalid ${key}`)
+        return (p[key] as string).trim()
+      }
+      const id = text('id')
+      if (!ID.test(id) || ids.has(id)) throw new TypeError('Invalid or duplicate provider ID')
+      const serviceUrl = normalizeServiceUrl(p.serviceUrl)
+      if (urls.has(serviceUrl)) throw new TypeError('Duplicate provider URL')
+      if (typeof p.enabled !== 'boolean') throw new TypeError('enabled must be a boolean')
+      if (p.requiresInvite !== undefined && typeof p.requiresInvite !== 'boolean')
+        throw new TypeError('requiresInvite must be a boolean')
+      if (p.logo !== undefined && (typeof p.logo !== 'string' || !LOGO.test(p.logo) || p.logo.includes('..')))
+        throw new TypeError('Invalid logo filename')
+      ids.add(id)
+      urls.add(serviceUrl)
+      return Object.freeze({
+        id,
+        name: text('name'),
+        serviceUrl,
+        description: text('description'),
+        region: text('region'),
+        enabled: p.enabled,
+        ...(p.logo !== undefined ? { logo: p.logo as string } : {}),
+        ...(p.requiresInvite !== undefined ? { requiresInvite: p.requiresInvite as boolean } : {}),
+      })
+    }),
+  )
 }
 
 /** An immutable, bundled snapshot. Importing this module performs no network requests. */
@@ -72,15 +81,24 @@ export function getProvider(id: string): PdsProvider | undefined {
   return providers.find(provider => provider.id === id)
 }
 
-export function selectProviders(query: ProviderQuery = {}, directory: readonly PdsProvider[] = providers): readonly PdsProvider[] {
-  for (const id of query.ids ?? []) if (!directory.some(p => p.id === id)) throw new TypeError(`Unknown provider: ${id}`)
-  return directory.filter(p => p.enabled
-    && (!query.ids || query.ids.includes(p.id))
-    && (!query.regions?.length || query.regions.includes(p.region))
-    && (!query.invite || query.invite === 'any'
-      || (query.invite === 'required' && p.requiresInvite === true)
-      || (query.invite === 'not-required' && p.requiresInvite === false)
-      || (query.invite === 'unknown' && p.requiresInvite === undefined)))
+export function selectProviders(
+  query: ProviderQuery = {},
+  directory: readonly PdsProvider[] = providers,
+): readonly PdsProvider[] {
+  for (const id of query.ids ?? [])
+    if (!directory.some(p => p.id === id)) throw new TypeError(`Unknown provider: ${id}`)
+  return directory
+    .filter(
+      p =>
+        p.enabled &&
+        (!query.ids || query.ids.includes(p.id)) &&
+        (!query.regions?.length || query.regions.includes(p.region)) &&
+        (!query.invite ||
+          query.invite === 'any' ||
+          (query.invite === 'required' && p.requiresInvite === true) ||
+          (query.invite === 'not-required' && p.requiresInvite === false) ||
+          (query.invite === 'unknown' && p.requiresInvite === undefined)),
+    )
     .sort((a, b) => (query.sort === 'za' ? -1 : 1) * a.name.localeCompare(b.name, 'en'))
 }
 
@@ -89,7 +107,8 @@ export function resolveProviderLogo(provider: PdsProvider, baseUrl: string | URL
   if (!provider.logo) return undefined
   if (!LOGO.test(provider.logo) || provider.logo.includes('..')) throw new TypeError('Invalid logo filename')
   const base = new URL(baseUrl)
-  if (base.protocol !== 'https:' || base.username || base.password || base.search || base.hash) throw new TypeError('Expected an HTTPS asset directory')
+  if (base.protocol !== 'https:' || base.username || base.password || base.search || base.hash)
+    throw new TypeError('Expected an HTTPS asset directory')
   if (!base.pathname.endsWith('/')) base.pathname += '/'
   return new URL(provider.logo, base).href
 }

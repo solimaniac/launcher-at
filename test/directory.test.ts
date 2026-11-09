@@ -30,10 +30,17 @@ test('unknown invite requirements are distinct from explicitly open signup', () 
 })
 
 test('rejects unsafe data and equivalent duplicate service endpoints', () => {
-  for (const serviceUrl of ['http://example.com', 'javascript:alert(1)', 'https://user:pass@example.com', 'https://host.test/#token']) {
+  for (const serviceUrl of [
+    'http://example.com',
+    'javascript:alert(1)',
+    'https://user:pass@example.com',
+    'https://host.test/#token',
+  ]) {
     expect(() => parseProviders([{ ...providers[0], serviceUrl }])).toThrow()
   }
-  expect(() => parseProviders([providers[0], { ...providers[1], serviceUrl: 'https://bsky.social/' }])).toThrow('Duplicate')
+  expect(() => parseProviders([providers[0], { ...providers[1], serviceUrl: 'https://bsky.social/' }])).toThrow(
+    'Duplicate',
+  )
   expect(() => parseProviders([{ ...providers[0], logo: '../escape.svg' }])).toThrow()
   expect(() => parseProviders([{ ...providers[0], requiresInvite: 'false' }])).toThrow()
   expect(resolveProviderLogo(providers[0]!, 'https://my.app/hosts')).toBe('https://my.app/hosts/bluesky.svg')

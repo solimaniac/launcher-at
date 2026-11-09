@@ -8,20 +8,48 @@
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
-    ".": { "import": { "types": "./dist/index.d.ts", "default": "./dist/index.js" }, "require": { "types": "./dist/index.d.cts", "default": "./dist/index.cjs" } },
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    },
     "./providers.json": "./data/providers.json",
     "./schema.json": "./schema.json",
     "./logos/*": "./logos/*",
     "./package.json": "./package.json"
   },
-  "files": ["dist", "data", "logos", "schema.json", "LICENSE"],
+  "files": [
+    "dist",
+    "data",
+    "logos",
+    "schema.json",
+    "LICENSE"
+  ],
   "sideEffects": false,
-  "engines": { "node": ">=22.12.0" },
-  "repository": { "type": "git", "url": "git+https://github.com/solimaniac/launcher-pds-dir.git" },
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/solimaniac/launcher-pds-dir.git"
+  },
   "homepage": "https://github.com/solimaniac/launcher-pds-dir#readme",
   "bugs": "https://github.com/solimaniac/launcher-pds-dir/issues",
-  "keywords": ["atproto", "at-protocol", "pds", "atmosphere", "launcher"],
-  "publishConfig": { "access": "public" },
+  "keywords": [
+    "atproto",
+    "at-protocol",
+    "pds",
+    "atmosphere",
+    "launcher"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsup src/index.ts --format esm,cjs --dts --clean",
     "typecheck": "tsc --noEmit",
@@ -30,5 +58,11 @@
     "prepare": "npm run build",
     "prepublishOnly": "npm run check"
   },
-  "devDependencies": { "@types/node": "^24.19.1", "ajv": "^8.17.1", "tsup": "^8.5.0", "typescript": "~6.0.3", "vitest": "^5.0.3" }
+  "devDependencies": {
+    "@types/node": "^24.19.1",
+    "ajv": "^8.17.1",
+    "tsup": "^8.5.0",
+    "typescript": "~6.0.3",
+    "vitest": "^5.0.3"
+  }
 }
