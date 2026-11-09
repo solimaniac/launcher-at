@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/solimaniac/launcher-pds-dir/main/schema.json",
+  "title": "Launcher PDS directory",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["id", "name", "serviceUrl", "description", "region", "enabled"],
+    "properties": {
+      "id": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+      "name": { "type": "string", "minLength": 1 },
+      "serviceUrl": { "type": "string", "pattern": "^https://[^\\s?#@]+$" },
+      "description": { "type": "string", "minLength": 1 },
+      "region": { "type": "string", "minLength": 1 },
+      "enabled": { "type": "boolean" },
+      "logo": { "type": "string", "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]*\\.(svg|png|webp|jpe?g)$" },
+      "requiresInvite": { "type": "boolean" }
+    }
+  }
+}

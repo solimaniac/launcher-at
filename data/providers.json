@@ -1,0 +1,122 @@
+[
+  {
+    "id": "bluesky",
+    "name": "Bluesky",
+    "serviceUrl": "https://bsky.social",
+    "description": "A social media company building an open social network on the Atmosphere.",
+    "region": "United States",
+    "logo": "bluesky.svg",
+    "enabled": true
+  },
+  {
+    "id": "eurosky",
+    "name": "Eurosky",
+    "serviceUrl": "https://eurosky.social",
+    "description": "A European nonprofit focused on providing independent social infrastructure on the Atmosphere.",
+    "region": "European Union",
+    "logo": "eurosky.png",
+    "enabled": true
+  },
+  {
+    "id": "blacksky",
+    "name": "Blacksky",
+    "serviceUrl": "https://blacksky.app",
+    "description": "A community-led social platform focused on safety, community governance, and user control.",
+    "region": "United States",
+    "logo": "blacksky.svg",
+    "enabled": true
+  },
+  {
+    "id": "w-social",
+    "name": "W Social",
+    "serviceUrl": "https://pds.wsocial.network",
+    "description": "A European social network focused on privacy, authenticity, and human-centered online communities.",
+    "region": "European Union",
+    "logo": "w-social.svg",
+    "enabled": true,
+    "requiresInvite": true
+  },
+  {
+    "id": "northsky",
+    "name": "Northsky",
+    "serviceUrl": "https://northsky.social",
+    "description": "A Canadian nonprofit cooperative building social infrastructure for 2SLGBTQIA+ and marginalized communities.",
+    "region": "Canada",
+    "logo": "northsky.svg",
+    "enabled": true,
+    "requiresInvite": true
+  },
+  {
+    "id": "selfhosted-social",
+    "name": "selfhosted.social",
+    "serviceUrl": "https://selfhosted.social",
+    "description": "An independent community project providing hosted infrastructure for the Atmosphere.",
+    "region": "United States",
+    "logo": "selfhosted-social.png",
+    "enabled": true
+  },
+  {
+    "id": "tangled",
+    "name": "Tangled",
+    "serviceUrl": "https://tngl.sh",
+    "description": "A social coding platform for hosting, sharing, and collaborating on Git repositories.",
+    "region": "European Union",
+    "logo": "tangled.svg",
+    "enabled": true
+  },
+  {
+    "id": "spark",
+    "name": "Spark",
+    "serviceUrl": "https://pds.sprk.so",
+    "description": "An open-source social networking project focused on customizable, user-controlled feeds.",
+    "region": "United States",
+    "logo": "spark.svg",
+    "enabled": true
+  },
+  {
+    "id": "npmx",
+    "name": "npmx",
+    "serviceUrl": "https://npmx.social",
+    "description": "A community-built npm client that adds social and discovery features using the Atmosphere.",
+    "region": "European Union",
+    "logo": "npmx.svg",
+    "enabled": true
+  },
+  {
+    "id": "pckt",
+    "name": "pckt",
+    "serviceUrl": "https://pds.pckt.cafe",
+    "description": "An open-web publishing platform focused on blogging, creator ownership, and portable identity.",
+    "region": "United States",
+    "logo": "pckt.svg",
+    "enabled": true
+  },
+  {
+    "id": "witchcraft-systems",
+    "name": "Witchcraft Systems",
+    "serviceUrl": "https://pds.witchcraft.systems",
+    "description": "An independent technology collective operating infrastructure for the Atmosphere and other open internet services from Japan.",
+    "region": "Japan",
+    "logo": "witchcraft-systems.png",
+    "enabled": true,
+    "requiresInvite": true
+  },
+  {
+    "id": "tophhie-social",
+    "name": "Tophhie Social",
+    "serviceUrl": "https://pds.tophhie.cloud",
+    "description": "A UK-based technology project focused on privacy, independent hosting, and open social infrastructure.",
+    "region": "United Kingdom",
+    "logo": "tophhie-social.svg",
+    "enabled": true
+  },
+  {
+    "id": "margin-cafe",
+    "name": "Margin",
+    "serviceUrl": "https://margin.cafe",
+    "description": "A social platform for collecting, annotating, and sharing content from around the web.",
+    "region": "European Union",
+    "logo": "margin.svg",
+    "enabled": true
+  }
+]
