@@ -1,5 +1,5 @@
 dist
 node_modules
 package-lock.json
-example/public
-example/build/fonts
+public
+build/fonts

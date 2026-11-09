@@ -1,7 +1,7 @@
 import { launch } from './launcher'
 import { oauth } from './oauth'
 import { t } from './i18n'
-import { version } from '../../package.json'
+import { version } from '../package.json'
 import './styles/main.scss'
 
 const SOURCE_URL = 'https://github.com/solimaniac/launcher-at'

@@ -4,7 +4,6 @@
  * `dist/embed-routes.caddy` rewrites those URLs to the prebuilt `dist/embeds/<id>.html`.
  */
 import { readFileSync } from 'node:fs'
-import { fileURLToPath } from 'node:url'
 import { Resvg } from '@resvg/resvg-js'
 import type { Plugin } from 'vite'
 import { DEFAULT_APP_ID, lookupApp, type AppConfig } from '../src/config.ts'
@@ -19,10 +18,7 @@ const LOGO_TIMEOUT_MS = 15_000
 
 /** Bundled fonts; Noto Sans also stands in for `system-ui` and any font missing on the build machine. */
 const font = {
-  fontFiles: [
-    fileURLToPath(new URL('./fonts/NotoSans.ttf', import.meta.url)),
-    fileURLToPath(new URL('./fonts/NotoSans-Bold.ttf', import.meta.url)),
-  ],
+  fontFiles: ['build/fonts/NotoSans.ttf', 'build/fonts/NotoSans-Bold.ttf'],
   defaultFontFamily: 'Noto Sans',
   sansSerifFamily: 'Noto Sans',
 }
@@ -137,7 +133,7 @@ async function loadLogo(app: AppConfig) {
     if (!response.ok) throw new Error(`Could not load embed logo for ${app.id}: HTTP ${response.status}`)
     logo = Buffer.from(await response.arrayBuffer())
   } else {
-    logo = readFileSync(new URL('../public/logo.png', import.meta.url))
+    logo = readFileSync('public/logo.png')
   }
   const start = logo.subarray(0, 100).toString()
   const type = start.includes('<svg') || start.includes('<?xml') ? 'image/svg+xml' : 'image/png'
