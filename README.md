@@ -1,6 +1,6 @@
 # launcher-components
 
-Unstyled AT Protocol login and signup for plain JavaScript, React, Vue, Svelte, and other browser apps. Includes a headless flow, accessible DOM components, and an optional official OAuth SDK adapter.
+AT Protocol login and onboarding components. The current TypeScript implementation, under `implementations/typescript/`, provides unstyled components for plain JavaScript, React, Vue, Svelte, and other browser apps. Includes a headless flow, accessible DOM components, and an optional official OAuth SDK adapter.
 
 ```sh
 npm install launcher-components launcher-pds-dir @atproto/oauth-client-browser

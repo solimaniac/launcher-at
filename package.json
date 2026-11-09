@@ -38,17 +38,17 @@
         "default": "./dist/oauth.cjs"
       }
     },
-    "./styles.css": "./styles.css",
+    "./styles.css": "./implementations/typescript/styles.css",
     "./package.json": "./package.json"
   },
   "files": [
     "dist",
-    "styles.css",
+    "implementations/typescript/styles.css",
     "docs",
     "LICENSE"
   ],
   "sideEffects": [
-    "./styles.css"
+    "./implementations/typescript/styles.css"
   ],
   "engines": {
     "node": ">=22.12.0"
@@ -72,14 +72,14 @@
     "access": "public"
   },
   "scripts": {
-    "build": "tsup src/index.ts src/dom.ts src/oauth.ts --format esm,cjs --splitting --dts --clean",
+    "build": "tsup implementations/typescript/src/index.ts implementations/typescript/src/dom.ts implementations/typescript/src/oauth.ts --tsconfig implementations/typescript/tsconfig.json --format esm,cjs --splitting --dts --clean",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "check": "npm run typecheck && npm test && npm run build",
     "prepare": "npm run build",
     "prepublishOnly": "npm run check",
-    "dev": "vite examples --host 127.0.0.1",
-    "build:examples": "vite build examples --base ./ --outDir ../example-dist --emptyOutDir"
+    "dev": "vite implementations/typescript/examples --host 127.0.0.1",
+    "build:examples": "vite build implementations/typescript/examples --base ./ --outDir ../../../example-dist --emptyOutDir"
   },
   "peerDependencies": {
     "@atproto/oauth-client-browser": "^0.5.9"

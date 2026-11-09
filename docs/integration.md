@@ -1,5 +1,7 @@
 # Integration
 
+The repository keeps each programming-language implementation under `implementations/`. The TypeScript package builds from `implementations/typescript/`; existing npm entrypoints and commands remain unchanged.
+
 ## Pick the layers you need
 
 - `launcher-components`: headless state and validation, no browser globals at import time.
