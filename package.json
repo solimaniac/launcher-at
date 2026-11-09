@@ -21,7 +21,7 @@
     "@atproto/oauth-client-browser": "^0.5.9",
     "@atproto/oauth-types": "^0.7.7",
     "i18next": "^26.4.2",
-    "launcher-components": "git+https://github.com/solimaniac/launcher-at.git#3a728cd604683789c283a00f7912f457ccad2a11",
+    "launcher-components": "git+https://github.com/solimaniac/launcher-at.git#e4daf71d17793462be27507c7881419704be7417",
     "launcher-pds-dir": "git+https://github.com/solimaniac/launcher-at.git#d6ff78c138be9a61d3321d390b905abe844f2a50"
   },
   "devDependencies": {

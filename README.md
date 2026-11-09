@@ -107,6 +107,8 @@ build/      Build-time plugins: OAuth metadata and link-preview images
 
 [launcher-components](https://github.com/solimaniac/launcher-components) provides the framework-independent flow, unstyled DOM screens, provider picker, and OAuth adapter. [launcher-pds-dir](https://github.com/solimaniac/launcher-pds-dir) provides the typed host directory and assets. This app uses both, while retaining its branding and configured return destinations.
 
+The components repository separates language implementations from shared JSON flow contracts, copy, and conformance cases, so a future Dart/Flutter package can use the same behavior and PDS data independently of JavaScript.
+
 The launcher uses signup-only mode and discards its temporary OAuth session. Apps using the components directly can support existing-account login, retain their own SDK session, and choose inline, full-screen, or dialog presentation. Neither package is published to npm yet. Until the requested separate GitHub repositories can be created, dependencies are pinned to standalone package commits on the `codex/launcher-components` and `codex/launcher-pds-dir` branches of this repository. Move those same commits into the new repositories, then update the Git URLs; no source changes are needed.
 
 ## License
