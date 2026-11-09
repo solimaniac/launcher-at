@@ -3,7 +3,7 @@ import { loadEnv, type Plugin } from 'vite'
 import { readFileSync, readdirSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { dirname, join } from 'node:path'
-import { providers as providerDirectory } from 'launcher-pds-dir'
+import { providers as providerDirectory } from 'pds-registry'
 import { parseProviders, parseApps } from './src/config.ts'
 import { metadataFor } from './build/metadata.ts'
 import { embedsPlugin } from './build/embeds.ts'
@@ -25,7 +25,7 @@ const providerRegistry = JSON.stringify(
   null,
   2,
 )
-const directoryRoot = dirname(createRequire(import.meta.url).resolve('launcher-pds-dir/package.json'))
+const directoryRoot = dirname(createRequire(import.meta.url).resolve('pds-registry/package.json'))
 const providerLogos = Object.fromEntries(
   providers
     .filter(provider => provider.logo)

@@ -1,6 +1,6 @@
 /** App configuration validation, shared by the browser and the build. */
-import type { PdsProvider } from 'launcher-pds-dir'
-export { parseProviders } from 'launcher-pds-dir'
+import type { PdsProvider } from 'pds-registry'
+export { parseProviders } from 'pds-registry'
 export type Provider = PdsProvider
 
 export const DEFAULT_APP_ID = 'default'

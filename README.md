@@ -39,14 +39,14 @@ Each app gets its own branded launcher at `/?app=<id>`.
 
 2. Link people to `/?app=your-app`. Apps are picked up automatically at build time.
 
-| Field               | Required | Notes                                                                                                                               |
-| ------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| `id`                | yes      | Same as the directory name. Lowercase letters, digits and single hyphens.                                                           |
-| `appName`           | yes      | Shown in the header and page title.                                                                                                 |
-| `theme.*`           | yes      | All five fields. Colors are six-digit hex; button text color is picked for contrast.                                                |
-| `redirectUrl`       | no       | HTTPS URL to send people back to after signup (8-second countdown). Omit to stay on the page.                                       |
-| `logo_url`          | no       | HTTPS image URL for the header. Defaults to the launcher logo.                                                                      |
-| `providerAllowlist` | no       | Non-empty array of unique provider IDs from `launcher-pds-dir`. Omit to show all enabled providers. Disabled providers stay hidden. |
+| Field               | Required | Notes                                                                                                                           |
+| ------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `id`                | yes      | Same as the directory name. Lowercase letters, digits and single hyphens.                                                       |
+| `appName`           | yes      | Shown in the header and page title.                                                                                             |
+| `theme.*`           | yes      | All five fields. Colors are six-digit hex; button text color is picked for contrast.                                            |
+| `redirectUrl`       | no       | HTTPS URL to send people back to after signup (8-second countdown). Omit to stay on the page.                                   |
+| `logo_url`          | no       | HTTPS image URL for the header. Defaults to the launcher logo.                                                                  |
+| `providerAllowlist` | no       | Non-empty array of unique provider IDs from `pds-registry`. Omit to show all enabled providers. Disabled providers stay hidden. |
 
 Good to know:
 
@@ -87,7 +87,7 @@ Set these at build time, in the environment or in `.env.local` (see [`.env.examp
 
 ## Other configuration
 
-- **Providers**: the [launcher-pds-dir](https://github.com/solimaniac/launcher-pds-dir) package is the single source for provider metadata and logos. The build preserves `/v1/providers.json` and `/providers/*` for existing clients. Update the directory package to change hosts; there is no local provider snapshot.
+- **Providers**: the [pds-registry](https://github.com/solimaniac/pds-registry) package is the single source for provider metadata and logos. The build preserves `/v1/providers.json` and `/providers/*` for existing clients. Update the directory package to change hosts; there is no local provider snapshot.
 - **App directory**: [`config/atmosphere-apps.json`](config/atmosphere-apps.json) lists the apps shown after a generic signup. Logos live in `public/atmosphere-apps/`.
 - **Text**: all UI strings are in [`locales/en.json`](locales/en.json).
 
@@ -105,11 +105,11 @@ build/      Build-time plugins: OAuth metadata and link-preview images
 
 ## Reusable packages
 
-[launcher-components](https://github.com/solimaniac/launcher-components) provides the framework-independent flow, unstyled DOM screens, provider picker, and OAuth adapter. [launcher-pds-dir](https://github.com/solimaniac/launcher-pds-dir) provides the typed host directory and assets. This app uses both, while retaining its branding and configured return destinations.
+[launcher-components](https://github.com/solimaniac/launcher-components) provides the framework-independent flow, unstyled DOM screens, provider picker, and OAuth adapter. [pds-registry](https://github.com/solimaniac/pds-registry) provides the typed host directory and assets. This app uses both, while retaining its branding and configured return destinations.
 
 The components repository separates language implementations from shared JSON flow contracts, copy, and conformance cases, so a future Dart/Flutter package can use the same behavior and PDS data independently of JavaScript.
 
-The launcher uses signup-only mode and discards its temporary OAuth session. Apps using the components directly can support existing-account login, retain their own SDK session, and choose inline, full-screen, or dialog presentation. Neither package is published to npm yet. Until the requested separate GitHub repositories can be created, dependencies are pinned to standalone package commits on the `codex/launcher-components` and `codex/launcher-pds-dir` branches of this repository. Move those same commits into the new repositories, then update the Git URLs; no source changes are needed.
+The launcher uses signup-only mode and discards its temporary OAuth session. Apps using the components directly can support existing-account login, retain their own SDK session, and choose inline, full-screen, or dialog presentation. Neither package is published to npm yet. Dependencies are pinned to immutable commits in their separate GitHub repositories. This repository remains the sample website, with development and build commands run from the root.
 
 ## License
 
