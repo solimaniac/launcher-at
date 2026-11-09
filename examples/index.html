@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Launcher components · interactive examples</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 2rem;
+        font:
+          1rem/1.6 system-ui,
+          sans-serif;
+        color: #20242a;
+        background: #faf9f6;
+      }
+      body[data-theme='ink'] {
+        font-family: Georgia, serif;
+        color: #f3f3ed;
+        background: #182421;
+      }
+      header,
+      main {
+        max-width: 54rem;
+        margin: auto;
+      }
+      header {
+        margin-bottom: 2rem;
+      }
+      .settings {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin: 1rem 0;
+        align-items: end;
+      }
+      .settings label {
+        display: grid;
+      }
+      button,
+      select {
+        font: inherit;
+        min-height: 44px;
+        padding: 0.5rem 0.875rem;
+      }
+      button {
+        border: 1px solid currentColor;
+        border-radius: 4px;
+        background: transparent;
+        color: inherit;
+        margin: 0.25rem;
+        cursor: pointer;
+      }
+      input,
+      select {
+        background: transparent;
+        color: inherit;
+        border: 1px solid currentColor;
+        padding: 0.5rem;
+      }
+      h1,
+      h2 {
+        line-height: 1.2;
+      }
+      #inline {
+        border-block: 1px solid currentColor;
+        padding-block: 1.5rem;
+      }
+      dialog {
+        font: inherit;
+        color: inherit;
+        background: #faf9f6;
+      }
+      body[data-theme='ink'] dialog {
+        background: #182421;
+      }
+      :focus-visible {
+        outline: 2px solid currentColor;
+        outline-offset: 3px;
+      }
+      [hidden] {
+        display: none !important;
+      }
+      #fullscreen {
+        position: fixed;
+        inset: 0;
+        z-index: 2;
+        background: inherit;
+        overflow: auto;
+      }
+      #fullscreen-content {
+        max-width: 42rem;
+        margin: auto;
+      }
+      [data-part='identifier'],
+      .custom-service-form input {
+        padding: 0.75rem;
+      }
+      [data-part='heading'] {
+        margin-top: 0.5rem;
+      }
+      @media (max-width: 500px) {
+        body {
+          padding: 1rem;
+        }
+        .settings {
+          display: grid;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Launcher login components</h1>
+      <p>Interactive examples using a simulated authorization service. No account is created.</p>
+      <div class="settings">
+        <label
+          >App styling<select id="theme">
+            <option value="paper">Paper / system font</option>
+            <option value="ink">Ink / serif font</option>
+          </select></label
+        >
+        <label
+          >Host response<select id="outcome">
+            <option value="success">Success</option>
+            <option value="failure">Connection failure</option>
+          </select></label
+        >
+        <button id="reset" type="button">Reset example</button>
+        <button id="open-dialog" type="button">Open dialog</button>
+        <button id="open-fullscreen" type="button">Open full screen</button>
+      </div>
+    </header>
+    <main><div id="inline"></div></main>
+    <section id="fullscreen" hidden>
+      <button id="close-fullscreen" type="button">Close full screen</button>
+      <div id="fullscreen-content"></div>
+    </section>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

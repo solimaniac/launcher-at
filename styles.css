@@ -1,0 +1,87 @@
+/* Optional structural defaults. Every selector has zero specificity. No fonts or palette. */
+:where([data-launcher]) {
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}
+:where([data-launcher] *, [data-launcher-dialog]) {
+  box-sizing: border-box;
+}
+:where([data-launcher] [hidden]) {
+  display: none !important;
+}
+:where([data-launcher] button, [data-launcher] input, [data-launcher] select, [data-launcher-dialog] > button) {
+  font: inherit;
+  color: inherit;
+  min-block-size: 44px;
+  max-inline-size: 100%;
+}
+:where([data-launcher] button, [data-launcher-dialog] > button) {
+  cursor: pointer;
+}
+:where([data-launcher] summary) {
+  min-block-size: 44px;
+  cursor: pointer;
+}
+:where([data-launcher] button:disabled) {
+  cursor: wait;
+}
+:where([data-launcher] :focus-visible, [data-launcher-dialog] > button:focus-visible) {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}
+:where([data-launcher] form, [data-launcher] [data-part='provider-picker'], [data-launcher] .providers) {
+  display: grid;
+  gap: 1rem;
+}
+:where([data-launcher] form) {
+  margin-block: 1rem;
+}
+:where([data-launcher] input, [data-launcher] select) {
+  inline-size: 100%;
+}
+:where([data-launcher] input[type='checkbox']) {
+  inline-size: 1.25rem;
+  min-block-size: 1.25rem;
+}
+:where([data-launcher] .provider) {
+  display: flex;
+  gap: 1rem;
+  text-align: start;
+  padding: 1rem;
+}
+:where([data-launcher] .provider img) {
+  inline-size: 2rem;
+  block-size: 2rem;
+  object-fit: contain;
+}
+:where([data-launcher] .provider-details) {
+  display: grid;
+  gap: 0.25rem;
+}
+:where([data-launcher] .provider-summary, [data-launcher] .region-choices) {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+:where([data-launcher] .region-choice) {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-block-size: 44px;
+}
+:where([data-launcher][data-presentation='fullscreen']) {
+  min-block-size: 100dvh;
+  padding: clamp(1rem, 4vw, 3rem);
+}
+:where([data-launcher-dialog]) {
+  inline-size: min(36rem, calc(100% - 2rem));
+  max-block-size: calc(100dvh - 2rem);
+  overflow: auto;
+  padding: 1.5rem;
+}
+@media (prefers-reduced-motion: reduce) {
+  :where([data-launcher] *, [data-launcher-dialog]) {
+    scroll-behavior: auto;
+  }
+}
