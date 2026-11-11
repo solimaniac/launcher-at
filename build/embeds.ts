@@ -35,7 +35,7 @@ function escape(value: string) {
 
 export function embedCopy(app: AppConfig) {
   if (app.id === DEFAULT_APP_ID) {
-    return { title: en.site.title, heading: en.embed.genericHeading, description: en.embed.genericDescription }
+    return { title: en.demo.title, heading: en.embed.genericHeading, description: en.embed.genericDescription }
   }
   const appTitle = en.embed.appTitle.replace('{{appName}}', app.appName)
   return { title: appTitle, heading: appTitle, description: en.embed.appDescription }

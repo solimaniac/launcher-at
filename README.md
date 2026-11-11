@@ -4,13 +4,15 @@
 </h1>
 
 <p align="center">
-  A friendly signup page for the <a href="https://atproto.com">Atmosphere</a>.<br />
-  Pick a provider, create an account, and head back to the app that sent you.
+  An interactive demo of <a href="https://github.com/solimaniac/launcher-components">launcher-components</a>.<br />
+  Try Atmosphere login in a dialog, an inline form, or a full-screen flow.
 </p>
 
 ---
 
-launcher.at is a static site (Vite + TypeScript, no framework). It explains the Atmosphere, lets people choose an account provider, and sends them through that provider's own OAuth signup. When they're done, it can send them back to your app.
+launcher.at is a static site (Vite + TypeScript, no framework). The homepage is a component playground with simulated sign-ins. Try account flows, three appearances, English/Spanish, provider allowlists, custom hosts, error recovery, and the standalone host picker. The implementation panel shows matching TypeScript, including redirect or popup OAuth adapters.
+
+The existing live signup flow remains at `/?app=default` and `/?app=<id>`. It explains the Atmosphere and continues on the selected provider’s website. Configured apps can send users back after signup.
 
 It stores no accounts or tokens and needs no runtime backend.
 
@@ -99,7 +101,7 @@ Provider and app logos belong to their owners. The MIT license doesn't cover the
 apps/       Per-app branding (one config.json each)
 config/     App discovery directory
 locales/    UI strings
-src/        App branding, return destinations, OAuth client setup, discovery
+src/        Demo playground, app branding, return destinations, OAuth setup, discovery
 build/      Build-time plugins: OAuth metadata and link-preview images
 ```
 
@@ -107,9 +109,9 @@ build/      Build-time plugins: OAuth metadata and link-preview images
 
 [launcher-components](https://github.com/solimaniac/launcher-components) provides the framework-independent flow, unstyled DOM screens, provider picker, and OAuth adapter. [pds-registry](https://github.com/solimaniac/pds-registry) provides the typed host directory and assets. This app uses both, while retaining its branding and configured return destinations.
 
-The components repository separates language implementations from shared JSON flow contracts, copy, and conformance cases, so a future Dart/Flutter package can use the same behavior and PDS data independently of JavaScript.
+The components repository keeps the TypeScript implementation in `ts/`, translations in `locales/`, and shared behavior fixtures in `tests/`. Future implementations such as Dart/Flutter can live beside `ts/` and use the same PDS data.
 
-The launcher uses signup-only mode and discards its temporary OAuth session. Apps using the components directly can support existing-account login, retain their own SDK session, and choose inline, full-screen, or dialog presentation. Neither package is published to npm yet. Dependencies are pinned to immutable commits in their separate GitHub repositories. This repository remains the sample website, with development and build commands run from the root.
+The live launcher uses signup-only mode and discards its temporary OAuth session. The playground uses a local adapter that never contacts a provider or stores a session. Apps using the components directly can support existing-account login, retain their own SDK session, and choose inline, full-screen, or dialog presentation. Neither package is published to npm yet. Dependencies are pinned to immutable commits in their separate GitHub repositories. This repository remains the sample website, with development and build commands run from the root.
 
 ## License
 

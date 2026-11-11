@@ -37,7 +37,14 @@ export function createDemoAuth(outcome: Outcome): AuthAdapter<DemoResult> {
       attempts++
       if (outcome === 'cancelled') throw new LauncherError('errors.cancelled')
       if (outcome === 'retry' && attempts === 1) throw new LauncherError('errors.authorization')
-      return { handle: request.intent === 'signin' ? request.input : 'new-account.demo.test' }
+      return {
+        handle:
+          request.intent === 'signup'
+            ? 'new-account.demo.test'
+            : request.input.startsWith('did:')
+              ? 'demo-account.demo.test'
+              : request.input,
+      }
     },
   }
 }
@@ -73,13 +80,32 @@ function select<T extends string>(key: string, values: readonly T[], value: T, c
   return label
 }
 
-/** The website owns its design and demo adapter; every login screen is the published package API. */
+function networkArtwork() {
+  const network = element('div', '', 'demo-network')
+  network.setAttribute('aria-hidden', 'true')
+  const ring = element('div', '', 'demo-network-ring')
+  const core = element('span', '@', 'demo-network-core')
+  network.append(ring, core)
+  // Real app icons from the existing Atmosphere directory, never invented customer logos.
+  for (const app of atmosphereApps.slice(0, 4)) {
+    const node = element('span', '', 'demo-network-app')
+    const image = element('img')
+    image.src = app.logo
+    image.alt = ''
+    node.append(image)
+    network.append(node)
+  }
+  return network
+}
+
+/** The website owns its design and demo adapter; every login screen uses the public package API. */
 export function mountDemo(root: HTMLElement) {
   let layout: Layout = 'dialog'
   let appearance: Appearance = 'paper'
   let mode: LoginMode = 'both'
   let language = 'en'
   let outcome: Outcome = 'success'
+  let transport: 'redirect' | 'popup' = 'redirect'
   let limited = false
   let custom = false
   const selected = new Set(
@@ -99,9 +125,14 @@ export function mountDemo(root: HTMLElement) {
   root.removeAttribute('aria-live')
   const skip = link('demo.skip', '#playground', 'demo-skip')
   const header = element('header', '', 'demo-header')
-  const headerInner = element('div', '', 'demo-wrap demo-header-inner')
+  const headerInner = element('div', '', 'wrap demo-header-inner')
   const brand = link('demo.brand', '/', 'demo-brand')
-  brand.prepend(mark())
+  const logo = element('img', '', 'demo-launcher-logo')
+  logo.src = '/logo.png'
+  logo.alt = ''
+  logo.width = 36
+  logo.height = 36
+  brand.prepend(logo)
   const label = element('span', t('demo.components'), 'demo-brand-label')
   brand.append(label)
   const navigation = element('nav', '', 'demo-navigation')
@@ -116,7 +147,7 @@ export function mountDemo(root: HTMLElement) {
 
   const hero = element('section', '', 'demo-hero hero')
   hero.dataset.enter = ''
-  const wrap = element('div', '', 'demo-wrap')
+  const wrap = element('div', '', 'wrap')
   const intro = element('div', '', 'demo-intro')
   const heading = element('h1', t('demo.heading'))
   const introRight = element('div', '', 'demo-intro-right')
@@ -166,7 +197,9 @@ export function mountDemo(root: HTMLElement) {
   })
 
   const hosts = element('details', '', 'demo-host-settings')
-  hosts.append(element('summary', t('demo.hostSettings')))
+  hosts.append(
+    element('summary', t('demo.hostSettings', { count: providers.filter(provider => provider.enabled).length })),
+  )
   const limitedLabel = element('label', '', 'demo-checkbox')
   const limitedInput = element('input')
   limitedInput.type = 'checkbox'
@@ -235,10 +268,18 @@ export function mountDemo(root: HTMLElement) {
   const implementation = element('details', '', 'demo-implementation')
   const codeSummary = element('summary', t('demo.code'))
   const codeToolbar = element('div', '', 'demo-code-toolbar')
+  const transportField = select('transport', ['redirect', 'popup'] as const, transport, value => {
+    transport = value
+    updateCode()
+  })
   const code = element('code')
   const copyCode = action(
     'demo.copyCode',
     () => {
+      if (!navigator.clipboard) {
+        copyCode.textContent = t('demo.copyFailed')
+        return
+      }
       void navigator.clipboard
         .writeText(code.textContent ?? '')
         .then(() => {
@@ -250,16 +291,16 @@ export function mountDemo(root: HTMLElement) {
     },
     'demo-text-button',
   )
-  codeToolbar.append(element('span', 'TypeScript'), copyCode)
+  codeToolbar.append(transportField, copyCode)
   const pre = element('pre')
   pre.append(code)
-  implementation.append(codeSummary, codeToolbar, pre)
+  implementation.append(codeSummary, codeToolbar, element('p', t('demo.transportHint'), 'demo-code-hint'), pre)
   wrap.append(intro, layouts, playground, implementation)
   hero.append(wrap)
   root.replaceChildren(hero)
 
   const footer = element('footer', '', 'demo-footer')
-  const footerInner = element('div', '', 'demo-wrap demo-footer-inner')
+  const footerInner = element('div', '', 'wrap demo-footer-inner')
   const footerLinks = element('div', '', 'demo-footer-links')
   footerLinks.append(
     link('demo.componentsSource', COMPONENTS_URL),
@@ -324,6 +365,14 @@ export function mountDemo(root: HTMLElement) {
     modal.dialog.lang = language
     const note = element('p', t(`demo.${language}.note`), 'demo-dialog-note')
     modal.dialog.prepend(note)
+    if (presentation === 'fullscreen') {
+      const aside = element('div', '', 'demo-fullscreen-aside')
+      aside.setAttribute('aria-hidden', 'true')
+      const brand = element('div', t('demo.fullscreenBrand'), 'demo-fullscreen-brand')
+      brand.prepend(mark())
+      aside.append(brand, element('p', t('demo.fullscreenTitle'), 'demo-fullscreen-title'), networkArtwork())
+      modal.dialog.append(aside)
+    }
     stopDialog = modal.destroy
   }
   function updateCode() {
@@ -341,6 +390,7 @@ export function mountDemo(root: HTMLElement) {
       '',
     ]
     if (layout === 'picker') {
+      transportField.hidden = true
       code.textContent = [
         "import { renderProviderPicker } from 'launcher-components/dom'",
         "import { selectProviders } from 'pds-registry'",
@@ -353,18 +403,26 @@ export function mountDemo(root: HTMLElement) {
         'container.append(picker.element)',
       ].join('\n')
     } else {
+      transportField.hidden = false
       const method = layout === 'inline' ? 'mountLogin' : 'openLoginDialog'
       code.textContent = [
-        "import { createLoginFlow, translate } from 'launcher-components'",
+        `import { createLoginFlow${language === 'es' ? ', translate' : ''} } from 'launcher-components'`,
         `import { ${method} } from 'launcher-components/dom'`,
+        "import { createBrowserOAuthAdapter } from 'launcher-components/oauth'",
         "import { providers } from 'pds-registry'",
         ...(language === 'es' ? ["import messages from 'launcher-components/locales/es.json'"] : []),
+        '',
+        '// Supply your app’s configured BrowserOAuthClient.',
+        'const auth = createBrowserOAuthAdapter(client, {',
+        `  transport: '${transport}',`,
+        '})',
         '',
         ...config,
         ...(layout === 'inline'
           ? ['mountLogin(container, flow, {', '  focusOnMount: false,']
           : ['// Call from your Log in button.', 'openLoginDialog(flow, {']),
         ...(layout === 'fullscreen' ? ["  presentation: 'fullscreen',"] : []),
+        ...(layout !== 'inline' ? ['  onClose: () => flow.destroy(),'] : []),
         "  appName: 'Your app',",
         ...(language === 'es' ? ['  t: translate(messages),'] : []),
         '  logoUrl: provider => `/providers/${provider.logo}`,',
@@ -375,20 +433,7 @@ export function mountDemo(root: HTMLElement) {
   }
   function welcome() {
     const home = element('div', '', 'demo-app-home')
-    const network = element('div', '', 'demo-network')
-    network.setAttribute('aria-hidden', 'true')
-    const ring = element('div', '', 'demo-network-ring')
-    const core = element('span', '@', 'demo-network-core')
-    network.append(ring, core)
-    // Real app icons from the existing Atmosphere directory, never invented customer logos.
-    for (const app of atmosphereApps.slice(0, 4)) {
-      const node = element('span', '', 'demo-network-app')
-      const image = element('img')
-      image.src = app.logo
-      image.alt = ''
-      node.append(image)
-      network.append(node)
-    }
+    const network = networkArtwork()
     const title = element('h2', t('demo.canvasTitle'))
     const intro = element('p', t(layout === 'fullscreen' ? 'demo.canvasFullscreen' : 'demo.canvasIntro'))
     const start = action(

@@ -1,5 +1,3 @@
-import { launch } from './launcher'
-import { oauth } from './oauth'
 import { t } from './i18n'
 import { version } from '../package.json'
 import { mountDemo } from './demo'
@@ -20,6 +18,7 @@ function renderSourceFooter() {
 }
 
 if (isCallback || new URLSearchParams(location.search).has('app')) {
+  const [{ launch }, { oauth }] = await Promise.all([import('./launcher'), import('./oauth')])
   document.body.classList.add('onboarding-page')
   renderSourceFooter()
   await launch(root, oauth, isCallback)

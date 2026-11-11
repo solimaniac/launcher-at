@@ -6,8 +6,8 @@
   "embed": {
     "brand": "launcher.at",
     "appTitle": "Sign up for {{appName}}",
-    "genericHeading": "Join the Atmosphere.",
-    "genericDescription": "Sign up for an Atmosphere account. Choose your provider and use your account across compatible apps.",
+    "genericHeading": "Login components for the Atmosphere.",
+    "genericDescription": "Try Atmosphere login components in a dialog, an inline form, or a full-screen flow. Configure styling, languages, and account hosts.",
     "appDescription": "Start with an Atmosphere account. Choose your provider and use your account across compatible apps."
   },
   "intro": {
@@ -127,9 +127,9 @@
     "mode.signin": "Sign in only",
     "mode.signup": "Sign up only",
     "appearance": "Appearance",
-    "appearance.paper": "Paper · blue + sans serif",
-    "appearance.night": "Night · dark + sans serif",
-    "appearance.editorial": "Editorial · warm + serif",
+    "appearance.paper": "Paper",
+    "appearance.night": "Night",
+    "appearance.editorial": "Editorial",
     "language": "Component language",
     "language.en": "English",
     "language.es": "Español",
@@ -137,7 +137,7 @@
     "response.success": "Successful sign-in",
     "response.retry": "Fail once, then succeed",
     "response.cancelled": "Cancelled sign-in",
-    "hostSettings": "Account host settings",
+    "hostSettings": "Account hosts ({{count}})",
     "limitHosts": "Choose supported signup hosts",
     "customHost": "Allow a custom host address",
     "hostPolicy": "An explicit host list disables custom signup hosts. Existing accounts still sign in through their own host.",
@@ -152,8 +152,8 @@
     "footer": "Unstyled components. Your design.",
     "componentsSource": "Components source ↗",
     "liveOnboarding": "Live onboarding ↗",
-    "en.yourApp": "your app",
-    "es.yourApp": "tu app",
+    "en.yourApp": "Your app",
+    "es.yourApp": "Tu app",
     "en.opening": "Simulating sign-in…",
     "es.opening": "Simulando el inicio de sesión…",
     "en.complete": "Demo sign-in complete",
@@ -179,6 +179,12 @@
     "state.pending": "Completing sign-in",
     "state.error": "Error · try again",
     "state.complete": "Demo complete",
-    "state.closed": "Dialog closed"
+    "state.closed": "Dialog closed",
+    "transport": "OAuth handoff · code example",
+    "transport.redirect": "Redirect to account host",
+    "transport.popup": "Open account host in a popup",
+    "transportHint": "Your app can use redirects or the SDK’s popup flow. This code shows the real adapter; the playground keeps sign-ins simulated.",
+    "fullscreenTitle": "One account across compatible apps",
+    "fullscreenBrand": "Your app on the Atmosphere"
   }
 }

@@ -4,7 +4,7 @@ Guide for coding agents and contributors working on launcher.at. Read this befor
 
 ## What this is
 
-A static signup wizard for the Atmosphere (AT Protocol): an intro screen, then a provider picker, then the provider's own OAuth signup, then a completion screen that can send the user back to their app.
+A static demo of launcher-components for the Atmosphere (AT Protocol). `/` is an interactive playground with simulated authentication. `/?app=default` and `/?app=<id>` keep the live signup flow: introduction, provider picker, provider OAuth signup, and completion with configured returns.
 
 The site stores no accounts or tokens, and the frontend has no runtime server. Keep it that way.
 
@@ -44,7 +44,7 @@ flowchart LR
 
 | File                     | Responsibility                                                                                                                                                                           |
 | ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `main.ts`                | Entry point. Renders the footer and calls `launch()`.                                                                                                                                    |
+| `main.ts`                | Entry point. Routes the homepage to `mountDemo()`; app links and callbacks call `launch()`.                                                                                              |
 | `launcher.ts`            | App branding, configured returns, completion/discovery, and callback handling. Intro, provider selection, filters, and signup errors are rendered by `launcher-components/dom`.          |
 | `config.ts`              | Validates app configs and re-exports provider validation from `pds-registry`. Used by the browser and build.                                                                             |
 | `apps.ts`                | Loads `apps/*/config.json` with `import.meta.glob`, looks apps up (`selectApp`), and applies the theme as CSS custom properties.                                                         |
@@ -52,6 +52,8 @@ flowchart LR
 | `carousel.ts`            | Auto-scrolling app directory, shown only after a generic (default-app) signup.                                                                                                           |
 | `dom.ts`                 | `element(tag, text, className)` helper. Text is always set via `textContent`.                                                                                                            |
 | `i18n.ts`                | Single i18next instance, English only.                                                                                                                                                   |
+
+`demo.ts` composes real `launcher-components` APIs with a local, abortable simulation adapter. Do not use the demo adapter for live onboarding. Keep the simulation visibly labelled and keep all real provider metadata in the registry package.
 
 ### Build (`build/`, `vite.config.ts`)
 

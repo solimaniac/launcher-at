@@ -154,3 +154,51 @@ test('unmount cancels active inline work and removes external headers and dialog
   expect(document.querySelector('header, footer, dialog')).toBeNull()
   expect(vi.getTimerCount()).toBe(0)
 })
+
+test('implementation snippets follow presentation, locale, host policy, and OAuth transport', () => {
+  const code = () => root.querySelector('code')!.textContent!
+  choose('transport', 'popup')
+  expect(code()).toContain("transport: 'popup'")
+  expect(code()).toContain('openLoginDialog(flow')
+  layout('inline')
+  choose('language', 'es')
+  expect(code()).toContain('mountLogin(container, flow')
+  expect(code()).toContain('launcher-components/locales/es.json')
+  layout('picker')
+  expect(code()).toContain('selectProviders(')
+  expect(code()).not.toContain('createBrowserOAuthAdapter')
+})
+
+test('DID sign-ins complete with a simulated handle rather than treating a DID as a handle', async () => {
+  layout('inline')
+  const container = root.querySelector<HTMLElement>('[data-launcher]')!
+  const did = 'did:web:demo.test'
+  submit(container, did)
+  await vi.runAllTimersAsync()
+  expect(container.dataset.view).toBe('complete')
+  expect(container.querySelector('.demo-result-handle')?.textContent).not.toContain('did:')
+  expect(container.textContent).not.toContain(did)
+})
+
+test('hosted signup is simulated locally and completes without sending the provider URL as an identity', async () => {
+  layout('inline')
+  choose('mode', 'signup')
+  root.querySelector<HTMLButtonElement>('[data-launcher] > button')!.click()
+  root.querySelector<HTMLButtonElement>('[data-provider]:not([hidden])')!.click()
+  await vi.runAllTimersAsync()
+  expect(root.querySelector('[data-view="complete"]')).not.toBeNull()
+  expect(root.querySelector('.demo-result-handle')?.textContent).not.toContain('https:')
+})
+
+test('copying code provides a manual fallback when the clipboard API is unavailable', () => {
+  const clipboard = vi.spyOn(navigator, 'clipboard', 'get').mockReturnValue(undefined!)
+  try {
+    const button = root.querySelector<HTMLButtonElement>('.demo-code-toolbar button')!
+    const initial = button.textContent
+    button.click()
+    expect(button.textContent).not.toBe(initial)
+    expect(root.querySelector('code')?.textContent).toContain('createLoginFlow')
+  } finally {
+    clipboard.mockRestore()
+  }
+})
