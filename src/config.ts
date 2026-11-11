@@ -1,26 +1,15 @@
-/** Validation for `config/providers.json` and `apps/*\/config.json`, shared by the browser and the build. */
+/** App configuration validation, shared by the browser and the build. */
+import type { PdsProvider } from 'pds-registry'
+export { parseProviders } from 'pds-registry'
+export type Provider = PdsProvider
 
 export const DEFAULT_APP_ID = 'default'
 
 /** Lowercase letters/digits with single hyphen separators, e.g. `my-app`. */
 const ID_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
 const HEX_COLOR_PATTERN = /^#[0-9a-fA-F]{6}$/
-const LOCAL_PATH_PATTERN = /^\/[a-zA-Z0-9/_ .-]+$/
 /** Characters that could break out of the CSS custom property the font is written to. */
 const UNSAFE_FONT_PATTERN = /[;{}<>]/
-
-export interface Provider {
-  id: string
-  name: string
-  /** PDS or entryway URL passed to OAuth. */
-  serviceUrl: string
-  /** Locale key for the description, e.g. `providers.bluesky`. */
-  description: string
-  region: string
-  logo?: string
-  enabled: boolean
-  requiresInvite?: boolean
-}
 
 export interface AppConfig {
   id: string
@@ -61,64 +50,7 @@ function nonEmptyString(value: unknown): value is string {
   return typeof value === 'string' && value.trim().length > 0
 }
 
-function optionalBoolean(value: unknown) {
-  return value === undefined || typeof value === 'boolean'
-}
-
-/** Logos must be same-site absolute paths such as `/providers/bluesky.svg`. */
-function validateLogo(value: unknown) {
-  if (!nonEmptyString(value) || !LOCAL_PATH_PATTERN.test(value) || value.startsWith('//') || value.includes('..')) {
-    throw new Error('Invalid local logo path')
-  }
-}
-
-/** A bare origin is stored without its trailing slash so duplicates compare equal. */
-function normalizeServiceUrl(value: unknown) {
-  const url = new URL(httpsUrl(value))
-  const isBareOrigin = url.pathname === '/' && !url.search && !url.hash
-  return isBareOrigin ? url.origin : url.href
-}
-
-export function parseProviders(value: unknown): Provider[] {
-  if (!Array.isArray(value)) throw new Error('Expected provider array')
-  const ids = new Set<string>()
-  const serviceUrls = new Set<string>()
-
-  return value.map(entry => {
-    const provider = record(entry)
-    const { id, name, description, region, enabled, logo, requiresInvite } = provider
-    if (
-      !validId(id) ||
-      !nonEmptyString(name) ||
-      !nonEmptyString(description) ||
-      !nonEmptyString(region) ||
-      typeof enabled !== 'boolean'
-    ) {
-      throw new Error('Invalid provider fields')
-    }
-    if (!optionalBoolean(requiresInvite)) throw new Error('requiresInvite must be a boolean')
-
-    const serviceUrl = normalizeServiceUrl(provider.serviceUrl)
-    if (ids.has(id) || serviceUrls.has(serviceUrl)) throw new Error('Duplicate provider')
-    ids.add(id)
-    serviceUrls.add(serviceUrl)
-
-    if (logo !== undefined) validateLogo(logo)
-
-    return {
-      id,
-      name,
-      description,
-      region: region.trim(),
-      enabled,
-      serviceUrl,
-      ...(logo ? { logo: logo as string } : {}),
-      ...(requiresInvite !== undefined ? { requiresInvite: requiresInvite as boolean } : {}),
-    }
-  })
-}
-
-export function parseApps(value: unknown[], providers: Provider[]): AppConfig[] {
+export function parseApps(value: unknown[], providers: readonly Provider[]): AppConfig[] {
   const ids = new Set<string>()
   const providerIds = new Set(providers.map(provider => provider.id))
 

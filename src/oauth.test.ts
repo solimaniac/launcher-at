@@ -31,6 +31,7 @@ vi.mock('@atproto/oauth-client-browser', () => ({
   },
   OAuthCallbackError: class extends Error {},
   OAuthResolverError: class extends Error {},
+  LoginContinuedInParentWindowError: class extends Error {},
 }))
 
 const handle = 'alice.bsky.social'

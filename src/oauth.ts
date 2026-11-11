@@ -1,15 +1,9 @@
-import {
-  BrowserOAuthClient,
-  OAuthResolverError,
-  OAuthCallbackError,
-  type OAuthClientMetadataInput,
-} from '@atproto/oauth-client-browser'
+import { BrowserOAuthClient, type OAuthClientMetadataInput } from '@atproto/oauth-client-browser'
+import { LauncherError } from 'launcher-components'
+import { createBrowserOAuthAdapter } from 'launcher-components/oauth'
 import { SignupError, recoverAppId, type SignupOAuth } from './signup'
 
 let client: BrowserOAuthClient | undefined
-const HANDLE_LOOKUP_TIMEOUT_MS = 3000
-
-/** Lazily creates the OAuth client from the metadata generated at build time. */
 async function getClient() {
   if (client) return client
   try {
@@ -27,56 +21,35 @@ async function getClient() {
   }
 }
 
-/** Maps a callback failure to the locale key shown to the user. */
-function callbackErrorKey(error: unknown) {
-  if (error instanceof OAuthCallbackError && error.params.get('error') === 'access_denied') return 'errors.cancelled'
-  if (error instanceof SignupError) return error.key
-  return 'errors.callback'
-}
-
+/** A signup broker: the reusable adapter revokes its session before resolving a handle. */
 export const oauth: SignupOAuth = {
   async start(serviceUrl, appId) {
-    const client = await getClient()
+    const adapter = createBrowserOAuthAdapter(getClient, {
+      state: appId,
+      recoverState: recoverAppId,
+      session: 'discard',
+    })
     try {
-      // `prompt: 'create'` asks the provider for its account-creation screen; `state` carries only the app ID.
-      await client.signInRedirect(serviceUrl, { scope: 'atproto', prompt: 'create', state: appId })
+      await adapter.start({ intent: 'signup', input: serviceUrl, signal: new AbortController().signal })
     } catch (error) {
-      throw new SignupError(error instanceof OAuthResolverError ? 'errors.unsupportedProvider' : 'errors.authorization')
+      throw new SignupError(error instanceof LauncherError ? error.key : 'errors.authorization')
     }
   },
-
   async finish() {
-    const params = new URLSearchParams(location.hash.slice(1))
-    // Remove the authorization response from the address bar and history straight away.
-    history.replaceState(null, '', location.pathname)
+    const adapter = createBrowserOAuthAdapter(getClient, {
+      recoverState: recoverAppId,
+      session: 'discard',
+      responseMode: 'fragment',
+    })
     try {
-      const client = await getClient()
-      const result = await client.initCallback(params)
-      const did = result.session.did
-      // The launcher only needs proof of signup, so it discards its own session immediately.
-      let cleanupFailed = false
-      try {
-        await result.session.signOut()
-      } catch {
-        cleanupFailed = true
-      }
-      // Public identity resolution needs no session; never delay credential cleanup for it.
-      let handle: string | null = null
-      try {
-        const identity = await client.identityResolver.resolve(did, {
-          signal: AbortSignal.timeout(HANDLE_LOOKUP_TIMEOUT_MS),
-          noCache: true,
-        })
-        if (identity.did === did && identity.handle !== 'handle.invalid') handle = identity.handle
-      } catch {
-        // A missing or temporarily unavailable handle does not undo a successful signup.
-      }
-      return { handle, appId: recoverAppId(result.state), cleanupFailed }
+      const result = await adapter.finish!()
+      if (!result) throw new SignupError('errors.callback')
+      return { handle: result.handle, appId: result.state, cleanupFailed: result.cleanupFailed }
     } catch (error) {
-      const appId = error instanceof OAuthCallbackError ? recoverAppId(error.state) : null
-      throw new SignupError(callbackErrorKey(error), appId)
-    } finally {
-      history.replaceState(null, '', location.pathname)
+      throw new SignupError(
+        error instanceof LauncherError ? error.key : 'errors.callback',
+        error instanceof LauncherError ? error.state : null,
+      )
     }
   },
 }

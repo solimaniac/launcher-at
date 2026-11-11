@@ -1,5 +1,5 @@
 import { parseApps, parseProviders, lookupApp, type AppConfig } from './config'
-import providerSource from '../config/providers.json'
+import { providers as providerSource } from './providers'
 
 /** Every `apps/<id>/config.json`, discovered and validated at build time. */
 const modules = import.meta.glob('../apps/*/config.json', { eager: true, import: 'default' })
