@@ -92,6 +92,10 @@ function networkArtwork() {
     const image = element('img')
     image.src = app.logo
     image.alt = ''
+    image.width = 32
+    image.height = 32
+    image.loading = 'lazy'
+    image.decoding = 'async'
     node.append(image)
     network.append(node)
   }
@@ -128,7 +132,7 @@ export function mountDemo(root: HTMLElement) {
   const headerInner = element('div', '', 'wrap demo-header-inner')
   const brand = link('demo.brand', '/', 'demo-brand')
   const logo = element('img', '', 'demo-launcher-logo')
-  logo.src = '/logo.png'
+  logo.src = '/favicon.png'
   logo.alt = ''
   logo.width = 36
   logo.height = 36
