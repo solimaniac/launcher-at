@@ -3,3 +3,6 @@ dist
 *.local
 *.log
 .env
+
+# Local design review artifacts
+.taste-skill

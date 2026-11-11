@@ -2,6 +2,7 @@ import { launch } from './launcher'
 import { oauth } from './oauth'
 import { t } from './i18n'
 import { version } from '../package.json'
+import { mountDemo } from './demo'
 import './styles/main.scss'
 
 const SOURCE_URL = 'https://github.com/solimaniac/launcher-at'
@@ -18,6 +19,10 @@ function renderSourceFooter() {
   root.after(footer)
 }
 
-renderSourceFooter()
-
-await launch(root, oauth, isCallback)
+if (isCallback || new URLSearchParams(location.search).has('app')) {
+  document.body.classList.add('onboarding-page')
+  renderSourceFooter()
+  await launch(root, oauth, isCallback)
+} else {
+  mountDemo(root)
+}
