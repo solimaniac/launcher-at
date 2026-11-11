@@ -1,7 +1,7 @@
 import { expect, test } from 'vitest'
 import generic from '../apps/default/config.json'
 import example from '../apps/example-app/config.json'
-import source from '../config/providers.json'
+import { providers as source } from './providers'
 import { lookupApp, parseApps, parseProviders } from './config'
 const providers = parseProviders(source)
 const apps = parseApps([generic, example], providers)

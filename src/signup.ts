@@ -1,4 +1,5 @@
 import { validId } from './config'
+import { LauncherError, type ErrorKey } from 'launcher-components'
 
 export interface SignupResult {
   handle: string | null
@@ -9,12 +10,10 @@ export interface SignupOAuth {
   start(serviceUrl: string, appId: string): Promise<void>
   finish(): Promise<SignupResult>
 }
-export class SignupError extends Error {
-  readonly key: string
+export class SignupError extends LauncherError {
   readonly appId: string | null
-  constructor(key: string, appId: string | null = null) {
-    super(key)
-    this.key = key
+  constructor(key: ErrorKey, appId: string | null = null) {
+    super(key, appId)
     this.appId = appId
   }
 }
