@@ -8,10 +8,13 @@ test('rejects duplicate ids, duplicate URLs and unsafe URLs', () => {
     expect(() => parseProviders([{ ...source[0], serviceUrl }])).toThrow()
 })
 test('normalizes equivalent entryway URLs without blocking issuer discovery', () => {
+  const provider = source[0]!
   expect(parseProviders([{ ...source[0], serviceUrl: 'https://bsky.social/' }])[0]!.serviceUrl).toBe(
     'https://bsky.social',
   )
-  expect(() => parseProviders([source[0], { ...source[1], serviceUrl: 'https://bsky.social/' }])).toThrow()
+  expect(() =>
+    parseProviders([provider, { ...provider, id: `${provider.id}-alias`, serviceUrl: `${provider.serviceUrl}/` }]),
+  ).toThrow()
 })
 test('rejects missing fields and remote or traversing logo paths', () => {
   expect(() => parseProviders([{ ...source[0], serviceUrl: undefined }])).toThrow()

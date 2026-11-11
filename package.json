@@ -21,8 +21,8 @@
     "@atproto/oauth-client-browser": "^0.5.9",
     "@atproto/oauth-types": "^0.7.7",
     "i18next": "^26.4.2",
-    "launcher-components": "git+https://github.com/solimaniac/launcher-components.git#47f8814dc8695f184612d428803ed101b2e9d739",
-    "pds-registry": "git+https://github.com/solimaniac/pds-registry.git#62d664c3baa5414ddbfdebbcb62c1a8074128839"
+    "launcher-components": "git+https://github.com/solimaniac/launcher-components.git#fbcf9ff551039bb9db99a5daccffcd294c10222a",
+    "pds-registry": "git+https://github.com/solimaniac/pds-registry.git#a9b5858effa60d0b5bbb9d78b5859c04aea0cb30"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

@@ -29,7 +29,10 @@ const directoryRoot = dirname(createRequire(import.meta.url).resolve('pds-regist
 const providerLogos = Object.fromEntries(
   providers
     .filter(provider => provider.logo)
-    .map(provider => [`providers/${provider.logo}`, readFileSync(join(directoryRoot, 'logos', provider.logo!))]),
+    .map(provider => [
+      `providers/${provider.logo}`,
+      readFileSync(join(directoryRoot, 'providers', provider.id, provider.logo!)),
+    ]),
 )
 
 /** Serves generated JSON files in development and emits them into `dist/` on build. */
