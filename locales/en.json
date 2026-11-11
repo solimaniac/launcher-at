@@ -1,5 +1,7 @@
 {
   "site": {
+    "wipTitle": "Work in progress",
+    "wipDisclaimer": "This website and its components are experimental and not ready for production use. Sign-ins in the playground are simulated.",
     "title": "Sign up for an Atmosphere account",
     "source": "view source code on"
   },
@@ -109,7 +111,6 @@
     "source": "GitHub",
     "login": "Log in",
     "heading": "Login components for the Atmosphere.",
-    "wip": "Work in progress",
     "intro": "Try the same login flow in a dialog, inside a page, or across the whole screen. Make it feel like your app.",
     "settings": "Playground settings",
     "playground": "Playground",

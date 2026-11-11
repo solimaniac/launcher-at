@@ -716,23 +716,8 @@ main.demo-main {
   justify-self: start;
 }
 .demo-intro-right p {
-  margin-top: 12px;
   font-size: 16px;
   line-height: 1.6;
-}
-.demo-wip {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--p-muted);
-  font-size: 13px;
-}
-.demo-wip::before {
-  content: '';
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #b47c20;
 }
 .demo-layouts {
   display: grid;
@@ -1550,7 +1535,7 @@ main.demo-main {
     max-width: 44ch;
   }
   .demo-intro-right p {
-    margin-top: 8px;
+    margin-top: 0;
   }
   .demo-layouts {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1656,6 +1641,42 @@ main.demo-main {
     width: 100%;
     margin-block: 40px;
   }
+}
+
+.site-wip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+  margin: 24px auto 0;
+  padding: 12px 16px;
+  border: 1px solid var(--color-border);
+  border-inline-start: 3px solid var(--color-primary);
+  border-radius: 8px;
+  background: var(--color-secondary);
+  color: var(--color-text);
+  font-size: 14px;
+  line-height: 1.5;
+}
+.site-wip strong {
+  font-weight: 500;
+}
+.site-wip p {
+  flex: 1 1 36rem;
+  min-width: 0;
+  max-width: none;
+  margin: 0;
+}
+.demo-page .site-wip {
+  border-color: color-mix(in srgb, var(--p-ink) 20%, var(--p-bg));
+  border-inline-start-color: var(--p-action);
+  background: #fff;
+  color: var(--p-ink);
+}
+.onboarding-page .site-wip {
+  width: 100%;
+  max-width: 54rem;
+  margin: 0 auto 16px;
 }
 @media (max-width: 359px) {
   .wrap {

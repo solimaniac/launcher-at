@@ -155,7 +155,7 @@ export function mountDemo(root: HTMLElement) {
   const intro = element('div', '', 'demo-intro')
   const heading = element('h1', t('demo.heading'))
   const introRight = element('div', '', 'demo-intro-right')
-  introRight.append(element('span', t('demo.wip'), 'demo-wip'), element('p', t('demo.intro')))
+  introRight.append(element('p', t('demo.intro')))
   intro.append(heading, introRight)
 
   const playground = element('div', '', 'demo-playground app-frame')
