@@ -18,11 +18,11 @@
     "format": "eslint --fix . && prettier --write ."
   },
   "dependencies": {
+    "@apogeekit/launcher-components": "0.1.0-alpha.0",
+    "@apogeekit/pds-registry": "0.1.0-alpha.0",
     "@atproto/oauth-client-browser": "^0.5.9",
     "@atproto/oauth-types": "^0.7.7",
-    "i18next": "^26.4.2",
-    "launcher-components": "git+https://github.com/apogeekit/launcher-components.git#467a3739ac92a80be682cb71e037b3b91f71309f",
-    "pds-registry": "git+https://github.com/apogeekit/pds-registry.git#f5fedc9904118c3d8bf6cb456c3853f7ce29dfe5"
+    "i18next": "^26.4.2"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

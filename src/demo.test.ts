@@ -163,7 +163,7 @@ test('implementation snippets follow presentation, locale, host policy, and OAut
   layout('inline')
   choose('language', 'es')
   expect(code()).toContain('mountLogin(container, flow')
-  expect(code()).toContain('launcher-components/locales/es.json')
+  expect(code()).toContain('@apogeekit/launcher-components/locales/es.json')
   layout('picker')
   expect(code()).toContain('selectProviders(')
   expect(code()).not.toContain('createBrowserOAuthAdapter')

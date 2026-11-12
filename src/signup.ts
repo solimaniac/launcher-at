@@ -1,5 +1,5 @@
 import { validId } from './config'
-import { LauncherError, type ErrorKey } from 'launcher-components'
+import { LauncherError, type ErrorKey } from '@apogeekit/launcher-components'
 
 export interface SignupResult {
   handle: string | null
