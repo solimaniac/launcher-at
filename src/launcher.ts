@@ -1,5 +1,5 @@
-import { createLoginFlow, LauncherError } from 'launcher-components'
-import { mountLogin } from 'launcher-components/dom'
+import { createLoginFlow, LauncherError } from '@apogeekit/launcher-components'
+import { mountLogin } from '@apogeekit/launcher-components/dom'
 import { t } from './i18n'
 import { providers as providerSource } from './providers'
 import { DEFAULT_APP_ID, parseProviders, httpsUrl } from './config'

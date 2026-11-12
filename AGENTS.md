@@ -4,7 +4,7 @@ Guide for coding agents and contributors working on launcher.at. Read this befor
 
 ## What this is
 
-A static demo of launcher-components for the Atmosphere (AT Protocol). `/` is an interactive playground with simulated authentication. `/?app=default` and `/?app=<id>` keep the live signup flow: introduction, provider picker, provider OAuth signup, and completion with configured returns.
+A static demo of @apogeekit/launcher-components for the Atmosphere (AT Protocol). `/` is an interactive playground with simulated authentication. `/?app=default` and `/?app=<id>` keep the live signup flow: introduction, provider picker, provider OAuth signup, and completion with configured returns.
 
 The site stores no accounts or tokens, and the frontend has no runtime server. Keep it that way.
 
@@ -12,7 +12,7 @@ The site stores no accounts or tokens, and the frontend has no runtime server. K
 
 ```
 apps/<id>/config.json   Per-app branding; discovered automatically at build time
-pds-registry package   Single source of truth for provider metadata and logos
+@apogeekit/pds-registry package   Single source of truth for provider metadata and logos
 config/atmosphere-apps.json  App directory shown after a generic signup
 locales/en.json         All UI strings (i18next keys)
 index.html, callback.html  The two pages; callback.html is the OAuth redirect target
@@ -42,22 +42,22 @@ flowchart LR
 
 ### Frontend (`src/`)
 
-| File                     | Responsibility                                                                                                                                                                           |
-| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `main.ts`                | Entry point. Routes the homepage to `mountDemo()`; app links and callbacks call `launch()`.                                                                                              |
-| `launcher.ts`            | App branding, configured returns, completion/discovery, and callback handling. Intro, provider selection, filters, and signup errors are rendered by `launcher-components/dom`.          |
-| `config.ts`              | Validates app configs and re-exports provider validation from `pds-registry`. Used by the browser and build.                                                                             |
-| `apps.ts`                | Loads `apps/*/config.json` with `import.meta.glob`, looks apps up (`selectApp`), and applies the theme as CSS custom properties.                                                         |
-| `oauth.ts` / `signup.ts` | App client setup around `launcher-components/oauth`, which delegates to `@atproto/oauth-client-browser`. `SignupOAuth` is the seam tests mock. `SignupError.key` is always a locale key. |
-| `carousel.ts`            | Auto-scrolling app directory, shown only after a generic (default-app) signup.                                                                                                           |
-| `dom.ts`                 | `element(tag, text, className)` helper. Text is always set via `textContent`.                                                                                                            |
-| `i18n.ts`                | Single i18next instance, English only.                                                                                                                                                   |
+| File                     | Responsibility                                                                                                                                                                                      |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `main.ts`                | Entry point. Routes the homepage to `mountDemo()`; app links and callbacks call `launch()`.                                                                                                         |
+| `launcher.ts`            | App branding, configured returns, completion/discovery, and callback handling. Intro, provider selection, filters, and signup errors are rendered by `@apogeekit/launcher-components/dom`.          |
+| `config.ts`              | Validates app configs and re-exports provider validation from `@apogeekit/pds-registry`. Used by the browser and build.                                                                             |
+| `apps.ts`                | Loads `apps/*/config.json` with `import.meta.glob`, looks apps up (`selectApp`), and applies the theme as CSS custom properties.                                                                    |
+| `oauth.ts` / `signup.ts` | App client setup around `@apogeekit/launcher-components/oauth`, which delegates to `@atproto/oauth-client-browser`. `SignupOAuth` is the seam tests mock. `SignupError.key` is always a locale key. |
+| `carousel.ts`            | Auto-scrolling app directory, shown only after a generic (default-app) signup.                                                                                                                      |
+| `dom.ts`                 | `element(tag, text, className)` helper. Text is always set via `textContent`.                                                                                                                       |
+| `i18n.ts`                | Single i18next instance, English only.                                                                                                                                                              |
 
-`demo.ts` composes real `launcher-components` APIs with a local, abortable simulation adapter. Do not use the demo adapter for live onboarding. Keep the simulation visibly labelled and keep all real provider metadata in the registry package.
+`demo.ts` composes real `@apogeekit/launcher-components` APIs with a local, abortable simulation adapter. Do not use the demo adapter for live onboarding. Keep the simulation visibly labelled and keep all real provider metadata in the registry package.
 
 ### Build (`build/`, `vite.config.ts`)
 
-- **Validation.** `vite.config.ts` validates the `pds-registry` snapshot and every `apps/*/config.json` on start, so invalid config fails `npm run dev` and `npm run build`.
+- **Validation.** `vite.config.ts` validates the `@apogeekit/pds-registry` snapshot and every `apps/*/config.json` on start, so invalid config fails `npm run dev` and `npm run build`.
 - **`build/metadata.ts`.** Generates the OAuth client metadata from `PUBLIC_ORIGIN`. A loopback origin uses the AT Protocol localhost client; any other origin must be public HTTPS with no port.
 - **`build/embeds.ts`.** Writes Open Graph and Twitter tags into each page and renders a 1200×630 PNG per app with resvg, using the bundled Noto Sans fonts. It also emits Caddy rewrites so `/?app=<id>` serves `embeds/<id>.html` without changing the URL.
 
@@ -66,7 +66,7 @@ flowchart LR
 - **No HTML injection.** Never use `innerHTML` or insert markup. Use `element()` or `textContent`. App and provider names are untrusted text, including in `build/embeds.ts`, which escapes everything.
 - **Redirects come from configuration only.** The return URL comes from the repository's `apps/<id>/config.json`. It never comes from query parameters or OAuth state; OAuth `state` carries only a validated app ID (`recoverAppId`). The default app can never redirect.
 - **No identity leaks.** The launcher signs out its own OAuth session immediately and never shows or sends the DID.
-- **One provider list.** `pds-registry` supplies metadata and logos to the frontend and build. Do not create another local directory or copy its descriptions into locales.
+- **One provider list.** `@apogeekit/pds-registry` supplies metadata and logos to the frontend and build. Do not create another local directory or copy its descriptions into locales.
 - **Accessibility.** Keep visible focus, `aria-*` relationships, focus moving to the heading on each screen change, reduced-motion handling and 44–48px touch targets.
 
 ## Commands
@@ -118,7 +118,7 @@ Then:
 ## Common tasks
 
 - **Add an app:** create `apps/<id>/config.json`. The fields are documented in the README; the validator is `parseApps` in `src/config.ts`.
-- **Add a provider:** update the separate `pds-registry` repository and package, then update this app's dependency. The build copies its logos and maintains the existing public registry paths. App allowlists remain explicit.
+- **Add a provider:** update the separate `@apogeekit/pds-registry` repository and package, then update this app's dependency. The build copies its logos and maintains the existing public registry paths. App allowlists remain explicit.
 - **Add a config field:** validate it in `src/config.ts`, add a test for rejected values, and document it in the README table.
 - **Add an environment variable:** frontend variables must be prefixed `PUBLIC_` and read in `vite.config.ts`. Document them in the README and `.env.example`.
 

@@ -1,6 +1,6 @@
 /** App configuration validation, shared by the browser and the build. */
-import type { PdsProvider } from 'pds-registry'
-export { parseProviders } from 'pds-registry'
+import type { PdsProvider } from '@apogeekit/pds-registry'
+export { parseProviders } from '@apogeekit/pds-registry'
 export type Provider = PdsProvider
 
 export const DEFAULT_APP_ID = 'default'

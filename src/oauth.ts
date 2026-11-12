@@ -1,6 +1,6 @@
 import { BrowserOAuthClient, type OAuthClientMetadataInput } from '@atproto/oauth-client-browser'
-import { LauncherError } from 'launcher-components'
-import { createBrowserOAuthAdapter } from 'launcher-components/oauth'
+import { LauncherError } from '@apogeekit/launcher-components'
+import { createBrowserOAuthAdapter } from '@apogeekit/launcher-components/oauth'
 import { SignupError, recoverAppId, type SignupOAuth } from './signup'
 
 let client: BrowserOAuthClient | undefined

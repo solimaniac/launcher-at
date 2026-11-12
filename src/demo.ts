@@ -1,6 +1,17 @@
-import { createLoginFlow, LauncherError, translate, type AuthAdapter, type LoginMode } from 'launcher-components'
-import { mountLogin, openLoginDialog, renderProviderPicker, type MountOptions } from 'launcher-components/dom'
-import spanish from 'launcher-components/locales/es.json'
+import {
+  createLoginFlow,
+  LauncherError,
+  translate,
+  type AuthAdapter,
+  type LoginMode,
+} from '@apogeekit/launcher-components'
+import {
+  mountLogin,
+  openLoginDialog,
+  renderProviderPicker,
+  type MountOptions,
+} from '@apogeekit/launcher-components/dom'
+import spanish from '@apogeekit/launcher-components/locales/es.json'
 import { providers } from './providers'
 import atmosphereApps from '../config/atmosphere-apps.json'
 import { element } from './dom'
@@ -13,8 +24,8 @@ export interface DemoResult {
   handle: string
 }
 const DEMO_DELAY_MS = 700
-const COMPONENTS_URL = 'https://github.com/solimaniac/launcher-components'
-const REGISTRY_URL = 'https://github.com/solimaniac/pds-registry'
+const COMPONENTS_URL = 'https://github.com/apogeekit/launcher-components'
+const REGISTRY_URL = 'https://github.com/apogeekit/pds-registry'
 
 /** Local simulation only: never resolves a handle, contacts a PDS, or creates an OAuth session. */
 export function createDemoAuth(outcome: Outcome): AuthAdapter<DemoResult> {
@@ -396,8 +407,8 @@ export function mountDemo(root: HTMLElement) {
     if (layout === 'picker') {
       transportField.hidden = true
       code.textContent = [
-        "import { renderProviderPicker } from 'launcher-components/dom'",
-        "import { selectProviders } from 'pds-registry'",
+        "import { renderProviderPicker } from '@apogeekit/launcher-components/dom'",
+        "import { selectProviders } from '@apogeekit/pds-registry'",
         '',
         'const picker = renderProviderPicker(document, {',
         `  providers: selectProviders({ ids: ${limited ? JSON.stringify([...selected]) : 'undefined'} }),`,
@@ -410,11 +421,11 @@ export function mountDemo(root: HTMLElement) {
       transportField.hidden = false
       const method = layout === 'inline' ? 'mountLogin' : 'openLoginDialog'
       code.textContent = [
-        `import { createLoginFlow${language === 'es' ? ', translate' : ''} } from 'launcher-components'`,
-        `import { ${method} } from 'launcher-components/dom'`,
-        "import { createBrowserOAuthAdapter } from 'launcher-components/oauth'",
-        "import { providers } from 'pds-registry'",
-        ...(language === 'es' ? ["import messages from 'launcher-components/locales/es.json'"] : []),
+        `import { createLoginFlow${language === 'es' ? ', translate' : ''} } from '@apogeekit/launcher-components'`,
+        `import { ${method} } from '@apogeekit/launcher-components/dom'`,
+        "import { createBrowserOAuthAdapter } from '@apogeekit/launcher-components/oauth'",
+        "import { providers } from '@apogeekit/pds-registry'",
+        ...(language === 'es' ? ["import messages from '@apogeekit/launcher-components/locales/es.json'"] : []),
         '',
         '// Supply your app’s configured BrowserOAuthClient.',
         'const auth = createBrowserOAuthAdapter(client, {',
