@@ -1026,18 +1026,6 @@ main.demo-main {
   font-size: 13px;
   color: var(--p-muted);
 }
-.demo-simulation {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-}
-.demo-simulation::before {
-  content: '';
-  width: 6px;
-  height: 6px;
-  background: #248768;
-  border-radius: 50%;
-}
 .demo-flow-state {
   margin-left: auto;
   font-family: var(--font-mono);
@@ -1592,9 +1580,6 @@ main.demo-main {
     justify-content: space-between;
     gap: 0 8px;
   }
-  .demo-simulation {
-    font-size: 13px;
-  }
   .demo-inline {
     padding: 32px 20px;
   }
@@ -1701,9 +1686,6 @@ main.demo-main {
   .demo-settings {
     column-gap: 12px;
     padding: 16px;
-  }
-  .demo-simulation {
-    max-width: 18ch;
   }
 }
 @media (prefers-reduced-motion: reduce) {

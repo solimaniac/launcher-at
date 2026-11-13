@@ -227,7 +227,7 @@ export function mountDemo(root: HTMLElement) {
     }).element,
   )
   rawPicker.card.append(rawSelection)
-  raw.append(rawHeader, rawGrid, element('p', t('demo.simulation'), 'demo-small'))
+  raw.append(rawHeader, rawGrid)
 
   const examples = element('section', '', 'demo-examples')
   examples.id = 'examples'
@@ -338,12 +338,11 @@ export function mountDemo(root: HTMLElement) {
   previewHeader.append(appBrand, previewAction)
   const previewBody = element('div', '', 'demo-preview-body')
   const stateBar = element('div', '', 'demo-state-bar')
-  const simulation = element('span', t('demo.simulation'), 'demo-simulation')
   const state = element('span', '', 'demo-flow-state')
   state.setAttribute('role', 'status')
   state.setAttribute('aria-live', 'polite')
   const reset = action('demo.reset', renderPreview, 'demo-text-button')
-  stateBar.append(simulation, state, reset)
+  stateBar.append(state, reset)
   preview.append(previewHeader, previewBody)
   stage.append(preview, stateBar)
   playground.append(stage, settings)

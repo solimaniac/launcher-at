@@ -143,7 +143,6 @@
     "hostPolicy": "An explicit host list disables custom signup hosts. Existing accounts still sign in through their own host.",
     "registry": "PDS registry ↗",
     "yourApp": "Your app",
-    "simulation": "Simulation · no real account needed",
     "reset": "Reset demo",
     "code": "View implementation",
     "copyCode": "Copy code",
