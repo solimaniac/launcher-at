@@ -509,7 +509,7 @@ button:disabled {
   }
 }
 
-/* The demo owns this design. launcher-components supplies unstyled, reusable DOM. */
+/* App views use the site's CSS; isolated component previews use the library defaults. */
 html:has(.demo-page) {
   --p-bg: #eef0f3;
   --p-surface: #e2e5ea;
@@ -723,38 +723,33 @@ main.demo-main {
   font-size: 13px;
   text-decoration: underline;
 }
-.demo-raw-grid {
+.demo-component-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 24px;
   margin-bottom: 16px;
 }
-.demo-raw-card {
+.demo-component-card {
   min-width: 0;
 }
-.demo-raw-card h3 {
+.demo-component-card h3 {
   margin-bottom: 12px;
   font-size: 14px;
   letter-spacing: normal;
 }
-.demo-raw-preview {
-  height: 320px;
-  padding: 24px;
+.demo-component-preview {
+  max-height: 560px;
   overflow: auto;
-  border: 1px solid #cfd4df;
-  background: #fff;
-  color: initial;
-  font: initial;
   letter-spacing: normal;
   text-align: start;
   overflow-wrap: anywhere;
 }
-.demo-page .demo-raw-selection {
+.demo-page .demo-component-selection {
   padding-block: 12px;
   font-size: 13px;
   overflow-wrap: anywhere;
 }
-.demo-raw-card .demo-text-button {
+.demo-component-card .demo-text-button {
   margin-top: 4px;
 }
 .demo-examples {
@@ -1526,7 +1521,7 @@ main.demo-main {
   .demo-intro h1 {
     font-size: 40px;
   }
-  .demo-raw-grid {
+  .demo-component-grid {
     grid-template-columns: 1fr;
   }
   .demo-section-heading {
@@ -1535,9 +1530,8 @@ main.demo-main {
   .demo-section-heading h2 {
     max-width: 12ch;
   }
-  .demo-raw-preview {
-    height: 360px;
-    padding: 16px;
+  .demo-component-preview {
+    max-height: 600px;
   }
   .demo-layouts {
     grid-template-columns: repeat(2, minmax(0, 1fr));

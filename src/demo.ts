@@ -167,20 +167,20 @@ export function mountDemo(root: HTMLElement) {
   const heading = element('h1', t('demo.heading'))
   intro.append(heading)
 
-  const raw = element('section', '', 'demo-raw')
-  raw.id = 'components'
-  const rawHeader = element('div', '', 'demo-section-heading')
-  const rawHeading = element('h2', t('demo.raw'))
-  rawHeading.id = 'components-heading'
-  raw.setAttribute('aria-labelledby', rawHeading.id)
-  rawHeader.append(rawHeading, link('demo.examples', '#examples'))
-  const rawGrid = element('div', '', 'demo-raw-grid')
-  function rawPreview(name: 'login' | 'picker') {
-    const card = element('div', '', 'demo-raw-card')
-    const label = element('h3', t(`demo.raw.${name}`))
-    label.id = `raw-${name}-heading`
-    const host = element('div', '', 'demo-raw-preview')
-    host.dataset.raw = name
+  const component = element('section', '', 'demo-component')
+  component.id = 'components'
+  const componentHeader = element('div', '', 'demo-section-heading')
+  const componentHeading = element('h2', t('demo.defaults'))
+  componentHeading.id = 'components-heading'
+  component.setAttribute('aria-labelledby', componentHeading.id)
+  componentHeader.append(componentHeading, link('demo.examples', '#examples'))
+  const componentGrid = element('div', '', 'demo-component-grid')
+  function componentPreview(name: 'login' | 'picker') {
+    const card = element('div', '', 'demo-component-card')
+    const label = element('h3', t(`demo.defaults.${name}`))
+    label.id = `component-${name}-heading`
+    const host = element('div', '', 'demo-component-preview')
+    host.dataset.component = name
     host.setAttribute('role', 'group')
     host.setAttribute('aria-labelledby', label.id)
     // A shadow boundary keeps the site's global button, heading, and font styles out.
@@ -188,48 +188,46 @@ export function mountDemo(root: HTMLElement) {
     const container = element('div')
     shadow.append(container)
     card.append(label, host)
-    rawGrid.append(card)
+    componentGrid.append(card)
     return { card, container }
   }
-  const rawLogin = rawPreview('login')
-  const rawPicker = rawPreview('picker')
-  const rawMessages = translate()
-  let stopRawLogin: (() => void) | undefined
-  function resetRawLogin() {
-    stopRawLogin?.()
+  const componentLogin = componentPreview('login')
+  const componentPicker = componentPreview('picker')
+  const componentMessages = translate()
+  let stopComponentLogin: (() => void) | undefined
+  function resetComponentLogin() {
+    stopComponentLogin?.()
     const controller = createLoginFlow({ providers, auth: createDemoAuth('success') })
-    const unmount = mountLogin(rawLogin.container, controller, {
-      stylesheet: false,
+    const unmount = mountLogin(componentLogin.container, controller, {
       headingLevel: 3,
       focusOnMount: false,
       t(key, values) {
         if (key === 'oauth.opening') return t('demo.en.opening')
         if (key === 'complete.title') return t('demo.en.complete')
         if (key === 'complete.hint') return t('demo.en.result')
-        return rawMessages(key, values)
+        return componentMessages(key, values)
       },
     })
-    stopRawLogin = () => {
+    stopComponentLogin = () => {
       unmount()
       controller.destroy()
     }
   }
-  resetRawLogin()
-  rawLogin.card.append(action('demo.reset', resetRawLogin, 'demo-text-button'))
-  const rawSelection = element('p', '', 'demo-raw-selection')
-  rawSelection.setAttribute('role', 'status')
-  rawSelection.setAttribute('aria-live', 'polite')
-  rawPicker.container.append(
+  resetComponentLogin()
+  componentLogin.card.append(action('demo.reset', resetComponentLogin, 'demo-text-button'))
+  const componentSelection = element('p', '', 'demo-component-selection')
+  componentSelection.setAttribute('role', 'status')
+  componentSelection.setAttribute('aria-live', 'polite')
+  componentPicker.container.append(
     renderProviderPicker(document, {
       providers,
-      stylesheet: false,
       onSelect(provider) {
-        rawSelection.textContent = t('demo.selectedHost', { name: provider.name, url: provider.serviceUrl })
+        componentSelection.textContent = t('demo.selectedHost', { name: provider.name, url: provider.serviceUrl })
       },
     }).element,
   )
-  rawPicker.card.append(rawSelection)
-  raw.append(rawHeader, rawGrid)
+  componentPicker.card.append(componentSelection)
+  component.append(componentHeader, componentGrid)
 
   const examples = element('section', '', 'demo-examples')
   examples.id = 'examples'
@@ -238,7 +236,7 @@ export function mountDemo(root: HTMLElement) {
   const examplesHeading = element('h2', t('demo.examples'))
   examplesHeading.id = 'examples-heading'
   examples.setAttribute('aria-labelledby', examplesHeading.id)
-  examplesHeader.append(examplesHeading, link('demo.raw', '#components'))
+  examplesHeader.append(examplesHeading, link('demo.defaults', '#components'))
 
   const playground = element('div', '', 'demo-playground app-frame')
   playground.id = 'playground'
@@ -379,7 +377,7 @@ export function mountDemo(root: HTMLElement) {
   const pre = element('pre')
   pre.append(code)
   implementation.append(codeSummary, codeToolbar, element('p', t('demo.transportHint'), 'demo-code-hint'), pre)
-  wrap.append(intro, raw)
+  wrap.append(intro, component)
   hero.append(wrap)
   examplesWrap.append(examplesHeader, layouts, playground, implementation)
   examples.append(examplesWrap)
@@ -583,7 +581,7 @@ export function mountDemo(root: HTMLElement) {
     pickerGeneration++
     stopPreview?.()
     stopDialog?.()
-    stopRawLogin?.()
+    stopComponentLogin?.()
     header.remove()
     footer.remove()
     root.replaceChildren()

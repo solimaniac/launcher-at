@@ -107,7 +107,7 @@ build/      Build-time plugins: OAuth metadata and link-preview images
 
 ## Reusable packages
 
-[@apogeekit/launcher-components](https://github.com/apogeekit/launcher-components) provides the framework-independent flow, DOM screens with a default stylesheet, provider picker, and OAuth adapter. [@apogeekit/pds-registry](https://github.com/apogeekit/pds-registry) provides the typed host directory and assets. This app uses `stylesheet: false` for its native component previews and its own app styles, while retaining its branding and configured return destinations.
+[@apogeekit/launcher-components](https://github.com/apogeekit/launcher-components) provides the framework-independent flow, DOM screens with a default stylesheet, provider picker, and OAuth adapter. [@apogeekit/pds-registry](https://github.com/apogeekit/pds-registry) provides the typed host directory and assets. Component previews use the library’s default stylesheet. App examples and live signup use `stylesheet: false` to supply their own styles.
 
 The components repository keeps the TypeScript implementation in `ts/`, translations in `locales/`, and shared behavior fixtures in `tests/`. Future implementations such as Dart/Flutter can live beside `ts/` and use the same PDS data.
 
