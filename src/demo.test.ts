@@ -42,6 +42,8 @@ function raw(name: 'login' | 'picker') {
 }
 
 test('raw login validates and simulates independently of styled example settings', async () => {
+  expect(raw('login').querySelector('style')).toBeNull()
+  expect(raw('picker').querySelector('style')).toBeNull()
   const container = raw('login').querySelector<HTMLElement>('[data-launcher]')!
   submit(container, 'incomplete')
   expect(container.querySelector('input[aria-invalid="true"]')).not.toBeNull()
@@ -81,6 +83,7 @@ test('the small header button opens the library dialog and no auth session is st
   expect(root.querySelector('[data-launcher]')).toBeNull()
   const dialog = open()
   expect(dialog.open).toBe(true)
+  expect(dialog.querySelector('style')).toBeNull()
   expect(dialog.querySelector('[data-launcher]')?.getAttribute('data-view')).toBe('signin')
   expect(document.activeElement).toBe(dialog.querySelector('h2'))
   expect(dialog.querySelector('input[autocomplete="username"]')).not.toBeNull()
@@ -200,6 +203,7 @@ test('unmount cancels active inline work and removes external headers and dialog
 
 test('implementation snippets follow presentation, locale, host policy, and OAuth transport', () => {
   const code = () => root.querySelector('code')!.textContent!
+  expect(code()).toContain('stylesheet: false')
   choose('transport', 'popup')
   expect(code()).toContain("transport: 'popup'")
   expect(code()).toContain('openLoginDialog(flow')

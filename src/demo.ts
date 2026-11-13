@@ -199,6 +199,7 @@ export function mountDemo(root: HTMLElement) {
     stopRawLogin?.()
     const controller = createLoginFlow({ providers, auth: createDemoAuth('success') })
     const unmount = mountLogin(rawLogin.container, controller, {
+      stylesheet: false,
       headingLevel: 3,
       focusOnMount: false,
       t(key, values) {
@@ -221,6 +222,7 @@ export function mountDemo(root: HTMLElement) {
   rawPicker.container.append(
     renderProviderPicker(document, {
       providers,
+      stylesheet: false,
       onSelect(provider) {
         rawSelection.textContent = t('demo.selectedHost', { name: provider.name, url: provider.serviceUrl })
       },
@@ -408,6 +410,7 @@ export function mountDemo(root: HTMLElement) {
   }
   function options(restart: () => void): MountOptions<DemoResult> {
     return {
+      stylesheet: false,
       appName: t(`demo.${language}.yourApp`),
       t: messages(),
       logoUrl,
@@ -480,6 +483,7 @@ export function mountDemo(root: HTMLElement) {
         "import { selectProviders } from '@apogeekit/pds-registry'",
         '',
         'const picker = renderProviderPicker(document, {',
+        '  stylesheet: false, // Your app supplies the CSS.',
         `  providers: selectProviders({ ids: ${limited ? JSON.stringify([...selected]) : 'undefined'} }),`,
         '  onSelect: provider => { /* Continue with provider.serviceUrl */ },',
         '  logoUrl: provider => `/providers/${provider.logo}`,',
@@ -508,6 +512,7 @@ export function mountDemo(root: HTMLElement) {
         ...(layout === 'fullscreen' ? ["  presentation: 'fullscreen',"] : []),
         ...(layout !== 'inline' ? ['  onClose: () => flow.destroy(),'] : []),
         "  appName: 'Your app',",
+        '  stylesheet: false, // Your app supplies the CSS.',
         ...(language === 'es' ? ['  t: translate(messages),'] : []),
         '  logoUrl: provider => `/providers/${provider.logo}`,',
         '})',
@@ -558,6 +563,7 @@ export function mountDemo(root: HTMLElement) {
       selectedHost.setAttribute('role', 'status')
       const generation = pickerGeneration
       const picker = renderProviderPicker(document, {
+        stylesheet: false,
         providers: providers.filter(provider => !limited || selected.has(provider.id)),
         t: messages(),
         logoUrl,
