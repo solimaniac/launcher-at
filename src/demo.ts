@@ -165,9 +165,7 @@ export function mountDemo(root: HTMLElement) {
   const wrap = element('div', '', 'wrap')
   const intro = element('div', '', 'demo-intro')
   const heading = element('h1', t('demo.heading'))
-  const introRight = element('div', '', 'demo-intro-right')
-  introRight.append(element('p', t('demo.intro')))
-  intro.append(heading, introRight)
+  intro.append(heading, element('p', t('demo.intro')))
 
   const playground = element('div', '', 'demo-playground app-frame')
   playground.id = 'playground'
@@ -188,8 +186,7 @@ export function mountDemo(root: HTMLElement) {
       layout = value
       renderPreview()
     }
-    const text = element('span')
-    text.append(element('span', t(`demo.layout.${value}`)), element('small', t(`demo.layout.${value}.hint`)))
+    const text = element('span', t(`demo.layout.${value}`))
     label.append(input, text)
     layouts.append(label)
   }
@@ -278,7 +275,7 @@ export function mountDemo(root: HTMLElement) {
   stateBar.append(simulation, state, reset)
   preview.append(previewHeader, previewBody)
   stage.append(preview, stateBar)
-  playground.append(settings, stage)
+  playground.append(stage, settings)
 
   const implementation = element('details', '', 'demo-implementation')
   const codeSummary = element('summary', t('demo.code'))
@@ -322,7 +319,7 @@ export function mountDemo(root: HTMLElement) {
     link('demo.registry', REGISTRY_URL),
     link('demo.liveOnboarding', '/?app=default'),
   )
-  footerInner.append(element('span', t('demo.footer')), footerLinks)
+  footerInner.append(footerLinks)
   footer.append(footerInner)
   root.before(header)
   root.after(footer)
@@ -385,7 +382,7 @@ export function mountDemo(root: HTMLElement) {
       aside.setAttribute('aria-hidden', 'true')
       const brand = element('div', t('demo.fullscreenBrand'), 'demo-fullscreen-brand')
       brand.prepend(mark())
-      aside.append(brand, element('p', t('demo.fullscreenTitle'), 'demo-fullscreen-title'), networkArtwork())
+      aside.append(brand, networkArtwork())
       modal.dialog.append(aside)
     }
     stopDialog = modal.destroy
@@ -449,15 +446,13 @@ export function mountDemo(root: HTMLElement) {
   function welcome() {
     const home = element('div', '', 'demo-app-home')
     const network = networkArtwork()
-    const title = element('h2', t('demo.canvasTitle'))
-    const intro = element('p', t(layout === 'fullscreen' ? 'demo.canvasFullscreen' : 'demo.canvasIntro'))
     const start = action(
       layout === 'fullscreen' ? 'demo.openFullscreen' : 'demo.tryLogin',
       () => openDialog(layout === 'fullscreen' ? 'fullscreen' : 'dialog'),
       'demo-button demo-primary',
     )
     start.setAttribute('aria-haspopup', 'dialog')
-    home.append(network, title, intro, start, element('span', t('demo.canvasHint'), 'demo-small'))
+    home.append(network, start)
     previewBody.append(home)
   }
   function renderPreview() {

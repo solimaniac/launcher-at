@@ -700,10 +700,6 @@ main.demo-main {
   top: 16px;
 }
 .demo-intro {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  align-items: start;
-  gap: 24px;
   padding-block: 48px 40px;
 }
 .demo-intro h1 {
@@ -711,11 +707,9 @@ main.demo-main {
   font-size: clamp(36px, 4vw, 56px);
   font-weight: 400;
 }
-.demo-intro-right {
-  max-width: 480px;
-  justify-self: start;
-}
-.demo-intro-right p {
+.demo-intro p {
+  max-width: 70ch;
+  margin-top: 16px;
   font-size: 16px;
   line-height: 1.6;
 }
@@ -738,7 +732,7 @@ main.demo-main {
   display: flex;
   align-items: center;
   gap: 12px;
-  min-height: 68px;
+  min-height: 48px;
   padding: 12px 16px;
   border: 1px solid #d5d9e2;
   border-radius: 8px;
@@ -766,19 +760,12 @@ main.demo-main {
   accent-color: var(--p-action);
   flex-shrink: 0;
 }
-.demo-layout-option span span {
-  display: block;
+.demo-layout-option span {
   font-weight: 500;
-}
-.demo-layout-option small {
-  display: block;
-  margin-top: 2px;
-  color: var(--p-muted);
-  font-size: 13px;
 }
 .demo-playground {
   display: grid;
-  grid-template-columns: 256px minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
   overflow: hidden;
   border: 1px solid #cfd4df;
   border-radius: 12px;
@@ -786,10 +773,14 @@ main.demo-main {
   box-shadow: 0 8px 32px #151e3010;
 }
 .demo-settings {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  column-gap: 16px;
   padding: 24px;
-  border-right: 1px solid #dce0e7;
+  border-top: 1px solid #dce0e7;
 }
 .demo-settings h2 {
+  grid-column: 1 / -1;
   margin-bottom: 24px;
   font-size: 18px;
   letter-spacing: -0.025em;
@@ -814,6 +805,7 @@ main.demo-main {
   cursor: pointer;
 }
 .demo-host-settings {
+  grid-column: 1 / -1;
   margin-top: 4px;
   padding-top: 4px;
   border-top: 1px solid #e5e8ee;
@@ -914,23 +906,10 @@ main.demo-main {
   display: flex;
   flex-direction: column;
   align-items: center;
-  text-align: center;
-  padding: 24px 24px 32px;
-}
-.demo-app-home h2 {
-  margin-top: 16px;
-  font-size: 30px;
-  font-weight: 400;
-}
-.demo-app-home p {
-  max-width: 42ch;
-  margin-block: 16px 24px;
-  font-size: 16px;
-  line-height: 1.65;
-}
-.demo-app-home .demo-small {
-  margin-top: 16px;
-  color: var(--subtle);
+  justify-content: center;
+  gap: 24px;
+  min-height: 440px;
+  padding: 32px 24px;
 }
 .demo-network {
   position: relative;
@@ -1413,14 +1392,6 @@ main.demo-main {
   background: var(--accent);
   color: var(--accent-ink);
 }
-.demo-surface .demo-fullscreen-title {
-  max-width: 18ch;
-  margin-bottom: 32px;
-  font-size: clamp(36px, 4vw, 56px);
-  line-height: 1.12;
-  letter-spacing: -0.035em;
-  text-align: center;
-}
 .demo-dialog[data-presentation='fullscreen'] .demo-dialog-note {
   position: absolute;
   top: 32px;
@@ -1486,18 +1457,9 @@ main.demo-main {
   .wrap {
     width: calc(100% - 64px);
   }
-  .demo-intro {
-    gap: 32px;
-  }
   .demo-layout-option {
     padding: 12px;
     gap: 8px;
-  }
-  .demo-layout-option small {
-    display: none;
-  }
-  .demo-playground {
-    grid-template-columns: 232px minmax(0, 1fr);
   }
   .demo-settings {
     padding: 20px;
@@ -1523,19 +1485,10 @@ main.demo-main {
     gap: 16px;
   }
   .demo-intro {
-    grid-template-columns: 1fr;
-    gap: 24px;
     padding-block: 32px;
   }
   .demo-intro h1 {
     font-size: 40px;
-  }
-  .demo-intro-right {
-    justify-self: start;
-    max-width: 44ch;
-  }
-  .demo-intro-right p {
-    margin-top: 0;
   }
   .demo-layouts {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1543,15 +1496,8 @@ main.demo-main {
   .demo-layout-option {
     min-height: 48px;
   }
-  .demo-playground {
-    grid-template-columns: minmax(0, 1fr);
-  }
   .demo-settings {
-    display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    column-gap: 16px;
-    border: 0;
-    border-bottom: 1px solid #dce0e7;
   }
   .demo-settings h2 {
     grid-column: 1 / -1;
@@ -1580,12 +1526,6 @@ main.demo-main {
   }
   .demo-app-home {
     padding-inline: 20px;
-  }
-  .demo-app-home h2 {
-    font-size: 26px;
-  }
-  .demo-app-home p {
-    font-size: 16px;
   }
   .demo-state-bar {
     justify-content: space-between;
@@ -1644,39 +1584,45 @@ main.demo-main {
 }
 
 .site-wip {
+  --wip-ink: var(--color-text);
+  --wip-ground: var(--color-background);
   display: flex;
-  flex-wrap: wrap;
   align-items: baseline;
-  gap: 4px 12px;
+  gap: 8px 24px;
   margin: 24px auto 0;
-  padding: 12px 16px;
-  border: 1px solid var(--color-border);
-  border-inline-start: 3px solid var(--color-primary);
+  padding: 16px 24px;
   border-radius: 8px;
-  background: var(--color-secondary);
-  color: var(--color-text);
-  font-size: 14px;
+  background: color-mix(in srgb, var(--wip-ink) 5%, var(--wip-ground));
+  color: var(--wip-ink);
+  font-size: 16px;
   line-height: 1.5;
 }
 .site-wip strong {
+  flex-shrink: 0;
+  font-size: 14px;
   font-weight: 500;
 }
 .site-wip p {
-  flex: 1 1 36rem;
+  flex: 1;
   min-width: 0;
   max-width: none;
   margin: 0;
+  color: color-mix(in srgb, var(--wip-ink) 78%, var(--wip-ground));
 }
 .demo-page .site-wip {
-  border-color: color-mix(in srgb, var(--p-ink) 20%, var(--p-bg));
-  border-inline-start-color: var(--p-action);
-  background: #fff;
-  color: var(--p-ink);
+  --wip-ink: var(--p-ink);
+  --wip-ground: var(--p-bg);
 }
 .onboarding-page .site-wip {
   width: 100%;
   max-width: 54rem;
   margin: 0 auto 16px;
+}
+@media (max-width: 767px) {
+  .site-wip {
+    flex-direction: column;
+    padding: 16px;
+  }
 }
 @media (max-width: 359px) {
   .wrap {
