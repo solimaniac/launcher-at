@@ -167,12 +167,83 @@ export function mountDemo(root: HTMLElement) {
   const heading = element('h1', t('demo.heading'))
   intro.append(heading)
 
+  const component = element('section', '', 'demo-component')
+  component.id = 'components'
+  const componentHeader = element('div', '', 'demo-section-heading')
+  const componentHeading = element('h2', t('demo.defaults'))
+  componentHeading.id = 'components-heading'
+  component.setAttribute('aria-labelledby', componentHeading.id)
+  componentHeader.append(componentHeading, link('demo.examples', '#examples'))
+  const componentGrid = element('div', '', 'demo-component-grid')
+  function componentPreview(name: 'login' | 'picker') {
+    const card = element('div', '', 'demo-component-card')
+    const label = element('h3', t(`demo.defaults.${name}`))
+    label.id = `component-${name}-heading`
+    const host = element('div', '', 'demo-component-preview')
+    host.dataset.component = name
+    host.setAttribute('role', 'group')
+    host.setAttribute('aria-labelledby', label.id)
+    // A shadow boundary keeps the site's global button, heading, and font styles out.
+    const shadow = host.attachShadow({ mode: 'open' })
+    const container = element('div')
+    shadow.append(container)
+    card.append(label, host)
+    componentGrid.append(card)
+    return { card, container }
+  }
+  const componentLogin = componentPreview('login')
+  const componentPicker = componentPreview('picker')
+  const componentMessages = translate()
+  let stopComponentLogin: (() => void) | undefined
+  function resetComponentLogin() {
+    stopComponentLogin?.()
+    const controller = createLoginFlow({ providers, auth: createDemoAuth('success') })
+    const unmount = mountLogin(componentLogin.container, controller, {
+      headingLevel: 3,
+      focusOnMount: false,
+      t(key, values) {
+        if (key === 'oauth.opening') return t('demo.en.opening')
+        if (key === 'complete.title') return t('demo.en.complete')
+        if (key === 'complete.hint') return t('demo.en.result')
+        return componentMessages(key, values)
+      },
+    })
+    stopComponentLogin = () => {
+      unmount()
+      controller.destroy()
+    }
+  }
+  resetComponentLogin()
+  componentLogin.card.append(action('demo.reset', resetComponentLogin, 'demo-text-button'))
+  const componentSelection = element('p', '', 'demo-component-selection')
+  componentSelection.setAttribute('role', 'status')
+  componentSelection.setAttribute('aria-live', 'polite')
+  componentPicker.container.append(
+    renderProviderPicker(document, {
+      providers,
+      onSelect(provider) {
+        componentSelection.textContent = t('demo.selectedHost', { name: provider.name, url: provider.serviceUrl })
+      },
+    }).element,
+  )
+  componentPicker.card.append(componentSelection)
+  component.append(componentHeader, componentGrid)
+
+  const examples = element('section', '', 'demo-examples')
+  examples.id = 'examples'
+  const examplesWrap = element('div', '', 'wrap')
+  const examplesHeader = element('div', '', 'demo-section-heading')
+  const examplesHeading = element('h2', t('demo.examples'))
+  examplesHeading.id = 'examples-heading'
+  examples.setAttribute('aria-labelledby', examplesHeading.id)
+  examplesHeader.append(examplesHeading, link('demo.defaults', '#components'))
+
   const playground = element('div', '', 'demo-playground app-frame')
   playground.id = 'playground'
   playground.tabIndex = -1
   const settings = element('aside', '', 'demo-settings')
   settings.setAttribute('aria-label', t('demo.settings'))
-  const settingsHeading = element('h2', t('demo.playground'))
+  const settingsHeading = element('h3', t('demo.playground'))
   const layouts = element('fieldset', '', 'demo-layouts')
   layouts.append(element('legend', t('demo.layout')))
   for (const value of ['dialog', 'inline', 'fullscreen', 'picker'] as const) {
@@ -267,12 +338,11 @@ export function mountDemo(root: HTMLElement) {
   previewHeader.append(appBrand, previewAction)
   const previewBody = element('div', '', 'demo-preview-body')
   const stateBar = element('div', '', 'demo-state-bar')
-  const simulation = element('span', t('demo.simulation'), 'demo-simulation')
   const state = element('span', '', 'demo-flow-state')
   state.setAttribute('role', 'status')
   state.setAttribute('aria-live', 'polite')
   const reset = action('demo.reset', renderPreview, 'demo-text-button')
-  stateBar.append(simulation, state, reset)
+  stateBar.append(state, reset)
   preview.append(previewHeader, previewBody)
   stage.append(preview, stateBar)
   playground.append(stage, settings)
@@ -307,9 +377,11 @@ export function mountDemo(root: HTMLElement) {
   const pre = element('pre')
   pre.append(code)
   implementation.append(codeSummary, codeToolbar, element('p', t('demo.transportHint'), 'demo-code-hint'), pre)
-  wrap.append(intro, layouts, playground, implementation)
+  wrap.append(intro, component)
   hero.append(wrap)
-  root.replaceChildren(hero)
+  examplesWrap.append(examplesHeader, layouts, playground, implementation)
+  examples.append(examplesWrap)
+  root.replaceChildren(hero, examples)
 
   const footer = element('footer', '', 'demo-footer')
   const footerInner = element('div', '', 'wrap demo-footer-inner')
@@ -336,6 +408,7 @@ export function mountDemo(root: HTMLElement) {
   }
   function options(restart: () => void): MountOptions<DemoResult> {
     return {
+      stylesheet: false,
       appName: t(`demo.${language}.yourApp`),
       t: messages(),
       logoUrl,
@@ -408,6 +481,7 @@ export function mountDemo(root: HTMLElement) {
         "import { selectProviders } from '@apogeekit/pds-registry'",
         '',
         'const picker = renderProviderPicker(document, {',
+        '  stylesheet: false, // Your app supplies the CSS.',
         `  providers: selectProviders({ ids: ${limited ? JSON.stringify([...selected]) : 'undefined'} }),`,
         '  onSelect: provider => { /* Continue with provider.serviceUrl */ },',
         '  logoUrl: provider => `/providers/${provider.logo}`,',
@@ -436,6 +510,7 @@ export function mountDemo(root: HTMLElement) {
         ...(layout === 'fullscreen' ? ["  presentation: 'fullscreen',"] : []),
         ...(layout !== 'inline' ? ['  onClose: () => flow.destroy(),'] : []),
         "  appName: 'Your app',",
+        '  stylesheet: false, // Your app supplies the CSS.',
         ...(language === 'es' ? ['  t: translate(messages),'] : []),
         '  logoUrl: provider => `/providers/${provider.logo}`,',
         '})',
@@ -486,6 +561,7 @@ export function mountDemo(root: HTMLElement) {
       selectedHost.setAttribute('role', 'status')
       const generation = pickerGeneration
       const picker = renderProviderPicker(document, {
+        stylesheet: false,
         providers: providers.filter(provider => !limited || selected.has(provider.id)),
         t: messages(),
         logoUrl,
@@ -505,6 +581,7 @@ export function mountDemo(root: HTMLElement) {
     pickerGeneration++
     stopPreview?.()
     stopDialog?.()
+    stopComponentLogin?.()
     header.remove()
     footer.remove()
     root.replaceChildren()

@@ -18,7 +18,7 @@
     "format": "eslint --fix . && prettier --write ."
   },
   "dependencies": {
-    "@apogeekit/launcher-components": "0.1.0-alpha.0",
+    "@apogeekit/launcher-components": "0.1.0-alpha.1",
     "@apogeekit/pds-registry": "0.1.0-alpha.0",
     "@atproto/oauth-client-browser": "^0.5.9",
     "@atproto/oauth-types": "^0.7.7",

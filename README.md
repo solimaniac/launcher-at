@@ -107,11 +107,11 @@ build/      Build-time plugins: OAuth metadata and link-preview images
 
 ## Reusable packages
 
-[@apogeekit/launcher-components](https://github.com/apogeekit/launcher-components) provides the framework-independent flow, unstyled DOM screens, provider picker, and OAuth adapter. [@apogeekit/pds-registry](https://github.com/apogeekit/pds-registry) provides the typed host directory and assets. This app uses both, while retaining its branding and configured return destinations.
+[@apogeekit/launcher-components](https://github.com/apogeekit/launcher-components) provides the framework-independent flow, DOM screens with a default stylesheet, provider picker, and OAuth adapter. [@apogeekit/pds-registry](https://github.com/apogeekit/pds-registry) provides the typed host directory and assets. Component previews use the library’s default stylesheet. App examples and live signup use `stylesheet: false` to supply their own styles.
 
 The components repository keeps the TypeScript implementation in `ts/`, translations in `locales/`, and shared behavior fixtures in `tests/`. Future implementations such as Dart/Flutter can live beside `ts/` and use the same PDS data.
 
-The live launcher uses signup-only mode and discards its temporary OAuth session. The playground uses a local adapter that never contacts a provider or stores a session. Apps using the components directly can support existing-account login, retain their own SDK session, and choose inline, full-screen, or dialog presentation. Neither package is published to npm yet. Dependencies are pinned to immutable commits in their separate GitHub repositories. This repository remains the sample website, with development and build commands run from the root.
+The live launcher uses signup-only mode and discards its temporary OAuth session. The playground uses a local adapter that never contacts a provider or stores a session. Apps using the components directly can support existing-account login, retain their own SDK session, and choose inline, full-screen, or dialog presentation. Both packages are pinned to exact npm releases. This repository remains the sample website, with development and build commands run from the root.
 
 ## License
 

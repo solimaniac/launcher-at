@@ -79,6 +79,7 @@ export async function launch(root: HTMLElement, oauth: SignupOAuth, callback = f
         },
       })
       const unmount = mountLogin(root, flow, {
+        stylesheet: false,
         ...(isDefaultApp() ? {} : { appName: app.appName }),
         headingLevel: 1,
         idPrefix: 'provider',

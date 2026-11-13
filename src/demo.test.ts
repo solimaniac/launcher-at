@@ -37,11 +37,53 @@ function open() {
   button.click()
   return document.querySelector<HTMLDialogElement>('dialog')!
 }
+function component(name: 'login' | 'picker') {
+  return root.querySelector<HTMLElement>(`[data-component="${name}"]`)!.shadowRoot!
+}
+
+test('default components load library styles and simulate independently of app settings', async () => {
+  expect(component('login').querySelector('style')).not.toBeNull()
+  expect(component('picker').querySelector('style')).not.toBeNull()
+  const container = component('login').querySelector<HTMLElement>('[data-launcher]')!
+  submit(container, 'incomplete')
+  expect(container.querySelector('input[aria-invalid="true"]')).not.toBeNull()
+  choose('language', 'es')
+  choose('mode', 'signup')
+  choose('appearance', 'night')
+  expect(container.dataset.view).toBe('signin')
+  const styledState = root.querySelector('.demo-flow-state')!.textContent
+  submit(container, 'tester.demo.test')
+  expect(container.getAttribute('aria-busy')).toBe('true')
+  await vi.runAllTimersAsync()
+  expect(container.dataset.view).toBe('complete')
+  expect(root.querySelector('.demo-flow-state')!.textContent).toBe(styledState)
+})
+
+test('resetting component login aborts pending work and clears the form', async () => {
+  submit(component('login'), 'tester.demo.test')
+  expect(vi.getTimerCount()).toBe(1)
+  root.querySelector<HTMLButtonElement>('[data-component="login"] + button')!.click()
+  expect(vi.getTimerCount()).toBe(0)
+  await vi.runAllTimersAsync()
+  expect(component('login').querySelector('[data-view="signin"]')).not.toBeNull()
+  expect(component('login').querySelector<HTMLInputElement>('input')!.value).toBe('')
+})
+
+test('component host selection reports registry data without opening an app login', () => {
+  const card = component('picker').querySelector<HTMLButtonElement>('[data-provider]:not([hidden])')!
+  const provider = providers.find(provider => provider.id === card.dataset.provider)!
+  card.click()
+  expect(root.querySelector('.demo-component-selection')!.textContent).toContain(provider.serviceUrl)
+  expect(document.querySelector('dialog')).toBeNull()
+  expect(component('login').querySelector('[data-view="signin"]')).not.toBeNull()
+  expect(vi.getTimerCount()).toBe(0)
+})
 
 test('the small header button opens the library dialog and no auth session is started on load', () => {
   expect(root.querySelector('[data-launcher]')).toBeNull()
   const dialog = open()
   expect(dialog.open).toBe(true)
+  expect(dialog.querySelector('style')).toBeNull()
   expect(dialog.querySelector('[data-launcher]')?.getAttribute('data-view')).toBe('signin')
   expect(document.activeElement).toBe(dialog.querySelector('h2'))
   expect(dialog.querySelector('input[autocomplete="username"]')).not.toBeNull()
@@ -148,8 +190,12 @@ test('standalone selection exposes the real provider URL without invoking authen
 test('unmount cancels active inline work and removes external headers and dialogs', async () => {
   layout('inline')
   submit(root.querySelector('[data-launcher]')!, 'tester.demo.test')
+  submit(component('login'), 'tester.demo.test')
+  const componentContainer = component('login')
   unmount()
+  expect(vi.getTimerCount()).toBe(0)
   await vi.runAllTimersAsync()
+  expect(componentContainer.querySelector('[data-launcher]')).toBeNull()
   expect(root.childElementCount).toBe(0)
   expect(document.querySelector('header, footer, dialog')).toBeNull()
   expect(vi.getTimerCount()).toBe(0)
@@ -157,6 +203,7 @@ test('unmount cancels active inline work and removes external headers and dialog
 
 test('implementation snippets follow presentation, locale, host policy, and OAuth transport', () => {
   const code = () => root.querySelector('code')!.textContent!
+  expect(code()).toContain('stylesheet: false')
   choose('transport', 'popup')
   expect(code()).toContain("transport: 'popup'")
   expect(code()).toContain('openLoginDialog(flow')
