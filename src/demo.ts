@@ -165,14 +165,85 @@ export function mountDemo(root: HTMLElement) {
   const wrap = element('div', '', 'wrap')
   const intro = element('div', '', 'demo-intro')
   const heading = element('h1', t('demo.heading'))
-  intro.append(heading, element('p', t('demo.intro')))
+  intro.append(heading)
+
+  const raw = element('section', '', 'demo-raw')
+  raw.id = 'components'
+  const rawHeader = element('div', '', 'demo-section-heading')
+  const rawHeading = element('h2', t('demo.raw'))
+  rawHeading.id = 'components-heading'
+  raw.setAttribute('aria-labelledby', rawHeading.id)
+  rawHeader.append(rawHeading, link('demo.examples', '#examples'))
+  const rawGrid = element('div', '', 'demo-raw-grid')
+  function rawPreview(name: 'login' | 'picker') {
+    const card = element('div', '', 'demo-raw-card')
+    const label = element('h3', t(`demo.raw.${name}`))
+    label.id = `raw-${name}-heading`
+    const host = element('div', '', 'demo-raw-preview')
+    host.dataset.raw = name
+    host.setAttribute('role', 'group')
+    host.setAttribute('aria-labelledby', label.id)
+    // A shadow boundary keeps the site's global button, heading, and font styles out.
+    const shadow = host.attachShadow({ mode: 'open' })
+    const container = element('div')
+    shadow.append(container)
+    card.append(label, host)
+    rawGrid.append(card)
+    return { card, container }
+  }
+  const rawLogin = rawPreview('login')
+  const rawPicker = rawPreview('picker')
+  const rawMessages = translate()
+  let stopRawLogin: (() => void) | undefined
+  function resetRawLogin() {
+    stopRawLogin?.()
+    const controller = createLoginFlow({ providers, auth: createDemoAuth('success') })
+    const unmount = mountLogin(rawLogin.container, controller, {
+      headingLevel: 3,
+      focusOnMount: false,
+      t(key, values) {
+        if (key === 'oauth.opening') return t('demo.en.opening')
+        if (key === 'complete.title') return t('demo.en.complete')
+        if (key === 'complete.hint') return t('demo.en.result')
+        return rawMessages(key, values)
+      },
+    })
+    stopRawLogin = () => {
+      unmount()
+      controller.destroy()
+    }
+  }
+  resetRawLogin()
+  rawLogin.card.append(action('demo.reset', resetRawLogin, 'demo-text-button'))
+  const rawSelection = element('p', '', 'demo-raw-selection')
+  rawSelection.setAttribute('role', 'status')
+  rawSelection.setAttribute('aria-live', 'polite')
+  rawPicker.container.append(
+    renderProviderPicker(document, {
+      providers,
+      onSelect(provider) {
+        rawSelection.textContent = t('demo.selectedHost', { name: provider.name, url: provider.serviceUrl })
+      },
+    }).element,
+  )
+  rawPicker.card.append(rawSelection)
+  raw.append(rawHeader, rawGrid, element('p', t('demo.simulation'), 'demo-small'))
+
+  const examples = element('section', '', 'demo-examples')
+  examples.id = 'examples'
+  const examplesWrap = element('div', '', 'wrap')
+  const examplesHeader = element('div', '', 'demo-section-heading')
+  const examplesHeading = element('h2', t('demo.examples'))
+  examplesHeading.id = 'examples-heading'
+  examples.setAttribute('aria-labelledby', examplesHeading.id)
+  examplesHeader.append(examplesHeading, link('demo.raw', '#components'))
 
   const playground = element('div', '', 'demo-playground app-frame')
   playground.id = 'playground'
   playground.tabIndex = -1
   const settings = element('aside', '', 'demo-settings')
   settings.setAttribute('aria-label', t('demo.settings'))
-  const settingsHeading = element('h2', t('demo.playground'))
+  const settingsHeading = element('h3', t('demo.playground'))
   const layouts = element('fieldset', '', 'demo-layouts')
   layouts.append(element('legend', t('demo.layout')))
   for (const value of ['dialog', 'inline', 'fullscreen', 'picker'] as const) {
@@ -307,9 +378,11 @@ export function mountDemo(root: HTMLElement) {
   const pre = element('pre')
   pre.append(code)
   implementation.append(codeSummary, codeToolbar, element('p', t('demo.transportHint'), 'demo-code-hint'), pre)
-  wrap.append(intro, layouts, playground, implementation)
+  wrap.append(intro, raw)
   hero.append(wrap)
-  root.replaceChildren(hero)
+  examplesWrap.append(examplesHeader, layouts, playground, implementation)
+  examples.append(examplesWrap)
+  root.replaceChildren(hero, examples)
 
   const footer = element('footer', '', 'demo-footer')
   const footerInner = element('div', '', 'wrap demo-footer-inner')
@@ -505,6 +578,7 @@ export function mountDemo(root: HTMLElement) {
     pickerGeneration++
     stopPreview?.()
     stopDialog?.()
+    stopRawLogin?.()
     header.remove()
     footer.remove()
     root.replaceChildren()

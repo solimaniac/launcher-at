@@ -37,6 +37,45 @@ function open() {
   button.click()
   return document.querySelector<HTMLDialogElement>('dialog')!
 }
+function raw(name: 'login' | 'picker') {
+  return root.querySelector<HTMLElement>(`[data-raw="${name}"]`)!.shadowRoot!
+}
+
+test('raw login validates and simulates independently of styled example settings', async () => {
+  const container = raw('login').querySelector<HTMLElement>('[data-launcher]')!
+  submit(container, 'incomplete')
+  expect(container.querySelector('input[aria-invalid="true"]')).not.toBeNull()
+  choose('language', 'es')
+  choose('mode', 'signup')
+  choose('appearance', 'night')
+  expect(container.dataset.view).toBe('signin')
+  const styledState = root.querySelector('.demo-flow-state')!.textContent
+  submit(container, 'tester.demo.test')
+  expect(container.getAttribute('aria-busy')).toBe('true')
+  await vi.runAllTimersAsync()
+  expect(container.dataset.view).toBe('complete')
+  expect(root.querySelector('.demo-flow-state')!.textContent).toBe(styledState)
+})
+
+test('resetting raw login aborts pending work and clears the form', async () => {
+  submit(raw('login'), 'tester.demo.test')
+  expect(vi.getTimerCount()).toBe(1)
+  root.querySelector<HTMLButtonElement>('[data-raw="login"] + button')!.click()
+  expect(vi.getTimerCount()).toBe(0)
+  await vi.runAllTimersAsync()
+  expect(raw('login').querySelector('[data-view="signin"]')).not.toBeNull()
+  expect(raw('login').querySelector<HTMLInputElement>('input')!.value).toBe('')
+})
+
+test('raw host selection reports registry data without opening an app login', () => {
+  const card = raw('picker').querySelector<HTMLButtonElement>('[data-provider]:not([hidden])')!
+  const provider = providers.find(provider => provider.id === card.dataset.provider)!
+  card.click()
+  expect(root.querySelector('.demo-raw-selection')!.textContent).toContain(provider.serviceUrl)
+  expect(document.querySelector('dialog')).toBeNull()
+  expect(raw('login').querySelector('[data-view="signin"]')).not.toBeNull()
+  expect(vi.getTimerCount()).toBe(0)
+})
 
 test('the small header button opens the library dialog and no auth session is started on load', () => {
   expect(root.querySelector('[data-launcher]')).toBeNull()
@@ -148,8 +187,12 @@ test('standalone selection exposes the real provider URL without invoking authen
 test('unmount cancels active inline work and removes external headers and dialogs', async () => {
   layout('inline')
   submit(root.querySelector('[data-launcher]')!, 'tester.demo.test')
+  submit(raw('login'), 'tester.demo.test')
+  const rawContainer = raw('login')
   unmount()
+  expect(vi.getTimerCount()).toBe(0)
   await vi.runAllTimersAsync()
+  expect(rawContainer.querySelector('[data-launcher]')).toBeNull()
   expect(root.childElementCount).toBe(0)
   expect(document.querySelector('header, footer, dialog')).toBeNull()
   expect(vi.getTimerCount()).toBe(0)
